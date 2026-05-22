@@ -16,35 +16,21 @@ D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Web
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Web.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Web.pdb
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\AutoMapper.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Azure.Core.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Azure.Identity.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\BCrypt.Net-Next.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\FluentValidation.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\FluentValidation.DependencyInjectionExtensions.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.Bcl.AsyncInterfaces.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.Data.SqlClient.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Abstractions.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.Relational.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.EntityFrameworkCore.SqlServer.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.Identity.Client.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.Identity.Client.Extensions.Msal.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.IdentityModel.Abstractions.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.IdentityModel.JsonWebTokens.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.IdentityModel.Logging.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.SqlServer.Server.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.ClientModel.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.Configuration.ConfigurationManager.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.Memory.Data.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.Security.Cryptography.ProtectedData.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win-arm64\native\Microsoft.Data.SqlClient.SNI.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win-x64\native\Microsoft.Data.SqlClient.SNI.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win-x86\native\Microsoft.Data.SqlClient.SNI.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Application.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Domain.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Infrastructure.dll
@@ -146,11 +132,6 @@ D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\zh-Hans\M
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.Build.Locator.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Microsoft.Win32.SystemEvents.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.Drawing.Common.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.Runtime.Caching.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.Security.Permissions.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\System.Windows.Extensions.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\cs\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\de\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\es\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
@@ -164,15 +145,6 @@ D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\ru\Micros
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\tr\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\unix\lib\net6.0\Microsoft.Data.SqlClient.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win\lib\net6.0\Microsoft.Data.SqlClient.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win-arm\native\Microsoft.Data.SqlClient.SNI.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win\lib\net6.0\Microsoft.Win32.SystemEvents.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\unix\lib\net6.0\System.Drawing.Common.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win\lib\net6.0\System.Drawing.Common.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Web.exe
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9p1nll2w5m-{0}-fj2tavo0xy-fj2tavo0xy.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\t1s9k41pt6-{0}-f84gcfxstk-f84gcfxstk.gz
@@ -189,3 +161,6 @@ C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Web.deps.json
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Web.runtimeconfig.json
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Web.dll
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Web.pdb
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Npgsql.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\Elovo.Web.sourcelink.json

@@ -18,3 +18,4 @@ D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Infrastructure\obj\Debug\net10.
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Infrastructure.deps.json
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Infrastructure.dll
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Infrastructure.pdb
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Infrastructure\obj\Debug\net10.0\Elovo.Infrastructure.sourcelink.json

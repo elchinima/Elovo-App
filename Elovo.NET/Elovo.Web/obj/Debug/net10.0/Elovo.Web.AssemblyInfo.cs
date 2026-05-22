@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Elovo.Web")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+988572eb94d8fc3f6ce7cf2af38459317f25391d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+65b6c92789a2d52d8802f75b85ff632843346eba")]
 [assembly: System.Reflection.AssemblyProductAttribute("Elovo.Web")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Elovo.Web")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

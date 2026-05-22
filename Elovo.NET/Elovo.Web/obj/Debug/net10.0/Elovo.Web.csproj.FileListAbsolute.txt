@@ -146,7 +146,6 @@ D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\tr\Micros
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.MSBuild.BuildHost.resources.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Web.exe
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9p1nll2w5m-{0}-fj2tavo0xy-fj2tavo0xy.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\t1s9k41pt6-{0}-f84gcfxstk-f84gcfxstk.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\3g0fdid26c-{0}-k3p05lp4rr-k3p05lp4rr.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9mk41yyx3w-{0}-s31knbvbbt-s31knbvbbt.gz
@@ -164,3 +163,4 @@ C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Web.pdb
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Npgsql.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\Elovo.Web.sourcelink.json
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9p1nll2w5m-{0}-yzkld3a8uy-yzkld3a8uy.gz

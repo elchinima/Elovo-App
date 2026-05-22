@@ -29,7 +29,9 @@
 
 @media (max-width: 820px) {
     .app-shell {
-        padding: 0;
+        min-height: 100dvh;
+        padding: 50px 0 25px;
+        place-items: stretch;
     }
 
     .login-view {
@@ -54,7 +56,8 @@
     }
 
     .messenger-view {
-        height: 100vh;
+        height: calc(100vh - 75px);
+        height: calc(100dvh - 75px);
         grid-template-columns: 1fr;
         border-radius: 0;
     }
@@ -88,12 +91,13 @@
     }
 
     .modal-backdrop {
-        padding: 0;
+        padding: 50px 0 25px;
     }
 
     .modal-panel {
         width: 100%;
-        max-height: 100vh;
+        max-height: calc(100vh - 75px);
+        max-height: calc(100dvh - 75px);
         border-radius: 0;
     }
 }

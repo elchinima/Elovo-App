@@ -1,0 +1,18 @@
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\bin\Debug\net10.0\Elovo.Application.deps.json
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\bin\Debug\net10.0\Elovo.Application.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\bin\Debug\net10.0\Elovo.Application.pdb
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\bin\Debug\net10.0\Elovo.Domain.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\bin\Debug\net10.0\Elovo.Domain.pdb
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\Elovo.Application.csproj.AssemblyReference.cache
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\Elovo.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\Elovo.Application.AssemblyInfoInputs.cache
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\Elovo.Application.AssemblyInfo.cs
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\Elovo.Application.csproj.CoreCompileInputs.cache
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\Elovo.Ap.CCA33669.Up2Date
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\Elovo.Application.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\refint\Elovo.Application.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\Elovo.Application.pdb
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Application\obj\Debug\net10.0\ref\Elovo.Application.dll
+C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Application.deps.json
+C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Application.dll
+C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Application.pdb

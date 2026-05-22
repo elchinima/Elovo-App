@@ -1,0 +1,731 @@
+const loginForm = document.querySelector("#loginForm");
+const registerForm = document.querySelector("#registerForm");
+const logoutButton = document.querySelector("#logoutButton");
+const messengerView = document.querySelector("#messengerView");
+const chatList = document.querySelector("#chatList");
+const searchInput = document.querySelector("#searchInput");
+const messageStream = document.querySelector("#messageStream");
+const messageForm = document.querySelector("#messageForm");
+const messageInput = document.querySelector("#messageInput");
+const activeName = document.querySelector("#activeName");
+const activeStatus = document.querySelector("#activeStatus");
+const activeAvatar = document.querySelector("#activeAvatar");
+const backButton = document.querySelector("#backButton");
+const addFriendButton = document.querySelector("#addFriendButton");
+const friendRequestsButton = document.querySelector("#friendRequestsButton");
+const addFriendModal = document.querySelector("#addFriendModal");
+const friendRequestsModal = document.querySelector("#friendRequestsModal");
+const userSearchInput = document.querySelector("#userSearchInput");
+const userSearchResults = document.querySelector("#userSearchResults");
+const friendRequestsList = document.querySelector("#friendRequestsList");
+
+let conversations = [];
+let activeConversation = null;
+let connection = null;
+let typingTimer = null;
+let userSearchTimer = null;
+let latestMessageId = "";
+let isSending = false;
+
+function getCurrentUserId() {
+    return (window.elovoCurrentUserId || "").toLowerCase();
+}
+
+function normalizeId(value) {
+    return (value || "").toLowerCase();
+}
+
+function sameId(first, second) {
+    return normalizeId(first) === normalizeId(second);
+}
+
+function getConversationStorageKey(userId) {
+    const currentUserId = getCurrentUserId();
+    const otherUserId = normalizeId(userId);
+    const pair = [currentUserId, otherUserId].sort().join(":");
+    return `elovo:messages:${pair}`;
+}
+
+function readStoredMessages(userId) {
+    try {
+        const raw = window.localStorage.getItem(getConversationStorageKey(userId));
+        const messages = raw ? JSON.parse(raw) : [];
+        return Array.isArray(messages) ? messages : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeStoredMessages(userId, messages) {
+    window.localStorage.setItem(getConversationStorageKey(userId), JSON.stringify(messages));
+}
+
+function getMessageParticipantId(message) {
+    const currentUserId = getCurrentUserId();
+    const senderId = normalizeId(message.senderId);
+    const receiverId = normalizeId(message.receiverId);
+    return senderId === currentUserId ? receiverId : senderId;
+}
+
+function storeMessage(message) {
+    const otherUserId = getMessageParticipantId(message);
+    if (!otherUserId) {
+        return;
+    }
+
+    const messages = readStoredMessages(otherUserId);
+    if (messages.some((storedMessage) => storedMessage.id === message.id)) {
+        return;
+    }
+
+    messages.push(message);
+    messages.sort((first, second) => new Date(first.sentAt) - new Date(second.sentAt));
+    writeStoredMessages(otherUserId, messages);
+}
+
+function getStoredConversationSummary(userId) {
+    const messages = readStoredMessages(userId);
+    const lastMessage = messages.at(-1);
+
+    return {
+        lastMessage: lastMessage ? lastMessage.content : "Start a conversation.",
+        lastMessageAt: lastMessage ? lastMessage.sentAt : null
+    };
+}
+
+function applyLocalConversationHistory(items) {
+    return items
+        .map((chat) => {
+            const summary = getStoredConversationSummary(chat.userId);
+            return {
+                ...chat,
+                lastMessage: summary.lastMessage,
+                lastMessageAt: summary.lastMessageAt,
+                unreadCount: 0
+            };
+        })
+        .sort((first, second) => {
+            const firstTime = first.lastMessageAt ? new Date(first.lastMessageAt).getTime() : 0;
+            const secondTime = second.lastMessageAt ? new Date(second.lastMessageAt).getTime() : 0;
+            return secondTime - firstTime || first.username.localeCompare(second.username);
+        });
+}
+
+function getAntiForgeryToken() {
+    const token = document.querySelector("input[name='__RequestVerificationToken']");
+    return token ? token.value : "";
+}
+
+function formatTime(value) {
+    if (!value) {
+        return "";
+    }
+
+    const date = new Date(value);
+    const now = new Date();
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    if (date.toDateString() === now.toDateString()) {
+        return new Intl.DateTimeFormat("en", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false
+        }).format(date);
+    }
+
+    return new Intl.DateTimeFormat("en", {
+        month: "short",
+        day: "numeric"
+    }).format(date);
+}
+
+function formatStatus(chat) {
+    if (chat.isOnline) {
+        return "Online now";
+    }
+
+    if (!chat.lastSeenAt) {
+        return "Offline";
+    }
+
+    return `Last seen ${formatTime(chat.lastSeenAt)}`;
+}
+
+function openModal(modal) {
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+}
+
+function closeModal(modal) {
+    if (!modal) {
+        return;
+    }
+
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+}
+
+function getFilteredConversations() {
+    const term = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+    if (!term) {
+        return conversations;
+    }
+
+    return conversations.filter((chat) => {
+        return chat.username.toLowerCase().includes(term) ||
+            (chat.lastMessage || "").toLowerCase().includes(term);
+    });
+}
+
+function renderChatList(items = conversations) {
+    if (!chatList) {
+        return;
+    }
+
+    chatList.innerHTML = "";
+
+    if (items.length === 0) {
+        const empty = document.createElement("span");
+        empty.className = "chat-copy";
+        empty.textContent = "No conversations yet.";
+        chatList.appendChild(empty);
+        return;
+    }
+
+    items.forEach((chat, index) => {
+        const button = document.createElement("button");
+        const avatar = document.createElement("span");
+        const copy = document.createElement("span");
+        const name = document.createElement("strong");
+        const preview = document.createElement("span");
+        const time = document.createElement("span");
+
+        button.type = "button";
+        button.className = `chat-item${activeConversation && sameId(chat.userId, activeConversation.userId) ? " is-active" : ""}`;
+        button.style.animationDelay = `${index * 45}ms`;
+        avatar.className = "avatar";
+        copy.className = "chat-copy";
+        time.className = "time";
+        avatar.textContent = chat.initial;
+        name.textContent = chat.username;
+        preview.textContent = chat.lastMessage || "Start a conversation.";
+        time.textContent = formatTime(chat.lastMessageAt);
+        copy.append(name, preview);
+        button.append(avatar, copy, time);
+        button.addEventListener("click", () => selectConversation(chat.userId));
+        chatList.appendChild(button);
+    });
+}
+
+function renderConversationHeader(chat) {
+    if (!chat || !activeName || !activeStatus || !activeAvatar) {
+        return;
+    }
+
+    activeName.textContent = chat.username;
+    activeStatus.textContent = formatStatus(chat);
+    activeAvatar.textContent = chat.initial;
+}
+
+function renderMessages(messages) {
+    if (!messageStream) {
+        return;
+    }
+
+    messageStream.innerHTML = "";
+
+    messages.forEach((message) => {
+        appendMessage(message);
+    });
+
+    messageStream.scrollTo({
+        top: messageStream.scrollHeight,
+        behavior: "smooth"
+    });
+}
+
+function appendMessage(message) {
+    const bubble = document.createElement("article");
+    const time = document.createElement("small");
+    const currentUserId = getCurrentUserId();
+    const isMine = (message.senderId || "").toLowerCase() === currentUserId;
+
+    bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}`;
+    bubble.textContent = message.content;
+    time.textContent = formatTime(message.sentAt);
+    bubble.appendChild(time);
+    messageStream.appendChild(bubble);
+}
+
+async function loadConversations() {
+    const response = await fetch("/api/conversations", {
+        headers: { "Accept": "application/json" }
+    });
+
+    if (!response.ok) {
+        window.location.href = "/auth/login";
+        return;
+    }
+
+    conversations = applyLocalConversationHistory(await response.json());
+
+    if (!activeConversation && conversations.length > 0) {
+        activeConversation = conversations[0];
+    } else if (activeConversation) {
+        activeConversation = conversations.find(x => sameId(x.userId, activeConversation.userId)) || activeConversation;
+    }
+
+    renderChatList(getFilteredConversations());
+
+    if (activeConversation) {
+        renderConversationHeader(activeConversation);
+    }
+}
+
+function renderUsers(items) {
+    if (!userSearchResults) {
+        return;
+    }
+
+    userSearchResults.innerHTML = "";
+
+    if (items.length === 0) {
+        const empty = document.createElement("span");
+        empty.className = "modal-empty";
+        empty.textContent = "No users found.";
+        userSearchResults.appendChild(empty);
+        return;
+    }
+
+    items.forEach((user) => {
+        const row = document.createElement("div");
+        const avatar = document.createElement("span");
+        const copy = document.createElement("span");
+        const name = document.createElement("strong");
+        const status = document.createElement("span");
+        const button = document.createElement("button");
+
+        row.className = "user-row";
+        avatar.className = "avatar";
+        copy.className = "chat-copy";
+        button.type = "button";
+        button.className = `row-action${user.status === "none" ? " primary" : ""}`;
+
+        avatar.textContent = user.initial;
+        name.textContent = user.username;
+        status.textContent = formatCandidateStatus(user.status);
+        const icon = document.createElement("img");
+        const label = document.createElement("span");
+
+        icon.className = "action-icon";
+        icon.src = user.status === "none"
+            ? "/Assets/Images/Icons/add-action.svg"
+            : "/Assets/Images/Icons/sent-action.svg";
+        icon.alt = "";
+        label.textContent = formatCandidateAction(user.status);
+        button.append(icon, label);
+        button.disabled = user.status !== "none";
+
+        if (user.status === "none") {
+            button.addEventListener("click", () => sendFriendRequest(user.id, button, status));
+        }
+
+        copy.append(name, status);
+        row.append(avatar, copy, button);
+        userSearchResults.appendChild(row);
+    });
+}
+
+function formatCandidateStatus(status) {
+    if (status === "friend") {
+        return "Already friends";
+    }
+
+    if (status === "sent") {
+        return "Request sent";
+    }
+
+    if (status === "incoming") {
+        return "Sent you a request";
+    }
+
+    return "Not in friends";
+}
+
+function formatCandidateAction(status) {
+    if (status === "friend") {
+        return "Friend";
+    }
+
+    if (status === "sent") {
+        return "Sent";
+    }
+
+    if (status === "incoming") {
+        return "Open requests";
+    }
+
+    return "Add";
+}
+
+async function searchUsers() {
+    if (!userSearchInput || !userSearchResults) {
+        return;
+    }
+
+    const term = userSearchInput.value.trim();
+    if (!term) {
+        userSearchResults.innerHTML = "";
+        const empty = document.createElement("span");
+        empty.className = "modal-empty";
+        empty.textContent = "Enter a username.";
+        userSearchResults.appendChild(empty);
+        return;
+    }
+
+    const response = await fetch(`/api/users?query=${encodeURIComponent(term)}`, {
+        headers: { "Accept": "application/json" }
+    });
+
+    if (response.ok) {
+        renderUsers(await response.json());
+    }
+}
+
+async function sendFriendRequest(receiverId, button, status) {
+    button.disabled = true;
+    setActionButtonLabel(button, "Sending", "/Assets/Images/Icons/sent-action.svg");
+
+    const response = await fetch("/api/friend-requests", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "RequestVerificationToken": getAntiForgeryToken()
+        },
+        body: JSON.stringify({ receiverId })
+    });
+
+    if (response.ok) {
+        setActionButtonLabel(button, "Sent", "/Assets/Images/Icons/sent-action.svg");
+        button.classList.remove("primary");
+        status.textContent = "Request sent";
+    } else {
+        button.disabled = false;
+        setActionButtonLabel(button, "Add", "/Assets/Images/Icons/add-action.svg");
+    }
+}
+
+function setActionButtonLabel(button, text, iconSrc) {
+    const icon = button.querySelector(".action-icon");
+    const label = button.querySelector("span");
+
+    if (icon) {
+        icon.src = iconSrc;
+    }
+
+    if (label) {
+        label.textContent = text;
+        return;
+    }
+
+    button.textContent = text;
+}
+
+function renderFriendRequests(items) {
+    if (!friendRequestsList) {
+        return;
+    }
+
+    friendRequestsList.innerHTML = "";
+
+    if (items.length === 0) {
+        const empty = document.createElement("span");
+        empty.className = "modal-empty";
+        empty.textContent = "No friend requests.";
+        friendRequestsList.appendChild(empty);
+        return;
+    }
+
+    items.forEach((request) => {
+        const row = document.createElement("div");
+        const avatar = document.createElement("span");
+        const copy = document.createElement("span");
+        const name = document.createElement("strong");
+        const date = document.createElement("span");
+        const button = document.createElement("button");
+
+        row.className = "user-row";
+        avatar.className = "avatar";
+        copy.className = "chat-copy";
+        button.type = "button";
+        button.className = "row-action primary";
+
+        avatar.textContent = request.initial;
+        name.textContent = request.senderUsername;
+        date.textContent = formatTime(request.createdAt);
+        button.textContent = "Accept";
+        button.addEventListener("click", () => acceptFriendRequest(request.id, button));
+
+        copy.append(name, date);
+        row.append(avatar, copy, button);
+        friendRequestsList.appendChild(row);
+    });
+}
+
+async function loadFriendRequests() {
+    const response = await fetch("/api/friend-requests", {
+        headers: { "Accept": "application/json" }
+    });
+
+    if (response.ok) {
+        renderFriendRequests(await response.json());
+    }
+}
+
+async function acceptFriendRequest(requestId, button) {
+    button.disabled = true;
+    button.textContent = "Adding";
+
+    const response = await fetch(`/api/friend-requests/${requestId}/accept`, {
+        method: "POST",
+        headers: {
+            "RequestVerificationToken": getAntiForgeryToken()
+        }
+    });
+
+    if (response.ok) {
+        await loadFriendRequests();
+        await loadConversations();
+    } else {
+        button.disabled = false;
+        button.textContent = "Accept";
+    }
+}
+
+async function loadMessages(userId) {
+    renderMessages(readStoredMessages(userId));
+}
+
+async function selectConversation(userId) {
+    activeConversation = conversations.find(x => sameId(x.userId, userId));
+    latestMessageId = "";
+
+    if (!activeConversation) {
+        return;
+    }
+
+    renderChatList(getFilteredConversations());
+    renderConversationHeader(activeConversation);
+    await loadMessages(activeConversation.userId);
+
+    if (messengerView) {
+        messengerView.classList.add("chat-open");
+    }
+}
+
+async function startSignalR() {
+    if (!messengerView || !window.signalR) {
+        if (activeStatus) {
+            activeStatus.textContent = "Realtime client is unavailable";
+        }
+        return;
+    }
+
+    connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .withAutomaticReconnect()
+        .build();
+
+    connection.on("ReceiveMessage", async (message) => {
+        latestMessageId = message.id;
+        storeMessage(message);
+
+        if (messageBelongsToActiveConversation(message)) {
+            await loadMessages(activeConversation.userId);
+            messageStream.scrollTo({
+                top: messageStream.scrollHeight,
+                behavior: "smooth"
+            });
+        }
+
+        await loadConversations();
+    });
+
+    connection.on("UserOnline", (userId) => {
+        updateUserStatus(userId, true);
+    });
+
+    connection.on("UserOffline", (userId) => {
+        updateUserStatus(userId, false);
+    });
+
+    connection.on("UserTyping", (userId) => {
+        if (activeConversation && sameId(userId, activeConversation.userId)) {
+            activeStatus.textContent = "Typing...";
+        }
+    });
+
+    connection.on("UserStopTyping", (userId) => {
+        if (activeConversation && sameId(userId, activeConversation.userId)) {
+            activeStatus.textContent = formatStatus(activeConversation);
+        }
+    });
+
+    await connection.start();
+}
+
+function messageBelongsToActiveConversation(message) {
+    return activeConversation &&
+        (sameId(message.senderId, activeConversation.userId) ||
+            sameId(message.receiverId, activeConversation.userId));
+}
+
+function updateUserStatus(userId, isOnline) {
+    const chat = conversations.find(x => sameId(x.userId, userId));
+    if (!chat) {
+        return;
+    }
+
+    chat.isOnline = isOnline;
+    chat.lastSeenAt = isOnline ? null : new Date().toISOString();
+
+    if (activeConversation && sameId(activeConversation.userId, userId)) {
+        activeConversation = chat;
+        renderConversationHeader(chat);
+    }
+
+    renderChatList(getFilteredConversations());
+}
+
+async function sendCurrentMessage(event) {
+    event.preventDefault();
+
+    if (!activeConversation || !connection || isSending) {
+        return;
+    }
+
+    const text = messageInput.value.trim();
+    if (!text) {
+        return;
+    }
+
+    isSending = true;
+    messageInput.value = "";
+    messageInput.disabled = true;
+    messageForm.classList.add("is-sending");
+
+    try {
+        await connection.invoke("SendMessage", activeConversation.userId, text);
+    } finally {
+        messageForm.classList.remove("is-sending");
+        messageInput.disabled = false;
+        messageInput.focus();
+        isSending = false;
+    }
+}
+
+async function logout() {
+    await fetch("/auth/logout", {
+        method: "POST",
+        headers: {
+            "RequestVerificationToken": getAntiForgeryToken()
+        }
+    });
+
+    window.location.href = "/auth/login";
+}
+
+if (messengerView && chatList && messageStream) {
+    loadConversations()
+        .then(() => activeConversation ? loadMessages(activeConversation.userId) : null)
+        .then(startSignalR)
+        .catch(() => {
+            window.location.href = "/auth/login";
+        });
+}
+
+if (logoutButton) {
+    logoutButton.addEventListener("click", logout);
+}
+
+if (searchInput) {
+    searchInput.addEventListener("input", () => {
+        renderChatList(getFilteredConversations());
+    });
+}
+
+if (messageForm) {
+    messageForm.addEventListener("submit", sendCurrentMessage);
+}
+
+if (messageInput) {
+    messageInput.addEventListener("input", () => {
+        if (!connection || !activeConversation) {
+            return;
+        }
+
+        connection.invoke("StartTyping", activeConversation.userId);
+        window.clearTimeout(typingTimer);
+        typingTimer = window.setTimeout(() => {
+            connection.invoke("StopTyping", activeConversation.userId);
+        }, 700);
+    });
+}
+
+if (backButton) {
+    backButton.addEventListener("click", () => {
+        if (messengerView) {
+            messengerView.classList.remove("chat-open");
+        }
+    });
+}
+
+if (addFriendButton) {
+    addFriendButton.addEventListener("click", () => {
+        openModal(addFriendModal);
+        searchUsers();
+        if (userSearchInput) {
+            userSearchInput.focus();
+        }
+    });
+}
+
+if (friendRequestsButton) {
+    friendRequestsButton.addEventListener("click", () => {
+        openModal(friendRequestsModal);
+        loadFriendRequests();
+    });
+}
+
+if (userSearchInput) {
+    userSearchInput.addEventListener("input", () => {
+        window.clearTimeout(userSearchTimer);
+        userSearchTimer = window.setTimeout(searchUsers, 250);
+    });
+}
+
+document.querySelectorAll("[data-close-modal]").forEach((button) => {
+    button.addEventListener("click", () => {
+        closeModal(button.closest(".modal-backdrop"));
+    });
+});
+
+document.querySelectorAll(".modal-backdrop").forEach((modal) => {
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+            closeModal(modal);
+        }
+    });
+});
+
+if (loginForm || registerForm) {
+    window.localStorage.removeItem("elovoCurrentUser");
+}

@@ -1,0 +1,11 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <filter id="softGlow" x="-8" y="-8" width="44" height="44" color-interpolation-filters="sRGB">
+            <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#4F8CFF" flood-opacity=".42"/>
+        </filter>
+    </defs>
+    <path d="M12 6.5H7.75C6.51 6.5 5.5 7.51 5.5 8.75v10.5c0 1.24 1.01 2.25 2.25 2.25H12" stroke="#F5F7FF" stroke-width="2.25" stroke-linecap="round" filter="url(#softGlow)"/>
+    <path d="M13.5 14h9" stroke="#F5F7FF" stroke-width="2.25" stroke-linecap="round"/>
+    <path d="M18.75 9.25 23.5 14l-4.75 4.75" stroke="#F5F7FF" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13.5 14h5.6" stroke="#8B7CFF" stroke-width="1.2" stroke-linecap="round" opacity=".9"/>
+</svg>

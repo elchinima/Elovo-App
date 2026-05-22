@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="Elovo.Application/Elovo.Application.csproj" />
+    <Project Path="Elovo.Domain/Elovo.Domain.csproj" />
+    <Project Path="Elovo.Infrastructure/Elovo.Infrastructure.csproj" Id="b6a12889-65d3-4877-b49d-059868a138d1" />
+    <Project Path="Elovo.Web/Elovo.Web.csproj" Id="c3c09a3b-bd64-4b28-b2ff-7453ae7f89c8" />
+  </Folder>
+</Solution>

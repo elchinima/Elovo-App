@@ -1,0 +1,14 @@
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\bin\Debug\net10.0\Elovo.Domain.deps.json
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\bin\Debug\net10.0\Elovo.Domain.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\bin\Debug\net10.0\Elovo.Domain.pdb
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\obj\Debug\net10.0\Elovo.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\obj\Debug\net10.0\Elovo.Domain.AssemblyInfoInputs.cache
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\obj\Debug\net10.0\Elovo.Domain.AssemblyInfo.cs
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\obj\Debug\net10.0\Elovo.Domain.csproj.CoreCompileInputs.cache
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\obj\Debug\net10.0\Elovo.Domain.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\obj\Debug\net10.0\refint\Elovo.Domain.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\obj\Debug\net10.0\Elovo.Domain.pdb
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Domain\obj\Debug\net10.0\ref\Elovo.Domain.dll
+C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Domain.deps.json
+C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Domain.dll
+C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Domain.pdb

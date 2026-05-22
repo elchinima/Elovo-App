@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elovo Login</title>
+    <link rel="stylesheet" href="./Assets/CSS/style.css">
+    <link rel="stylesheet" href="./Assets/CSS/responisve.css">
+</head>
+<body>
+    <main class="app-shell">
+        <section class="login-view is-active" id="loginView" aria-label="Login">
+            <div class="brand-panel">
+                <img class="brand-logo" src="Assets/Images/Logo/Elovo-Logo.png" alt="Elovo logo">
+                <p class="eyebrow">Elovo Chat</p>
+                <h1>Sign in to your secure workspace.</h1>
+                <p class="support-copy">A polished messenger simulation built around fast conversations, shared files, and calm focus.</p>
+            </div>
+
+            <form class="login-card" id="loginForm">
+                <div>
+                    <span class="form-kicker">Welcome back</span>
+                    <h2>Log in</h2>
+                </div>
+                <label>
+                    Username
+                    <input type="text" id="loginUsername" required>
+                </label>
+                <label>
+                    Password
+                    <input type="password" id="loginPassword" required>
+                </label>
+                <button class="primary-icon-button" type="submit" aria-label="Enter Messenger" title="Enter Messenger">
+                    <img class="button-icon" src="Assets/Images/Icons/login.svg" alt="">
+                    <span>Log in</span>
+                </button>
+                <a href="register.html" class="secondary-button">Create a new account</a>
+                <p class="error-message" id="loginError" style="color: red; display: none; margin-top: 10px; font-size: 0.875rem;">Invalid username or password.</p>
+            </form>
+        </section>
+    </main>
+
+    <script src="Assets/Script/app.js"></script>
+</body>
+</html>

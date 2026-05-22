@@ -1,0 +1,734 @@
+:root {
+    --bg: #070914;
+    --bg-soft: #10142a;
+    --panel: rgba(17, 22, 46, 0.82);
+    --panel-solid: #121832;
+    --line: rgba(125, 134, 255, 0.18);
+    --text: #f5f7ff;
+    --muted: #aab0d4;
+    --quiet: #7780b8;
+    --accent: #6d67ff;
+    --accent-2: #4f8cff;
+    --accent-3: #8b7cff;
+    --success: #53d6a4;
+    --shadow: none;
+    --radius: 8px;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 20% 20%, rgba(109, 103, 255, 0.22), transparent 28rem),
+        radial-gradient(circle at 78% 72%, rgba(79, 140, 255, 0.18), transparent 30rem),
+        linear-gradient(135deg, #050714 0%, #0a0f24 48%, #111735 100%);
+    text-rendering: geometricPrecision;
+    scrollbar-color: rgba(109, 103, 255, 0.78) rgba(8, 12, 30, 0.74);
+    scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(8, 12, 30, 0.74);
+}
+
+::-webkit-scrollbar-thumb {
+    border: 2px solid rgba(8, 12, 30, 0.9);
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--accent), var(--accent-2));
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #817cff, #62a0ff);
+}
+
+::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, opacity 180ms ease;
+    touch-action: manipulation;
+    user-select: none;
+}
+
+button:active {
+    transform: scale(0.95);
+    opacity: 0.85;
+    transition: transform 50ms ease, opacity 50ms ease;
+}
+
+.app-shell {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.login-view,
+.messenger-view {
+    width: min(1120px, 100%);
+    display: none;
+}
+
+.login-view.is-active,
+.messenger-view.is-active {
+    display: grid;
+    animation: viewIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.login-view {
+    grid-template-columns: 1.08fr 0.92fr;
+    gap: 24px;
+    align-items: stretch;
+}
+
+.brand-panel,
+.login-card,
+.sidebar,
+.chat-panel {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    box-shadow: none;
+    backdrop-filter: blur(22px);
+}
+
+.brand-panel {
+    min-height: 620px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(32px, 6vw, 72px);
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+}
+
+.brand-panel::after {
+    content: "";
+    position: absolute;
+    inset: auto -18% -24% 24%;
+    height: 320px;
+    background: linear-gradient(120deg, rgba(79, 140, 255, 0.42), rgba(139, 124, 255, 0.18));
+    filter: blur(24px);
+    transform: skewX(-22deg);
+    animation: glowDrift 9s ease-in-out infinite alternate;
+}
+
+.brand-logo {
+    width: 112px;
+    height: 112px;
+    object-fit: contain;
+    margin-bottom: 42px;
+    animation: logoFloat 5s ease-in-out infinite;
+}
+
+.eyebrow,
+.form-kicker {
+    margin: 0 0 12px;
+    color: var(--accent-2);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+    margin-top: 0;
+}
+
+h1 {
+    max-width: 560px;
+    margin-bottom: 18px;
+    font-size: clamp(2.4rem, 6vw, 5rem);
+    line-height: 0.96;
+}
+
+.support-copy {
+    max-width: 480px;
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.login-card {
+    align-self: center;
+    display: grid;
+    gap: 20px;
+    padding: clamp(26px, 4vw, 44px);
+    border-radius: var(--radius);
+}
+
+.login-card h2 {
+    margin-bottom: 0;
+    font-size: 2.2rem;
+}
+
+label {
+    display: grid;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+input {
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(5, 8, 22, 0.68);
+    outline: none;
+    padding: 0 14px;
+    transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+
+input:focus {
+    border-color: rgba(109, 103, 255, 0.85);
+    background: rgba(7, 11, 30, 0.88);
+}
+
+input:disabled {
+    opacity: 0.72;
+    cursor: wait;
+}
+
+.login-card button,
+.composer button[type="submit"] {
+    min-height: 48px;
+    border: 0;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.primary-icon-button {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.button-icon {
+    width: 26px;
+    height: 26px;
+    display: block;
+    pointer-events: none;
+    transition: transform 180ms ease, filter 180ms ease, opacity 180ms ease;
+}
+
+.send-button .button-icon {
+    width: 27px;
+    height: 27px;
+}
+
+.secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    font-weight: 800;
+    text-decoration: none;
+    transition: background 180ms ease, border-color 180ms ease;
+}
+
+.secondary-button:hover,
+.secondary-button:focus-visible {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(125, 134, 255, 0.35);
+}
+
+.fine-print {
+    margin: 0;
+    text-align: center;
+    color: var(--quiet);
+    font-size: 0.84rem;
+}
+
+.fine-print a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: rgba(119, 128, 184, 0.4);
+    text-underline-offset: 3px;
+    transition: color 180ms ease, text-decoration-color 180ms ease;
+}
+
+.fine-print a:hover,
+.fine-print a:focus-visible {
+    color: var(--text);
+    text-decoration-color: var(--text);
+}
+
+.messenger-view {
+    height: min(820px, calc(100vh - 48px));
+    grid-template-columns: 340px minmax(0, 1fr);
+    overflow: hidden;
+    border-radius: var(--radius);
+}
+
+.sidebar,
+.chat-panel {
+    min-height: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.sidebar {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    border-right: 0;
+}
+
+.sidebar-header,
+.chat-header,
+.composer {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px;
+    border-bottom: 1px solid var(--line);
+}
+
+.brand-mark {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius);
+    background: rgba(109, 103, 255, 0.14);
+}
+
+.brand-mark img {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+
+.sidebar-header p,
+.sidebar-header strong {
+    display: block;
+    margin: 0;
+}
+
+.sidebar-header p,
+.chat-header p {
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+.search-box {
+    padding: 18px;
+    border-bottom: 1px solid var(--line);
+}
+
+.search-box span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.chat-list {
+    min-height: 0;
+    overflow: auto;
+    padding: 8px;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+}
+
+.chat-item {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    border: 0;
+    border-radius: var(--radius);
+    color: var(--text);
+    background: transparent;
+    padding: 12px;
+    text-align: left;
+    animation: listItemIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.chat-item:hover,
+.chat-item.is-active {
+    background: rgba(109, 103, 255, 0.12);
+}
+
+.chat-item:hover {
+    transform: translateX(2px);
+}
+
+.chat-item.is-active {
+    border-left: 3px solid var(--accent-2);
+}
+
+.avatar {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: var(--radius);
+    color: #fff;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    transition: transform 180ms ease;
+}
+
+.chat-item:hover .avatar,
+.chat-header .avatar {
+    transform: scale(1.05);
+    /* added subtle scale instead of shadow */
+}
+
+.chat-copy {
+    min-width: 0;
+}
+
+.chat-copy strong,
+.chat-copy span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-copy span,
+.time {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.time {
+    align-self: start;
+}
+
+.chat-panel {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(rgba(9, 13, 30, 0.9), rgba(9, 13, 30, 0.9)),
+        radial-gradient(circle at 20% 10%, rgba(109, 103, 255, 0.22), transparent 20rem);
+}
+
+.chat-header {
+    justify-content: flex-start;
+}
+
+.chat-header h2,
+.chat-header p {
+    margin: 0;
+}
+
+.chat-header h2 {
+    font-size: 1.16rem;
+}
+
+.ghost-button,
+.icon-button {
+    border: 1px solid var(--line);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: var(--radius);
+}
+
+.ghost-button {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    margin-left: auto;
+    padding: 0;
+    font-weight: 800;
+}
+
+.icon-button {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.mobile-back {
+    display: none;
+}
+
+.message-stream {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: auto;
+    padding: 22px;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+}
+
+.message {
+    max-width: min(68%, 560px);
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.08);
+    line-height: 1.5;
+    transform-origin: bottom right;
+    animation: messageIn 400ms cubic-bezier(0.16, 1.2, 0.3, 1) both;
+    transition: transform 180ms ease, filter 180ms ease, opacity 180ms ease;
+    will-change: transform, opacity;
+}
+
+.message.mine {
+    align-self: flex-end;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.message.them {
+    align-self: flex-start;
+    transform-origin: bottom left;
+}
+
+.message.is-new {
+    animation: sendPop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.message.is-pending {
+    position: relative;
+    overflow: hidden;
+    opacity: 0.86;
+    animation: pendingSend 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.message.is-pending::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 18%, rgba(255, 255, 255, 0.2) 42%, transparent 66%);
+    transform: translateX(-120%);
+    animation: shimmer 820ms ease-in-out infinite;
+}
+
+.message.is-pending small {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.message small {
+    display: block;
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 0.72rem;
+}
+
+.composer {
+    border-top: 1px solid var(--line);
+    border-bottom: 0;
+    transition: background 180ms ease;
+    position: relative;
+    z-index: 10;
+    background: var(--panel-solid);
+}
+
+.composer input {
+    flex: 1;
+}
+
+.composer button[type="submit"] {
+    width: 48px;
+    min-height: 43px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.composer.is-sending {
+    background: rgba(109, 103, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.composer.is-sending button[type="submit"] {
+    pointer-events: none;
+    transform: translateY(-1px);
+}
+
+.composer.is-sending button[type="submit"] .button-icon {
+    opacity: 0;
+    transform: translate(30px, -14px) scale(0.64);
+}
+
+.composer.is-sending button[type="submit"]::after {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.34);
+    border-top-color: #fff;
+    border-right-color: #fff;
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+    animation: spin 680ms linear infinite;
+}
+
+@keyframes viewIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.97);
+        filter: blur(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes listItemIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes messageIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes sendPop {
+    0% {
+        opacity: 0;
+        transform: translate(12px, 12px) scale(0.85);
+        filter: blur(2px);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-2px, -2px) scale(1.03);
+        filter: blur(0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes pendingSend {
+    from {
+        opacity: 0;
+        transform: translate(6px, 8px) scale(0.97);
+    }
+
+    to {
+        opacity: 0.86;
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+@keyframes shimmer {
+    to {
+        transform: translateX(120%);
+    }
+}
+
+@keyframes sendArrow {
+
+    0%,
+    100% {
+        opacity: 0.82;
+        transform: translate(-62%, -50%) scale(0.92);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-38%, -50%) scale(1.04);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes logoFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+@keyframes glowDrift {
+    from {
+        transform: translateX(-8px) skewX(-22deg);
+    }
+
+    to {
+        transform: translateX(18px) skewX(-22deg);
+    }
+}
+
+@keyframes mobilePanelIn {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

@@ -1,0 +1,91 @@
+@{
+    ViewData["Title"] = "Elovo Chat";
+}
+
+<main class="app-shell">
+    <section class="messenger-view is-active" id="messengerView" aria-label="Messenger simulation">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand-mark">
+                    <img src="~/Assets/Images/Logo/Elovo-Logo.png" alt="">
+                </div>
+                <div>
+                    <p>Elovo</p>
+                    <strong>Messages</strong>
+                </div>
+                <div class="sidebar-actions">
+                    <button class="icon-button" id="addFriendButton" type="button" aria-label="Add friend" title="Add friend">
+                        <img class="button-icon" src="~/Assets/Images/Icons/add-friend.svg" alt="">
+                    </button>
+                    <button class="icon-button" id="friendRequestsButton" type="button" aria-label="Friend requests" title="Friend requests">
+                        <img class="button-icon" src="~/Assets/Images/Icons/friend-requests.svg" alt="">
+                    </button>
+                </div>
+            </div>
+
+            <label class="search-box">
+                <span>Search</span>
+                <input type="search" id="searchInput" placeholder="Search chats">
+            </label>
+
+            <div class="chat-list" id="chatList" aria-label="Conversation list"></div>
+        </aside>
+
+        <section class="chat-panel">
+            <header class="chat-header">
+                <button class="icon-button mobile-back" id="backButton" type="button" aria-label="Back to conversations" title="Back">
+                    <img class="button-icon" src="~/Assets/Images/Icons/back.svg" alt="">
+                </button>
+                <div class="avatar" id="activeAvatar">E</div>
+                <div>
+                    <h2 id="activeName">Elovo</h2>
+                    <p id="activeStatus">Choose a conversation</p>
+                </div>
+                <button class="ghost-button" id="logoutButton" type="button" aria-label="Log out" title="Log out">
+                    <img class="button-icon" src="~/Assets/Images/Icons/logout.svg" alt="">
+                </button>
+            </header>
+
+            <div class="message-stream" id="messageStream" aria-live="polite"></div>
+
+            <form class="composer" id="messageForm">
+                @Html.AntiForgeryToken()
+                <button type="button" class="icon-button" aria-label="Attach file" title="Attach file">
+                    <img class="button-icon" src="~/Assets/Images/Icons/attach.svg" alt="">
+                </button>
+                <input type="text" id="messageInput" placeholder="Write a message" autocomplete="off">
+                <button class="send-button" type="submit" aria-label="Send message" title="Send message">
+                    <img class="button-icon" src="~/Assets/Images/Icons/send.svg" alt="">
+                </button>
+            </form>
+        </section>
+    </section>
+
+    <div class="modal-backdrop" id="addFriendModal" aria-hidden="true">
+        <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="addFriendTitle">
+            <header class="modal-header">
+                <h2 id="addFriendTitle">Add friend</h2>
+                <button class="icon-button" type="button" data-close-modal aria-label="Close" title="Close">×</button>
+            </header>
+            <label class="search-box modal-search">
+                <span>Search users</span>
+                <input type="search" id="userSearchInput" placeholder="Search by username">
+            </label>
+            <div class="modal-list" id="userSearchResults"></div>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="friendRequestsModal" aria-hidden="true">
+        <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="friendRequestsTitle">
+            <header class="modal-header">
+                <h2 id="friendRequestsTitle">Friend requests</h2>
+                <button class="icon-button" type="button" data-close-modal aria-label="Close" title="Close">×</button>
+            </header>
+            <div class="modal-list" id="friendRequestsList"></div>
+        </section>
+    </div>
+</main>
+
+<script>
+    window.elovoCurrentUserId = "@ViewBag.CurrentUserId";
+</script>

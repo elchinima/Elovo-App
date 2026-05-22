@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Elovo.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e2332429cf905566098edf1ef8a98c9c230e41c2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1b3fdb9088f089db8d6ddbbec81549813a96a2ba")]
 [assembly: System.Reflection.AssemblyProductAttribute("Elovo.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Elovo.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

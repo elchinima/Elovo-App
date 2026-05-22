@@ -12,7 +12,7 @@ public static class InfrastructureServiceExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration config)
     {
         services.AddDbContext<ElovoDbContext>(options =>
-            options.UseSqlServer(
+            options.UseNpgsql(
                 config.GetConnectionString("Default"),
                 sqlOptions => sqlOptions.EnableRetryOnFailure()));
 

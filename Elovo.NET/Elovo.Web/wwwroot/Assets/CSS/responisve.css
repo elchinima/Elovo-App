@@ -28,13 +28,49 @@
 }
 
 @media (max-width: 820px) {
+    body {
+        overflow: hidden;
+    }
+
     .app-shell {
+        position: relative;
+        height: 100vh;
+        height: 100dvh;
         min-height: 100dvh;
+        overflow: hidden;
         padding: 50px 0 25px;
         place-items: stretch;
     }
 
+    .app-shell::before,
+    .app-shell::after {
+        content: "";
+        position: fixed;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        pointer-events: none;
+        background:
+            radial-gradient(circle at 18% 0%, rgba(109, 103, 255, 0.22), transparent 18rem),
+            rgba(17, 22, 46, 0.82);
+        backdrop-filter: blur(22px);
+    }
+
+    .app-shell::before {
+        top: 0;
+        height: 50px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .app-shell::after {
+        bottom: 0;
+        height: 25px;
+        border-top: 1px solid var(--line);
+    }
+
     .login-view {
+        height: 100%;
+        overflow: auto;
         grid-template-columns: 1fr;
         gap: 0;
     }

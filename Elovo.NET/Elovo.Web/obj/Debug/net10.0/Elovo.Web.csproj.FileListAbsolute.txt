@@ -148,10 +148,8 @@ D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\zh-Hant\M
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Elovo.Web.exe
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\t1s9k41pt6-{0}-f84gcfxstk-f84gcfxstk.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\3g0fdid26c-{0}-k3p05lp4rr-k3p05lp4rr.gz
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9mk41yyx3w-{0}-s31knbvbbt-s31knbvbbt.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\rahyuh7kxs-{0}-fqd3ydumpt-fqd3ydumpt.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\vf8094770q-{0}-k51lsqyvkj-k51lsqyvkj.gz
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\ofcyoaq11k-{0}-99uj2alc7d-99uj2alc7d.gz
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\appsettings.Development.json
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\appsettings.json
 C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Web.staticwebassets.runtime.json
@@ -163,4 +161,6 @@ C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Web.pdb
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Npgsql.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\Elovo.Web.sourcelink.json
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9p1nll2w5m-{0}-yzkld3a8uy-yzkld3a8uy.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9p1nll2w5m-{0}-33lq1qjwlu-33lq1qjwlu.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9mk41yyx3w-{0}-y9nz15l0i1-y9nz15l0i1.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\ofcyoaq11k-{0}-d8v7zxcaaa-d8v7zxcaaa.gz

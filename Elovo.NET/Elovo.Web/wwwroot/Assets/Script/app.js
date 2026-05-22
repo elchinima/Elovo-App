@@ -18,6 +18,7 @@ const friendRequestsModal = document.querySelector("#friendRequestsModal");
 const userSearchInput = document.querySelector("#userSearchInput");
 const userSearchResults = document.querySelector("#userSearchResults");
 const friendRequestsList = document.querySelector("#friendRequestsList");
+const pageLoader = document.querySelector("#pageLoader");
 
 let conversations = [];
 let activeConversation = null;
@@ -26,6 +27,29 @@ let typingTimer = null;
 let userSearchTimer = null;
 let latestMessageId = "";
 let isSending = false;
+
+function showPageLoader() {
+    if (!pageLoader) {
+        return;
+    }
+
+    pageLoader.setAttribute("aria-hidden", "false");
+    document.body.classList.add("is-page-loading");
+}
+
+function hidePageLoader() {
+    if (!pageLoader) {
+        return;
+    }
+
+    pageLoader.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("is-page-loading");
+}
+
+function navigateWithLoader(url) {
+    showPageLoader();
+    window.location.href = url;
+}
 
 function getCurrentUserId() {
     return (window.elovoCurrentUserId || "").toLowerCase();
@@ -271,7 +295,7 @@ async function loadConversations() {
     });
 
     if (!response.ok) {
-        window.location.href = "/auth/login";
+        navigateWithLoader("/auth/login");
         return;
     }
 
@@ -633,6 +657,8 @@ async function sendCurrentMessage(event) {
 }
 
 async function logout() {
+    showPageLoader();
+
     await fetch("/auth/logout", {
         method: "POST",
         headers: {
@@ -640,7 +666,7 @@ async function logout() {
         }
     });
 
-    window.location.href = "/auth/login";
+    navigateWithLoader("/auth/login");
 }
 
 if (messengerView && chatList && messageStream) {
@@ -648,7 +674,7 @@ if (messengerView && chatList && messageStream) {
         .then(() => activeConversation ? loadMessages(activeConversation.userId) : null)
         .then(startSignalR)
         .catch(() => {
-            window.location.href = "/auth/login";
+            navigateWithLoader("/auth/login");
         });
 }
 
@@ -729,3 +755,43 @@ document.querySelectorAll(".modal-backdrop").forEach((modal) => {
 if (loginForm || registerForm) {
     window.localStorage.removeItem("elovoCurrentUser");
 }
+
+document.querySelectorAll("a[href]").forEach((link) => {
+    link.addEventListener("click", (event) => {
+        const url = new URL(link.href, window.location.href);
+        const isSamePageHash = url.origin === window.location.origin &&
+            url.pathname === window.location.pathname &&
+            url.search === window.location.search &&
+            url.hash;
+
+        if (event.defaultPrevented ||
+            event.button !== 0 ||
+            event.metaKey ||
+            event.ctrlKey ||
+            event.shiftKey ||
+            event.altKey ||
+            link.target ||
+            link.hasAttribute("download") ||
+            url.origin !== window.location.origin ||
+            isSamePageHash) {
+            return;
+        }
+
+        showPageLoader();
+    });
+});
+
+[loginForm, registerForm].forEach((form) => {
+    if (!form) {
+        return;
+    }
+
+    form.addEventListener("submit", () => {
+        showPageLoader();
+        form.querySelectorAll("button").forEach((button) => {
+            button.disabled = true;
+        });
+    });
+});
+
+window.addEventListener("pageshow", hidePageLoader);

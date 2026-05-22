@@ -9,6 +9,11 @@
 </head>
 <body>
     @RenderBody()
+    <div class="page-loader" id="pageLoader" aria-hidden="true">
+        <div class="loader-mark" aria-label="Loading" role="status">
+            <img src="~/Assets/Images/Logo/Elovo-Logo.png" alt="">
+        </div>
+    </div>
 
     <script src="~/microsoft/signalr/dist/browser/signalr.min.js"></script>
     <script src="~/Assets/Script/app.js" asp-append-version="true"></script>

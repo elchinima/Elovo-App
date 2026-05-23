@@ -17,7 +17,7 @@ public class MessageService : IMessageService
 
     public async Task<MessageDto> SendImageMessageAsync(Guid senderId, SendMessageDto dto, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(dto.ImagePath) || !dto.ImagePath.StartsWith("/uploads/chat-images/", StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(dto.ImagePath))
         {
             throw new InvalidOperationException("Image path is invalid.");
         }

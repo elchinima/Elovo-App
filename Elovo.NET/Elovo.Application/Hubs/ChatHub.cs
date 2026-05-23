@@ -9,12 +9,14 @@ public class ChatHub : Hub
     private readonly IMessageService _messageService;
     private readonly IUserService _userService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IImageStorageService _imageStorageService;
 
-    public ChatHub(IMessageService messageService, IUserService userService, IUnitOfWork unitOfWork)
+    public ChatHub(IMessageService messageService, IUserService userService, IUnitOfWork unitOfWork, IImageStorageService imageStorageService)
     {
         _messageService = messageService;
         _userService = userService;
         _unitOfWork = unitOfWork;
+        _imageStorageService = imageStorageService;
     }
 
     public override async Task OnConnectedAsync()
@@ -58,7 +60,7 @@ public class ChatHub : Hub
 
         if (IsConnected(receiverId))
         {
-            await Clients.Groups(UserGroup(senderId), UserGroup(receiverId)).SendAsync("ReceiveMessage", message);
+            await Clients.Groups(UserGroup(senderId), UserGroup(receiverId)).SendAsync("ReceiveMessage", ToClientMessage(message));
             return;
         }
 
@@ -74,12 +76,12 @@ public class ChatHub : Hub
         });
 
         await _unitOfWork.SaveChangesAsync();
-        await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", message);
+        await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", ToClientMessage(message));
     }
 
     public async Task SendImageMessage(Guid receiverId, string imagePath, string? fileName)
     {
-        if (string.IsNullOrWhiteSpace(imagePath))
+        if (string.IsNullOrWhiteSpace(imagePath) || !_imageStorageService.IsImagePath(imagePath))
         {
             return;
         }
@@ -145,11 +147,6 @@ public class ChatHub : Hub
         return ConnectedUsers.TryGetValue(userId, out var count) && count > 0;
     }
 
-    private static bool IsImagePath(string value)
-    {
-        return value.StartsWith("/uploads/chat-images/", StringComparison.Ordinal);
-    }
-
     private async Task SendPendingMessagesAsync(Guid userId)
     {
         var messages = await _unitOfWork.PendingMessages.GetByReceiverIdAsync(userId, Context.ConnectionAborted);
@@ -160,17 +157,41 @@ public class ChatHub : Hub
                 Id = message.Id,
                 SenderId = message.SenderId,
                 ReceiverId = message.ReceiverId,
-                Content = IsImagePath(message.Content) ? "Image" : message.Content,
+                Content = _imageStorageService.IsImagePath(message.Content) ? "Image" : message.Content,
                 SentAt = message.SentAt,
                 IsVoice = message.IsVoice,
                 VoiceUrl = message.VoiceUrl,
-                IsImage = IsImagePath(message.Content),
-                ImagePath = IsImagePath(message.Content) ? message.Content : null,
-                ImageFileName = IsImagePath(message.Content) ? message.VoiceUrl : null
+                IsImage = _imageStorageService.IsImagePath(message.Content),
+                ImagePath = _imageStorageService.IsImagePath(message.Content) ? _imageStorageService.GetPublicUrl(message.Content) : null,
+                ImageFileName = _imageStorageService.IsImagePath(message.Content) ? message.VoiceUrl : null
             }, Context.ConnectionAborted);
         }
 
         await _unitOfWork.PendingMessages.DeleteRangeAsync(messages, Context.ConnectionAborted);
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+    }
+
+    private MessageDto ToClientMessage(MessageDto message)
+    {
+        if (!message.IsImage || string.IsNullOrWhiteSpace(message.ImagePath))
+        {
+            return message;
+        }
+
+        return new MessageDto
+        {
+            Id = message.Id,
+            ConversationId = message.ConversationId,
+            SenderId = message.SenderId,
+            ReceiverId = message.ReceiverId,
+            Content = message.Content,
+            SentAt = message.SentAt,
+            ReadAt = message.ReadAt,
+            IsVoice = message.IsVoice,
+            VoiceUrl = message.VoiceUrl,
+            IsImage = true,
+            ImagePath = _imageStorageService.GetPublicUrl(message.ImagePath),
+            ImageFileName = message.ImageFileName
+        };
     }
 }

@@ -13,11 +13,11 @@ public class ImageMessagesController : ControllerBase
         ".gif"
     };
 
-    private readonly IWebHostEnvironment _environment;
+    private readonly IImageStorageService _imageStorageService;
 
-    public ImageMessagesController(IWebHostEnvironment environment)
+    public ImageMessagesController(IImageStorageService imageStorageService)
     {
-        _environment = environment;
+        _imageStorageService = imageStorageService;
     }
 
     [HttpPost("/api/messages/images")]
@@ -41,32 +41,53 @@ public class ImageMessagesController : ControllerBase
             return BadRequest("Only PNG, JPEG, JPG and GIF images are allowed.");
         }
 
-        var fileName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-        var uploadRoot = Path.Combine(_environment.WebRootPath, "uploads", "chat-images");
-        Directory.CreateDirectory(uploadRoot);
-        var physicalPath = Path.Combine(uploadRoot, fileName);
+        var fileName = Path.GetFileName(image.FileName);
+        var storagePath = $"messages/{GetCurrentUserId():N}/{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+
+        await using var compressed = new MemoryStream();
 
         try
         {
-            await using var output = System.IO.File.Create(physicalPath);
             using var input = image.OpenReadStream();
-            await SaveCompressedImageAsync(input, extension, output, cancellationToken);
+            await SaveCompressedImageAsync(input, extension, compressed, cancellationToken);
         }
         catch (InvalidOperationException)
         {
-            if (System.IO.File.Exists(physicalPath))
-            {
-                System.IO.File.Delete(physicalPath);
-            }
-
             return BadRequest("Image file is invalid.");
         }
 
+        compressed.Position = 0;
+        var upload = await _imageStorageService.UploadAsync(compressed, storagePath, GetContentType(extension), cancellationToken);
+
         return Ok(new
         {
-            path = $"/uploads/chat-images/{fileName}",
-            fileName = Path.GetFileName(image.FileName)
+            path = upload.Path,
+            url = upload.Url,
+            fileName
         });
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(value, out var userId)
+            ? userId
+            : throw new InvalidOperationException("Current user id is missing.");
+    }
+
+    private static string GetContentType(string extension)
+    {
+        if (extension.Equals(".png", StringComparison.OrdinalIgnoreCase))
+        {
+            return "image/png";
+        }
+
+        if (extension.Equals(".gif", StringComparison.OrdinalIgnoreCase))
+        {
+            return "image/gif";
+        }
+
+        return "image/jpeg";
     }
 
     private static async Task SaveCompressedImageAsync(Stream input, string extension, Stream output, CancellationToken cancellationToken)

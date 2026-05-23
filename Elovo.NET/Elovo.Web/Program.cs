@@ -11,6 +11,7 @@ builder.Services.AddInfrastructure(config);
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddHttpClient<IImageStorageService, SupabaseImageStorageService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

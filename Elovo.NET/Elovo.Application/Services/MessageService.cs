@@ -46,7 +46,7 @@ public class MessageService : IMessageService
             ConversationId = conversation.Id,
             SenderId = senderId,
             ReceiverId = receiver.Id,
-            Content = isImage ? (string.IsNullOrWhiteSpace(dto.Content) ? "Image" : dto.Content.Trim()) : dto.Content.Trim(),
+            Content = isImage ? dto.ImagePath! : dto.Content.Trim(),
             SentAt = sentAt,
             IsImage = isImage,
             ImagePath = isImage ? dto.ImagePath : null,

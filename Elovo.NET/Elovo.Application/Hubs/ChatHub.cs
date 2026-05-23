@@ -107,10 +107,7 @@ public class ChatHub : Hub
             Content = message.Content,
             SentAt = message.SentAt,
             IsVoice = message.IsVoice,
-            VoiceUrl = message.VoiceUrl,
-            IsImage = message.IsImage,
-            ImagePath = message.ImagePath,
-            ImageFileName = message.ImageFileName
+            VoiceUrl = message.ImageFileName
         });
 
         await _unitOfWork.SaveChangesAsync();
@@ -148,6 +145,11 @@ public class ChatHub : Hub
         return ConnectedUsers.TryGetValue(userId, out var count) && count > 0;
     }
 
+    private static bool IsImagePath(string value)
+    {
+        return value.StartsWith("/uploads/chat-images/", StringComparison.Ordinal);
+    }
+
     private async Task SendPendingMessagesAsync(Guid userId)
     {
         var messages = await _unitOfWork.PendingMessages.GetByReceiverIdAsync(userId, Context.ConnectionAborted);
@@ -158,13 +160,13 @@ public class ChatHub : Hub
                 Id = message.Id,
                 SenderId = message.SenderId,
                 ReceiverId = message.ReceiverId,
-                Content = message.Content,
+                Content = IsImagePath(message.Content) ? "Image" : message.Content,
                 SentAt = message.SentAt,
                 IsVoice = message.IsVoice,
                 VoiceUrl = message.VoiceUrl,
-                IsImage = message.IsImage,
-                ImagePath = message.ImagePath,
-                ImageFileName = message.ImageFileName
+                IsImage = IsImagePath(message.Content),
+                ImagePath = IsImagePath(message.Content) ? message.Content : null,
+                ImageFileName = IsImagePath(message.Content) ? message.VoiceUrl : null
             }, Context.ConnectionAborted);
         }
 

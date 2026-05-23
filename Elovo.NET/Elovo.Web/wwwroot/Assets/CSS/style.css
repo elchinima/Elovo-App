@@ -223,6 +223,15 @@ input:disabled {
     cursor: wait;
 }
 
+.visually-hidden-file {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
 .login-card button,
 .composer button[type="submit"] {
     min-height: 48px;

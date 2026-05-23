@@ -1,0 +1,130 @@
+<svg width="1400" height="520" viewBox="0 0 1400 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Elovo Chat README hero</title>
+  <desc id="desc">Animated dark messenger interface hero for Elovo Chat.</desc>
+  <defs>
+    <linearGradient id="pageBg" x1="0" y1="0" x2="1400" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#050714"/>
+      <stop offset="0.48" stop-color="#0A0F24"/>
+      <stop offset="1" stop-color="#111735"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="610" y1="236" x2="904" y2="458" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6D67FF"/>
+      <stop offset="1" stop-color="#4F8CFF"/>
+    </linearGradient>
+    <linearGradient id="card" x1="104" y1="70" x2="1296" y2="444" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#11162E" stop-opacity="0.92"/>
+      <stop offset="1" stop-color="#121832" stop-opacity="0.78"/>
+    </linearGradient>
+    <radialGradient id="shine" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(722 228) rotate(42) scale(560 290)">
+      <stop stop-color="#6D67FF" stop-opacity="0.28"/>
+      <stop offset="0.58" stop-color="#4F8CFF" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#4F8CFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-18%" y="-25%" width="136%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="28" stdDeviation="30" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+    <filter id="blur" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="44"/>
+    </filter>
+    <style>
+      .float-slow { animation: floatSlow 6s ease-in-out infinite; }
+      .float-fast { animation: floatFast 4.8s ease-in-out infinite; }
+      .pulse { animation: pulse 2.2s ease-in-out infinite; }
+      .slide { animation: slideIn 5.6s ease-in-out infinite; }
+      .typing-a { animation: typing 1.2s ease-in-out infinite; }
+      .typing-b { animation: typing 1.2s ease-in-out 0.18s infinite; }
+      .typing-c { animation: typing 1.2s ease-in-out 0.36s infinite; }
+      .glow { animation: glow 5s ease-in-out infinite alternate; }
+      @keyframes floatSlow {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+      @keyframes floatFast {
+        0%, 100% { transform: translateY(0) translateX(0); }
+        50% { transform: translateY(8px) translateX(-6px); }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.72; }
+        50% { opacity: 1; }
+      }
+      @keyframes slideIn {
+        0%, 100% { transform: translateX(0); opacity: 1; }
+        48% { transform: translateX(8px); opacity: 0.92; }
+      }
+      @keyframes typing {
+        0%, 100% { opacity: 0.32; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-4px); }
+      }
+      @keyframes glow {
+        from { opacity: 0.62; }
+        to { opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <rect width="1400" height="520" rx="10" fill="url(#pageBg)"/>
+  <circle class="glow" cx="214" cy="118" r="178" fill="#6D67FF" opacity="0.25" filter="url(#blur)"/>
+  <circle class="float-fast" cx="1120" cy="390" r="214" fill="#4F8CFF" opacity="0.18" filter="url(#blur)"/>
+  <path d="M748 54H1186C1225.76 54 1258 86.2355 1258 126V520H602L748 54Z" fill="url(#shine)"/>
+
+  <g filter="url(#softShadow)">
+    <rect x="88" y="76" width="1224" height="368" rx="10" fill="url(#card)" stroke="#7D86FF" stroke-opacity="0.18"/>
+    <rect x="88" y="76" width="1224" height="76" rx="10" fill="#121832"/>
+    <path d="M88 152H1312" stroke="#7D86FF" stroke-opacity="0.18"/>
+
+    <g transform="translate(132 98)">
+      <rect width="44" height="44" rx="8" fill="#6D67FF" fill-opacity="0.16"/>
+      <path d="M13 16C13 14.3431 14.3431 13 16 13H28C29.6569 13 31 14.3431 31 16V28C31 29.6569 29.6569 31 28 31H16C14.3431 31 13 29.6569 13 28V16Z" stroke="#F5F7FF" stroke-width="2.4"/>
+      <path d="M18 22H26M22 18V26" stroke="#4F8CFF" stroke-width="2.4" stroke-linecap="round"/>
+    </g>
+    <text x="196" y="128" fill="#F5F7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="28" font-weight="900">Elovo Chat</text>
+    <text x="1148" y="124" fill="#AAB0D4" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" font-weight="800">realtime</text>
+    <circle class="pulse" cx="1248" cy="118" r="7" fill="#53D6A4"/>
+
+    <g transform="translate(132 204)">
+      <text x="0" y="0" fill="#4F8CFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15" font-weight="900" letter-spacing="3.2">SECURE MESSENGER</text>
+      <text x="0" y="66" fill="#F5F7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="60" font-weight="900">Fast chats,</text>
+      <text x="0" y="132" fill="#F5F7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="60" font-weight="900">calm focus.</text>
+      <text x="0" y="184" fill="#AAB0D4" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="21" font-weight="650">ASP.NET Core, SignalR, JWT auth, and a polished dark UI.</text>
+    </g>
+
+    <g transform="translate(690 178)">
+      <rect width="486" height="236" rx="10" fill="#070B1E" fill-opacity="0.56" stroke="#7D86FF" stroke-opacity="0.18"/>
+      <g transform="translate(26 24)">
+        <rect width="214" height="54" rx="8" fill="#10142A" stroke="#7D86FF" stroke-opacity="0.24"/>
+        <circle cx="31" cy="27" r="14" fill="url(#accent)"/>
+        <text x="58" y="34" fill="#F5F7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="17" font-weight="850">Maya Sterling</text>
+      </g>
+
+      <g transform="translate(26 100)">
+        <g class="slide">
+          <rect width="300" height="70" rx="8" fill="url(#accent)"/>
+          <text x="24" y="43" fill="#FFFFFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="19" font-weight="850">Message sent instantly</text>
+        </g>
+      </g>
+
+      <g transform="translate(66 188)">
+        <g class="float-slow">
+          <rect width="258" height="48" rx="8" fill="#FFFFFF" fill-opacity="0.08"/>
+          <text x="22" y="30" fill="#DDE3FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="16" font-weight="750">Read receipts stay calm</text>
+        </g>
+      </g>
+
+      <g transform="translate(366 24)">
+        <rect width="150" height="188" rx="10" fill="#0B1026" stroke="#7D86FF" stroke-opacity="0.2"/>
+        <rect x="20" y="26" width="54" height="14" rx="7" fill="#7780B8" opacity="0.62"/>
+        <rect x="20" y="58" width="74" height="14" rx="7" fill="#6D67FF" opacity="0.75"/>
+        <rect x="20" y="90" width="62" height="14" rx="7" fill="#7780B8" opacity="0.46"/>
+        <rect x="20" y="132" width="44" height="28" rx="7" fill="#53D6A4"/>
+        <rect x="70" y="132" width="60" height="28" rx="7" fill="#4F8CFF"/>
+      </g>
+    </g>
+
+    <g transform="translate(1160 380)">
+      <rect width="90" height="44" rx="8" fill="#10142A" stroke="#7D86FF" stroke-opacity="0.18"/>
+      <circle class="typing-a" cx="30" cy="22" r="5" fill="#AAB0D4"/>
+      <circle class="typing-b" cx="46" cy="22" r="5" fill="#AAB0D4"/>
+      <circle class="typing-c" cx="62" cy="22" r="5" fill="#AAB0D4"/>
+    </g>
+  </g>
+</svg>

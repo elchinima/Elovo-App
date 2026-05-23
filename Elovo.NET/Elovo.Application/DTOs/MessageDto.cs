@@ -9,4 +9,6 @@ public class MessageDto
     public string Content { get; set; } = string.Empty;
     public DateTime SentAt { get; set; }
     public DateTime? ReadAt { get; set; }
+    public bool IsVoice { get; set; }
+    public string? VoiceUrl { get; set; }
 }

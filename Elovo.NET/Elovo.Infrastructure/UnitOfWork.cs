@@ -9,17 +9,20 @@ public class UnitOfWork : IUnitOfWork
         ElovoDbContext context,
         IUserRepository users,
         IConversationRepository conversations,
-        IFriendRequestRepository friendRequests)
+        IFriendRequestRepository friendRequests,
+        IPendingMessageRepository pendingMessages)
     {
         _context = context;
         Users = users;
         Conversations = conversations;
         FriendRequests = friendRequests;
+        PendingMessages = pendingMessages;
     }
 
     public IUserRepository Users { get; }
     public IConversationRepository Conversations { get; }
     public IFriendRequestRepository FriendRequests { get; }
+    public IPendingMessageRepository PendingMessages { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

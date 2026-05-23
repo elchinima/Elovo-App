@@ -1,0 +1,174 @@
+.login-view.is-active,
+.messenger-view.is-active {
+    animation: viewIn 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.brand-panel::after {
+    animation: glowDrift 9s ease-in-out infinite alternate;
+}
+
+.brand-logo {
+    animation: logoFloat 5s ease-in-out infinite;
+}
+
+.chat-item {
+    animation: listItemIn 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.message {
+    animation: messageIn 400ms cubic-bezier(0.16, 1.2, 0.3, 1) both;
+}
+
+.message.is-new {
+    animation: sendPop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.message.is-pending {
+    animation: pendingSend 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.message.is-pending::before {
+    animation: shimmer 820ms ease-in-out infinite;
+}
+
+.composer.is-sending button[type="submit"]::after {
+    animation: spin 680ms linear infinite;
+}
+
+.loader-mark img {
+    animation: none;
+}
+
+.modal-panel {
+    animation: viewIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes viewIn {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.97);
+        filter: blur(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes listItemIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes messageIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes sendPop {
+    0% {
+        opacity: 0;
+        transform: translate(12px, 12px) scale(0.85);
+        filter: blur(2px);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-2px, -2px) scale(1.03);
+        filter: blur(0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes pendingSend {
+    from {
+        opacity: 0;
+        transform: translate(6px, 8px) scale(0.97);
+    }
+
+    to {
+        opacity: 0.86;
+        transform: translate(0, 0) scale(1);
+    }
+}
+
+@keyframes shimmer {
+    to {
+        transform: translateX(120%);
+    }
+}
+
+@keyframes sendArrow {
+
+    0%,
+    100% {
+        opacity: 0.82;
+        transform: translate(-62%, -50%) scale(0.92);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translate(-38%, -50%) scale(1.04);
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes logoFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+@keyframes glowDrift {
+    from {
+        transform: translateX(-8px) skewX(-22deg);
+    }
+
+    to {
+        transform: translateX(18px) skewX(-22deg);
+    }
+}
+
+@keyframes mobilePanelIn {
+    from {
+        opacity: 0;
+        transform: translateX(24px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

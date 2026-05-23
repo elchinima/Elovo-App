@@ -154,14 +154,13 @@
     }
 
     .friend-action-dock {
-        left: 0;
-        right: 0;
-        bottom: calc(50px + env(safe-area-inset-bottom));
+        bottom: 12px;
         width: 100%;
+        margin-bottom: 12px;
     }
 
     .chat-list {
-        padding-bottom: 116px;
+        padding-bottom: 58px;
     }
 
     .messenger-view.chat-open .friend-action-dock {
@@ -174,12 +173,14 @@
 
     .modal-backdrop {
         padding: 50px 0 25px;
+        align-items: stretch;
     }
 
     .modal-panel {
         width: 100%;
-        max-height: calc(100vh - 75px);
-        max-height: calc(100dvh - 75px);
+        height: calc(100vh - 75px);
+        height: calc(100dvh - 75px);
+        max-height: none;
         border-radius: 0;
     }
 }

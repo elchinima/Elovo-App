@@ -11,6 +11,7 @@ public class ElovoDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
+    public DbSet<PendingMessage> PendingMessages => Set<PendingMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +56,25 @@ public class ElovoDbContext : DbContext
 
             entity.HasOne(x => x.Receiver)
                 .WithMany(x => x.ReceivedFriendRequests)
+                .HasForeignKey(x => x.ReceiverId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PendingMessage>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Content).IsRequired();
+            entity.Property(x => x.VoiceUrl).HasMaxLength(512);
+            entity.HasIndex(x => new { x.ReceiverId, x.SentAt });
+            entity.HasIndex(x => x.SenderId);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne<User>()
+                .WithMany()
                 .HasForeignKey(x => x.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
         });

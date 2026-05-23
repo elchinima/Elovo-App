@@ -1,12 +1,7 @@
 <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-        <filter id="softGlow" x="-8" y="-8" width="44" height="44" color-interpolation-filters="sRGB">
-            <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#4F8CFF" flood-opacity=".42"/>
-        </filter>
-    </defs>
-    <path d="M10.2 13.05a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" stroke="#F5F7FF" stroke-width="2.1" filter="url(#softGlow)"/>
+<path d="M10.2 13.05a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" stroke="#F5F7FF" stroke-width="2.1"/>
     <path d="M4.05 22.15c.6-3.5 2.9-5.42 6.15-5.42 3.24 0 5.55 1.92 6.15 5.42" stroke="#F5F7FF" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M18.45 12.05a3.1 3.1 0 1 0-1.18-5.96" stroke="#F5F7FF" stroke-width="2.1" stroke-linecap="round" filter="url(#softGlow)"/>
+    <path d="M18.45 12.05a3.1 3.1 0 1 0-1.18-5.96" stroke="#F5F7FF" stroke-width="2.1" stroke-linecap="round"/>
     <path d="M17.5 16.72c3.28.22 5.54 2.12 6.12 5.42" stroke="#F5F7FF" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M6.95 21.95c.52-1.6 1.72-2.45 3.25-2.45 1.52 0 2.72.85 3.24 2.45" stroke="#8B7CFF" stroke-width="1.2" stroke-linecap="round" opacity=".9"/>
 </svg>

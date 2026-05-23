@@ -207,8 +207,7 @@ function getFilteredConversations() {
     }
 
     return conversations.filter((chat) => {
-        return chat.username.toLowerCase().includes(term) ||
-            (chat.lastMessage || "").toLowerCase().includes(term);
+        return chat.username.toLowerCase().includes(term);
     });
 }
 

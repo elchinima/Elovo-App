@@ -348,6 +348,10 @@ input:disabled {
     margin: 0;
 }
 
+.sidebar-settings-button {
+    margin-left: auto;
+}
+
 .sidebar-actions {
     display: flex;
     gap: 8px;
@@ -606,11 +610,26 @@ input:disabled {
     color: rgba(255, 255, 255, 0.72);
 }
 
+.message-meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    margin-top: 6px;
+}
+
 .message small {
     display: block;
-    margin-top: 6px;
     color: rgba(255, 255, 255, 0.66);
     font-size: 0.72rem;
+}
+
+.message-status-icon {
+    width: 18px;
+    height: 14px;
+    display: block;
+    flex: 0 0 auto;
+    opacity: 0.9;
 }
 
 .composer {

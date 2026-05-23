@@ -110,6 +110,42 @@ function storeMessage(message) {
     writeStoredMessages(otherUserId, messages);
 }
 
+function markOutgoingMessagesRead(userId, readAt) {
+    const otherUserId = normalizeId(userId);
+    if (!otherUserId) {
+        return false;
+    }
+
+    const currentUserId = getCurrentUserId();
+    const messages = readStoredMessages(otherUserId);
+    let changed = false;
+
+    const updatedMessages = messages.map((message) => {
+        if (sameId(message.senderId, currentUserId) &&
+            sameId(message.receiverId, otherUserId) &&
+            !message.readAt) {
+            changed = true;
+            return { ...message, readAt };
+        }
+
+        return message;
+    });
+
+    if (changed) {
+        writeStoredMessages(otherUserId, updatedMessages);
+    }
+
+    return changed;
+}
+
+function notifyActiveConversationRead() {
+    if (!connection || !activeConversation) {
+        return;
+    }
+
+    connection.invoke("MarkMessagesRead", activeConversation.userId).catch(() => { });
+}
+
 function getStoredConversationSummary(userId) {
     const messages = readStoredMessages(userId);
     const lastMessage = messages.at(-1);
@@ -280,14 +316,29 @@ function renderMessages(messages) {
 
 function appendMessage(message) {
     const bubble = document.createElement("article");
+    const meta = document.createElement("span");
     const time = document.createElement("small");
     const currentUserId = getCurrentUserId();
     const isMine = (message.senderId || "").toLowerCase() === currentUserId;
 
     bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}`;
     bubble.textContent = message.content;
+    meta.className = "message-meta";
     time.textContent = formatTime(message.sentAt);
-    bubble.appendChild(time);
+    meta.appendChild(time);
+
+    if (isMine) {
+        const status = document.createElement("img");
+        status.className = "message-status-icon";
+        status.src = message.readAt
+            ? "/Assets/Images/Icons/message-read.svg"
+            : "/Assets/Images/Icons/sent-action.svg";
+        status.alt = message.readAt ? "Read" : "Sent";
+        status.title = message.readAt ? "Read" : "Sent";
+        meta.appendChild(status);
+    }
+
+    bubble.appendChild(meta);
     messageStream.appendChild(bubble);
 }
 
@@ -607,6 +658,8 @@ async function selectConversation(userId) {
     if (messengerView) {
         messengerView.classList.add("chat-open");
     }
+
+    notifyActiveConversationRead();
 }
 
 async function startSignalR() {
@@ -628,6 +681,9 @@ async function startSignalR() {
 
         if (messageBelongsToActiveConversation(message)) {
             await loadMessages(activeConversation.userId);
+            if (!sameId(message.senderId, getCurrentUserId())) {
+                notifyActiveConversationRead();
+            }
             messageStream.scrollTo({
                 top: messageStream.scrollHeight,
                 behavior: "smooth"
@@ -657,7 +713,18 @@ async function startSignalR() {
         }
     });
 
+    connection.on("MessagesRead", async (readerId, readAt) => {
+        if (!markOutgoingMessagesRead(readerId, readAt)) {
+            return;
+        }
+
+        if (activeConversation && sameId(activeConversation.userId, readerId)) {
+            await loadMessages(activeConversation.userId);
+        }
+    });
+
     await connection.start();
+    notifyActiveConversationRead();
 }
 
 function messageBelongsToActiveConversation(message) {
@@ -776,9 +843,6 @@ if (addFriendButton) {
     addFriendButton.addEventListener("click", () => {
         openModal(addFriendModal);
         searchUsers();
-        if (userSearchInput) {
-            userSearchInput.focus();
-        }
     });
 }
 

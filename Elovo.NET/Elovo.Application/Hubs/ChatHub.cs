@@ -87,6 +87,12 @@ public class ChatHub : Hub
         await Clients.Group(UserGroup(receiverId)).SendAsync("UserStopTyping", GetCurrentUserId());
     }
 
+    public async Task MarkMessagesRead(Guid senderId)
+    {
+        var readerId = GetCurrentUserId();
+        await Clients.Group(UserGroup(senderId)).SendAsync("MessagesRead", readerId, DateTime.UtcNow);
+    }
+
     private Guid GetCurrentUserId()
     {
         var value = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);

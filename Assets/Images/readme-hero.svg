@@ -85,7 +85,7 @@
       <text x="0" y="0" fill="#4F8CFF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="15" font-weight="900" letter-spacing="3.2">SECURE MESSENGER</text>
       <text x="0" y="66" fill="#F5F7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="60" font-weight="900">Fast chats,</text>
       <text x="0" y="132" fill="#F5F7FF" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="60" font-weight="900">calm focus.</text>
-      <text x="0" y="184" fill="#AAB0D4" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="21" font-weight="650">ASP.NET Core, SignalR, JWT auth, and a polished dark UI.</text>
+      <text x="0" y="184" fill="#AAB0D4" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="20" font-weight="650">ASP.NET Core, SignalR, JWT auth, and a polished dark UI.</text>
     </g>
 
     <g transform="translate(690 178)">

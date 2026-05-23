@@ -1,4 +1,5 @@
 global using System;
+global using System.Collections.Generic;
 global using System.Diagnostics;
 global using System.IO;
 global using System.Linq;
@@ -18,9 +19,11 @@ global using FluentValidation;
 global using Microsoft.AspNetCore.Authentication.JwtBearer;
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Builder;
+global using Microsoft.AspNetCore.Hosting;
 global using Microsoft.AspNetCore.Http;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.Extensions.DependencyInjection;
 global using Microsoft.Extensions.Hosting;
 global using Microsoft.IdentityModel.Tokens;
+global using SixLabors.ImageSharp;

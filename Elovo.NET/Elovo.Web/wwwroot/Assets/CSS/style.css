@@ -540,6 +540,8 @@ input:disabled {
     display: grid;
     place-items: center;
     flex: 0 0 auto;
+    position: relative;
+    overflow: hidden;
 }
 
 .mobile-back {
@@ -624,6 +626,66 @@ input:disabled {
     font-size: 0.72rem;
 }
 
+.message.has-image {
+    width: min(68%, 360px);
+    padding: 6px;
+    white-space: normal;
+}
+
+.message-image-frame {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    display: block;
+    position: relative;
+    border: 0;
+    border-radius: calc(var(--radius) - 2px);
+    overflow: hidden;
+    background: rgba(5, 8, 22, 0.38);
+    padding: 0;
+}
+
+.message-image-frame img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    opacity: 1;
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.message-image-frame:hover img {
+    transform: scale(1.015);
+}
+
+.message-image-frame.is-loading img,
+.message-image-frame.is-error img {
+    opacity: 0;
+}
+
+.image-transfer-loader {
+    position: absolute;
+    inset: 0;
+    display: none;
+    place-items: center;
+    background:
+        linear-gradient(110deg, rgba(255, 255, 255, 0.04) 8%, rgba(255, 255, 255, 0.16) 22%, rgba(255, 255, 255, 0.04) 36%),
+        rgba(5, 8, 22, 0.34);
+    background-size: 240% 100%;
+}
+
+.image-transfer-loader::after {
+    content: "";
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.28);
+    border-top-color: #fff;
+    border-radius: 50%;
+}
+
+.message-image-frame.is-loading .image-transfer-loader {
+    display: grid;
+}
+
 .message-status-icon {
     width: 18px;
     height: 14px;
@@ -681,6 +743,81 @@ input:disabled {
     border-right-color: #fff;
     border-radius: 999px;
     transform: translate(-50%, -50%);
+}
+
+.composer.is-image-transfer::before {
+    content: "";
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 8px;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.composer.is-image-transfer::after {
+    content: "";
+    position: absolute;
+    left: 18px;
+    top: 8px;
+    width: var(--image-progress, 0%);
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--success), #7aa8ff);
+    transition: width 120ms ease;
+}
+
+.composer.is-image-transfer .icon-button::after {
+    content: "";
+    position: absolute;
+    inset: 50% auto auto 50%;
+    width: 19px;
+    height: 19px;
+    border: 2px solid rgba(255, 255, 255, 0.28);
+    border-top-color: #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.composer.is-image-transfer .icon-button .button-icon {
+    opacity: 0;
+}
+
+.image-preview-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: grid;
+    place-items: center;
+    padding: 28px;
+    background: rgba(4, 7, 18, 0.86);
+    backdrop-filter: blur(18px);
+}
+
+.image-preview-backdrop img {
+    max-width: min(980px, 96vw);
+    max-height: 88vh;
+    object-fit: contain;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.image-preview-close {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(18, 24, 50, 0.9);
+    font-size: 1.6rem;
+    line-height: 1;
 }
 
 .modal-backdrop {

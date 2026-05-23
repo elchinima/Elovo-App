@@ -35,6 +35,19 @@
     animation: spin 680ms linear infinite;
 }
 
+.composer.is-image-transfer .icon-button::after,
+.image-transfer-loader::after {
+    animation: spin 680ms linear infinite;
+}
+
+.image-transfer-loader {
+    animation: shimmerBackground 1.2s ease-in-out infinite;
+}
+
+.image-preview-backdrop {
+    animation: previewFade 180ms ease both;
+}
+
 .loader-mark img {
     animation: none;
 }
@@ -116,6 +129,22 @@
 @keyframes shimmer {
     to {
         transform: translateX(120%);
+    }
+}
+
+@keyframes shimmerBackground {
+    to {
+        background-position: -160% 0;
+    }
+}
+
+@keyframes previewFade {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
     }
 }
 

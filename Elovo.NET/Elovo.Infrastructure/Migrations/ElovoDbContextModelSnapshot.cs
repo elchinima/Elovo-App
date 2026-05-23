@@ -87,6 +87,17 @@ namespace Elovo.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("ImageFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ImagePath")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<bool>("IsImage")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsVoice")
                         .HasColumnType("boolean");
 

@@ -154,13 +154,16 @@
     }
 
     .friend-action-dock {
-        bottom: 20px;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: calc(45px + env(safe-area-inset-bottom));
         width: 100%;
-        margin-bottom: 20px;
+        margin-bottom: 0;
     }
 
     .chat-list {
-        padding-bottom: 58px;
+        padding-bottom: 104px;
     }
 
     .messenger-view.chat-open .friend-action-dock {
@@ -169,6 +172,14 @@
 
     .message {
         max-width: 84%;
+    }
+
+    .message.has-image {
+        width: min(84%, 320px);
+    }
+
+    .image-preview-backdrop {
+        padding: 16px;
     }
 
     .modal-backdrop {

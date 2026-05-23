@@ -77,6 +77,46 @@ public class ChatHub : Hub
         await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", message);
     }
 
+    public async Task SendImageMessage(Guid receiverId, string imagePath, string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath))
+        {
+            return;
+        }
+
+        var senderId = GetCurrentUserId();
+        var message = await _messageService.SendImageMessageAsync(senderId, new SendMessageDto
+        {
+            ReceiverId = receiverId,
+            Content = "Image",
+            ImagePath = imagePath,
+            ImageFileName = fileName
+        });
+
+        if (IsConnected(receiverId))
+        {
+            await Clients.Groups(UserGroup(senderId), UserGroup(receiverId)).SendAsync("ReceiveMessage", message);
+            return;
+        }
+
+        await _unitOfWork.PendingMessages.AddAsync(new PendingMessage
+        {
+            Id = message.Id,
+            SenderId = message.SenderId,
+            ReceiverId = message.ReceiverId,
+            Content = message.Content,
+            SentAt = message.SentAt,
+            IsVoice = message.IsVoice,
+            VoiceUrl = message.VoiceUrl,
+            IsImage = message.IsImage,
+            ImagePath = message.ImagePath,
+            ImageFileName = message.ImageFileName
+        });
+
+        await _unitOfWork.SaveChangesAsync();
+        await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", message);
+    }
+
     public async Task StartTyping(Guid receiverId)
     {
         await Clients.Group(UserGroup(receiverId)).SendAsync("UserTyping", GetCurrentUserId());
@@ -121,7 +161,10 @@ public class ChatHub : Hub
                 Content = message.Content,
                 SentAt = message.SentAt,
                 IsVoice = message.IsVoice,
-                VoiceUrl = message.VoiceUrl
+                VoiceUrl = message.VoiceUrl,
+                IsImage = message.IsImage,
+                ImagePath = message.ImagePath,
+                ImageFileName = message.ImageFileName
             }, Context.ConnectionAborted);
         }
 

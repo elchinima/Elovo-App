@@ -7,6 +7,8 @@ const searchInput = document.querySelector("#searchInput");
 const messageStream = document.querySelector("#messageStream");
 const messageForm = document.querySelector("#messageForm");
 const messageInput = document.querySelector("#messageInput");
+const attachImageButton = document.querySelector("#attachImageButton");
+const imageInput = document.querySelector("#imageInput");
 const activeName = document.querySelector("#activeName");
 const activeStatus = document.querySelector("#activeStatus");
 const activeAvatar = document.querySelector("#activeAvatar");
@@ -30,6 +32,8 @@ let typingTimer = null;
 let userSearchTimer = null;
 let latestMessageId = "";
 let isSending = false;
+const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
+const maxImageSize = 10 * 1024 * 1024;
 
 function showPageLoader() {
     if (!pageLoader) {
@@ -151,9 +155,13 @@ function getStoredConversationSummary(userId) {
     const lastMessage = messages.at(-1);
 
     return {
-        lastMessage: lastMessage ? lastMessage.content : "Start a conversation.",
+        lastMessage: lastMessage ? getMessagePreview(lastMessage) : "Start a conversation.",
         lastMessageAt: lastMessage ? lastMessage.sentAt : null
     };
+}
+
+function getMessagePreview(message) {
+    return message.isImage ? "Image" : message.content;
 }
 
 function applyLocalConversationHistory(items) {
@@ -321,11 +329,16 @@ function appendMessage(message) {
     const currentUserId = getCurrentUserId();
     const isMine = (message.senderId || "").toLowerCase() === currentUserId;
 
-    bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}`;
-    bubble.textContent = message.content;
+    bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}${message.isImage ? " has-image" : ""}`;
     meta.className = "message-meta";
     time.textContent = formatTime(message.sentAt);
     meta.appendChild(time);
+
+    if (message.isImage && message.imagePath) {
+        bubble.appendChild(createImageMessage(message));
+    } else {
+        bubble.appendChild(document.createTextNode(message.content));
+    }
 
     if (isMine) {
         const status = document.createElement("img");
@@ -340,6 +353,71 @@ function appendMessage(message) {
 
     bubble.appendChild(meta);
     messageStream.appendChild(bubble);
+}
+
+function createImageMessage(message) {
+    const frame = document.createElement("button");
+    const image = document.createElement("img");
+    const loader = document.createElement("span");
+
+    frame.type = "button";
+    frame.className = "message-image-frame is-loading";
+    frame.title = message.imageFileName || "Open image";
+    image.src = message.imagePath;
+    image.alt = message.imageFileName || "Sent image";
+    image.loading = "lazy";
+    loader.className = "image-transfer-loader";
+
+    image.addEventListener("load", () => {
+        frame.classList.remove("is-loading");
+    });
+
+    image.addEventListener("error", () => {
+        frame.classList.remove("is-loading");
+        frame.classList.add("is-error");
+    });
+
+    frame.addEventListener("click", () => openImagePreview(message.imagePath, message.imageFileName));
+    frame.append(image, loader);
+    return frame;
+}
+
+function openImagePreview(path, fileName) {
+    const backdrop = document.createElement("div");
+    const image = document.createElement("img");
+    const close = document.createElement("button");
+
+    backdrop.className = "image-preview-backdrop is-open";
+    backdrop.setAttribute("role", "dialog");
+    backdrop.setAttribute("aria-modal", "true");
+    image.src = path;
+    image.alt = fileName || "Image preview";
+    close.type = "button";
+    close.className = "image-preview-close";
+    close.setAttribute("aria-label", "Close");
+    close.textContent = "×";
+
+    const closePreview = () => {
+        document.removeEventListener("keydown", onKeyDown);
+        backdrop.remove();
+    };
+
+    const onKeyDown = (event) => {
+        if (event.key === "Escape") {
+            closePreview();
+        }
+    };
+
+    close.addEventListener("click", closePreview);
+    backdrop.addEventListener("click", (event) => {
+        if (event.target === backdrop) {
+            closePreview();
+        }
+    });
+    document.addEventListener("keydown", onKeyDown);
+
+    backdrop.append(image, close);
+    document.body.appendChild(backdrop);
 }
 
 async function loadConversations() {
@@ -777,6 +855,87 @@ async function sendCurrentMessage(event) {
     }
 }
 
+function setImageTransferState(active, progress = 0) {
+    if (!messageForm) {
+        return;
+    }
+
+    messageForm.classList.toggle("is-image-transfer", active);
+    messageForm.style.setProperty("--image-progress", `${Math.max(0, Math.min(100, progress))}%`);
+
+    if (attachImageButton) {
+        attachImageButton.disabled = active;
+    }
+
+    if (messageInput) {
+        messageInput.disabled = active || isSending;
+    }
+}
+
+function uploadImage(file) {
+    return new Promise((resolve, reject) => {
+        const data = new FormData();
+        const request = new XMLHttpRequest();
+
+        data.append("image", file);
+        request.open("POST", "/api/messages/images");
+        request.setRequestHeader("RequestVerificationToken", getAntiForgeryToken());
+        request.responseType = "json";
+
+        request.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+                setImageTransferState(true, Math.round((event.loaded / event.total) * 100));
+            }
+        });
+
+        request.addEventListener("load", () => {
+            if (request.status >= 200 && request.status < 300) {
+                resolve(request.response);
+                return;
+            }
+
+            reject(new Error("Image upload failed."));
+        });
+
+        request.addEventListener("error", () => reject(new Error("Image upload failed.")));
+        request.addEventListener("abort", () => reject(new Error("Image upload was cancelled.")));
+        request.send(data);
+    });
+}
+
+async function sendSelectedImage() {
+    if (!activeConversation || !connection || !imageInput || isSending) {
+        return;
+    }
+
+    const file = imageInput.files && imageInput.files[0];
+    imageInput.value = "";
+
+    if (!file) {
+        return;
+    }
+
+    if (!allowedImageTypes.includes(file.type) || file.size > maxImageSize) {
+        setImageTransferState(false);
+        return;
+    }
+
+    isSending = true;
+    setImageTransferState(true, 0);
+
+    try {
+        const image = await uploadImage(file);
+        setImageTransferState(true, 100);
+        await connection.invoke("SendImageMessage", activeConversation.userId, image.path, image.fileName || file.name);
+    } finally {
+        isSending = false;
+        setImageTransferState(false);
+        if (messageInput) {
+            messageInput.focus();
+        }
+    }
+}
+
 async function logout() {
     showPageLoader();
 
@@ -811,6 +970,18 @@ if (searchInput) {
 
 if (messageForm) {
     messageForm.addEventListener("submit", sendCurrentMessage);
+}
+
+if (attachImageButton && imageInput) {
+    attachImageButton.addEventListener("click", () => {
+        if (!activeConversation || isSending) {
+            return;
+        }
+
+        imageInput.click();
+    });
+
+    imageInput.addEventListener("change", sendSelectedImage);
 }
 
 if (messageInput) {

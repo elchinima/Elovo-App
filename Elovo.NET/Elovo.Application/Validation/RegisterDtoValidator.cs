@@ -1,5 +1,3 @@
-using Elovo.Application.DTOs;
-using FluentValidation;
 
 namespace Elovo.Application.Validation;
 

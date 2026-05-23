@@ -1,6 +1,3 @@
-using Elovo.Web.Models;
-using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 
 namespace Elovo.Web.Controllers
 {

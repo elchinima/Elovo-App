@@ -11,10 +11,13 @@ const activeName = document.querySelector("#activeName");
 const activeStatus = document.querySelector("#activeStatus");
 const activeAvatar = document.querySelector("#activeAvatar");
 const backButton = document.querySelector("#backButton");
+const allFriendsButton = document.querySelector("#allFriendsButton");
 const addFriendButton = document.querySelector("#addFriendButton");
 const friendRequestsButton = document.querySelector("#friendRequestsButton");
+const allFriendsModal = document.querySelector("#allFriendsModal");
 const addFriendModal = document.querySelector("#addFriendModal");
 const friendRequestsModal = document.querySelector("#friendRequestsModal");
+const allFriendsList = document.querySelector("#allFriendsList");
 const userSearchInput = document.querySelector("#userSearchInput");
 const userSearchResults = document.querySelector("#userSearchResults");
 const friendRequestsList = document.querySelector("#friendRequestsList");
@@ -368,6 +371,58 @@ function renderUsers(items) {
     });
 }
 
+function renderAllFriends(items) {
+    if (!allFriendsList) {
+        return;
+    }
+
+    allFriendsList.innerHTML = "";
+
+    if (items.length === 0) {
+        const empty = document.createElement("span");
+        empty.className = "modal-empty";
+        empty.textContent = "No friends yet.";
+        allFriendsList.appendChild(empty);
+        return;
+    }
+
+    items.forEach((friend) => {
+        const row = document.createElement("div");
+        const avatar = document.createElement("span");
+        const copy = document.createElement("span");
+        const name = document.createElement("strong");
+        const status = document.createElement("span");
+        const button = document.createElement("button");
+
+        row.className = "user-row";
+        avatar.className = "avatar";
+        copy.className = "chat-copy";
+        button.type = "button";
+        button.className = "row-action primary";
+
+        avatar.textContent = friend.initial;
+        name.textContent = friend.username;
+        status.textContent = formatStatus(friend);
+        button.textContent = "Open";
+        button.addEventListener("click", () => {
+            closeModal(allFriendsModal);
+            selectConversation(friend.userId);
+        });
+
+        copy.append(name, status);
+        row.append(avatar, copy, button);
+        allFriendsList.appendChild(row);
+    });
+}
+
+async function openAllFriends() {
+    openModal(allFriendsModal);
+    if (conversations.length === 0) {
+        await loadConversations();
+    }
+    renderAllFriends(conversations);
+}
+
 function formatCandidateStatus(status) {
     if (status === "friend") {
         return "Already friends";
@@ -714,6 +769,10 @@ if (backButton) {
     });
 }
 
+if (allFriendsButton) {
+    allFriendsButton.addEventListener("click", openAllFriends);
+}
+
 if (addFriendButton) {
     addFriendButton.addEventListener("click", () => {
         openModal(addFriendModal);
@@ -793,5 +852,17 @@ document.querySelectorAll("a[href]").forEach((link) => {
         });
     });
 });
+
+if (window.matchMedia("(max-width: 820px), (pointer: coarse)").matches) {
+    ["copy", "cut", "contextmenu", "selectstart"].forEach((eventName) => {
+        document.addEventListener(eventName, (event) => {
+            if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+                return;
+            }
+
+            event.preventDefault();
+        }, { capture: true });
+    });
+}
 
 window.addEventListener("pageshow", hidePageLoader);

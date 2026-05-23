@@ -1,7 +1,3 @@
-using AutoMapper;
-using Elovo.Application.DTOs;
-using Elovo.Domain;
-using Elovo.Domain.Interfaces;
 
 namespace Elovo.Application.Services;
 

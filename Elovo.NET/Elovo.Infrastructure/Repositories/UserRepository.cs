@@ -1,7 +1,3 @@
-using Elovo.Domain;
-using Elovo.Domain.Interfaces;
-using Elovo.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace Elovo.Infrastructure.Repositories;
 

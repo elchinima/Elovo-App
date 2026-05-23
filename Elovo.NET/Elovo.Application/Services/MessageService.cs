@@ -1,5 +1,3 @@
-using Elovo.Application.DTOs;
-using Elovo.Domain.Interfaces;
 
 namespace Elovo.Application.Services;
 

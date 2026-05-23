@@ -1,9 +1,3 @@
-using Elovo.Domain.Interfaces;
-using Elovo.Infrastructure.Data;
-using Elovo.Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Elovo.Infrastructure;
 

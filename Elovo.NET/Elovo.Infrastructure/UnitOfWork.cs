@@ -1,5 +1,3 @@
-using Elovo.Domain.Interfaces;
-using Elovo.Infrastructure.Data;
 
 namespace Elovo.Infrastructure;
 

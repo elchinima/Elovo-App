@@ -1,8 +1,3 @@
-using Elovo.Application.DTOs;
-using Elovo.Application.Services;
-using FluentValidation;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Elovo.Web.Controllers;
 

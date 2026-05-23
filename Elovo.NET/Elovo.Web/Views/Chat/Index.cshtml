@@ -13,14 +13,6 @@
                     <p>Elovo</p>
                     <strong>Messages</strong>
                 </div>
-                <div class="sidebar-actions">
-                    <button class="icon-button" id="addFriendButton" type="button" aria-label="Add friend" title="Add friend">
-                        <img class="button-icon" src="~/Assets/Images/Icons/add-friend.svg" alt="">
-                    </button>
-                    <button class="icon-button" id="friendRequestsButton" type="button" aria-label="Friend requests" title="Friend requests">
-                        <img class="button-icon" src="~/Assets/Images/Icons/friend-requests.svg" alt="">
-                    </button>
-                </div>
             </div>
 
             <label class="search-box">
@@ -29,6 +21,18 @@
             </label>
 
             <div class="chat-list" id="chatList" aria-label="Conversation list"></div>
+
+            <nav class="friend-action-dock" aria-label="Friend actions">
+                <button class="icon-button dock-button" id="allFriendsButton" type="button" aria-label="All friends" title="All friends">
+                    <img class="button-icon" src="~/Assets/Images/Icons/all-friends.svg" alt="">
+                </button>
+                <button class="icon-button dock-button dock-button-primary" id="addFriendButton" type="button" aria-label="Add friend" title="Add friend">
+                    <img class="button-icon" src="~/Assets/Images/Icons/add-friend.svg" alt="">
+                </button>
+                <button class="icon-button dock-button" id="friendRequestsButton" type="button" aria-label="Friend requests" title="Friend requests">
+                    <img class="button-icon" src="~/Assets/Images/Icons/friend-requests.svg" alt="">
+                </button>
+            </nav>
         </aside>
 
         <section class="chat-panel">
@@ -72,6 +76,16 @@
                 <input type="search" id="userSearchInput" placeholder="Search by username">
             </label>
             <div class="modal-list" id="userSearchResults"></div>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="allFriendsModal" aria-hidden="true">
+        <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="allFriendsTitle">
+            <header class="modal-header">
+                <h2 id="allFriendsTitle">All friends</h2>
+                <button class="icon-button" type="button" data-close-modal aria-label="Close" title="Close">Г—</button>
+            </header>
+            <div class="modal-list" id="allFriendsList"></div>
         </section>
     </div>
 

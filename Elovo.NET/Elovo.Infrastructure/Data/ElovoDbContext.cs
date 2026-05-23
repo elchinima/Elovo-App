@@ -1,5 +1,3 @@
-using Elovo.Domain;
-using Microsoft.EntityFrameworkCore;
 
 namespace Elovo.Infrastructure.Data;
 

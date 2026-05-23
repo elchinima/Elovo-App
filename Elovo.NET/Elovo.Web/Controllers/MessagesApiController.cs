@@ -1,8 +1,3 @@
-using System.Security.Claims;
-using Elovo.Application.DTOs;
-using Elovo.Application.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Elovo.Web.Controllers;
 

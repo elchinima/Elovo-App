@@ -1,12 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using AutoMapper;
-using Elovo.Application.DTOs;
-using Elovo.Domain;
-using Elovo.Domain.Interfaces;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Elovo.Application.Services;
 

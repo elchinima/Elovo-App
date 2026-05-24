@@ -42,19 +42,26 @@ public class SupabaseImageStorageService : IImageStorageService
 
     public async Task DeleteAsync(string path, CancellationToken cancellationToken = default)
     {
-        if (!IsImagePath(path))
+        var storagePath = NormalizeStoragePath(path);
+        if (!IsImagePath(storagePath))
         {
             return;
         }
 
-        using var request = CreateRequest(HttpMethod.Delete, $"object/{Bucket}");
-        request.Content = JsonContent.Create(new { prefixes = new[] { path } });
+        using var request = CreateRequest(HttpMethod.Delete, $"object/{Bucket}/{EscapePath(storagePath)}");
         using var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return;
+        }
+
+        var details = await response.Content.ReadAsStringAsync(cancellationToken);
+        throw new InvalidOperationException($"Supabase image delete failed: {(int)response.StatusCode} {response.ReasonPhrase}. {details}");
     }
 
     public bool IsImagePath(string path)
     {
-        return path.StartsWith("messages/", StringComparison.Ordinal);
+        return NormalizeStoragePath(path).StartsWith("messages/", StringComparison.Ordinal);
     }
 
     private async Task EnsureBucketAsync(CancellationToken cancellationToken)
@@ -111,5 +118,39 @@ public class SupabaseImageStorageService : IImageStorageService
     private static string EscapePath(string path)
     {
         return string.Join("/", path.Split('/', StringSplitOptions.RemoveEmptyEntries).Select(Uri.EscapeDataString));
+    }
+
+    private string NormalizeStoragePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = path.Trim();
+        var publicPrefix = $"/storage/v1/object/public/{Bucket}/";
+        var objectPrefix = $"/storage/v1/object/{Bucket}/";
+
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+        {
+            return NormalizeStoragePathFromUri(uri.AbsolutePath, publicPrefix, objectPrefix);
+        }
+
+        return trimmed.TrimStart('/');
+    }
+
+    private static string NormalizeStoragePathFromUri(string absolutePath, string publicPrefix, string objectPrefix)
+    {
+        if (absolutePath.StartsWith(publicPrefix, StringComparison.Ordinal))
+        {
+            return Uri.UnescapeDataString(absolutePath[publicPrefix.Length..]);
+        }
+
+        if (absolutePath.StartsWith(objectPrefix, StringComparison.Ordinal))
+        {
+            return Uri.UnescapeDataString(absolutePath[objectPrefix.Length..]);
+        }
+
+        return absolutePath.TrimStart('/');
     }
 }

@@ -22,7 +22,11 @@ public class ElovoDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Username).HasMaxLength(32).IsRequired();
             entity.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
+            entity.Property(x => x.Email).HasMaxLength(256);
+            entity.Property(x => x.ProfileImagePath).HasMaxLength(512);
+            entity.Property(x => x.TwoFactorCodeHash).HasMaxLength(256);
             entity.HasIndex(x => x.Username).IsUnique();
+            entity.HasIndex(x => x.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");
             entity.HasIndex(x => x.IsOnline);
         });
 

@@ -3,19 +3,29 @@ namespace Elovo.Application.Services;
 
 public class UserService : IUserService
 {
+    private const int MinimumPasswordLength = 8;
+
+    private readonly IImageStorageService _imageStorageService;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
-    public UserService(IUnitOfWork unitOfWork, IMapper mapper)
+    public UserService(IUnitOfWork unitOfWork, IMapper mapper, IImageStorageService imageStorageService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _imageStorageService = imageStorageService;
+    }
+
+    public async Task<ProfileDto> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        return ToProfileDto(user);
     }
 
     public async Task<IReadOnlyList<UserDto>> GetUsersAsync(Guid currentUserId, CancellationToken cancellationToken = default)
     {
         var users = await _unitOfWork.Users.GetAllExceptAsync(currentUserId, cancellationToken);
-        return _mapper.Map<IReadOnlyList<UserDto>>(users);
+        return users.Select(ToUserDto).ToList();
     }
 
     public async Task<IReadOnlyList<ConversationDto>> GetConversationsAsync(Guid currentUserId, CancellationToken cancellationToken = default)
@@ -35,6 +45,8 @@ public class UserService : IUserService
                 Username = user.Username,
                 IsOnline = user.IsOnline,
                 LastSeenAt = user.LastSeenAt,
+                ProfileImagePath = user.ProfileImagePath,
+                ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 LastMessage = "Start a conversation.",
                 LastMessageAt = null,
                 UnreadCount = 0
@@ -73,6 +85,8 @@ public class UserService : IUserService
                 Username = user.Username,
                 IsOnline = user.IsOnline,
                 LastSeenAt = user.LastSeenAt,
+                ProfileImagePath = user.ProfileImagePath,
+                ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 Status = friendIds.Contains(user.Id)
                     ? "friend"
                     : request is null
@@ -96,8 +110,89 @@ public class UserService : IUserService
             Id = x.Id,
             SenderId = x.SenderId,
             SenderUsername = x.Sender.Username,
+            ProfileImagePath = x.Sender.ProfileImagePath,
+            ProfileImageUrl = GetImageUrl(x.Sender.ProfileImagePath),
             CreatedAt = x.CreatedAt
         }).ToList();
+    }
+
+    public async Task<ProfileDto> UpdateEmailAsync(Guid userId, string email, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = NormalizeEmail(email);
+        if (normalizedEmail.Length > 256 || !IsValidEmail(normalizedEmail))
+        {
+            throw new InvalidOperationException("Email is invalid.");
+        }
+
+        var existingUser = await _unitOfWork.Users.GetByEmailAsync(normalizedEmail, cancellationToken);
+        if (existingUser is not null && existingUser.Id != userId)
+        {
+            throw new InvalidOperationException("Email already exists.");
+        }
+
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        user.Email = normalizedEmail;
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+    }
+
+    public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < MinimumPasswordLength || newPassword.Length > 128)
+        {
+            throw new InvalidOperationException("New password is invalid.");
+        }
+
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+        {
+            throw new InvalidOperationException("Current password is invalid.");
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<ProfileDto> SetTwoFactorEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        if (enabled && string.IsNullOrWhiteSpace(user.Email))
+        {
+            throw new InvalidOperationException("Add an email before enabling two-factor authentication.");
+        }
+
+        user.IsTwoFactorEnabled = enabled;
+        if (!enabled)
+        {
+            user.TwoFactorCodeHash = null;
+            user.TwoFactorCodeExpiresAt = null;
+        }
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+    }
+
+    public async Task<ProfileDto> SetProfileImagePathAsync(Guid userId, string path, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        user.ProfileImagePath = path;
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return ToProfileDto(user);
+    }
+
+    public async Task<ProfileDto> RemoveProfileImagePathAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        user.ProfileImagePath = null;
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return ToProfileDto(user);
     }
 
     public async Task SendFriendRequestAsync(Guid currentUserId, Guid receiverId, CancellationToken cancellationToken = default)
@@ -181,5 +276,54 @@ public class UserService : IUserService
         return firstUserId.CompareTo(secondUserId) <= 0
             ? (firstUserId, secondUserId)
             : (secondUserId, firstUserId);
+    }
+
+    private async Task<User> GetRequiredUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        return await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken)
+            ?? throw new InvalidOperationException("User was not found.");
+    }
+
+    private UserDto ToUserDto(User user)
+    {
+        var dto = _mapper.Map<UserDto>(user);
+        dto.ProfileImageUrl = GetImageUrl(user.ProfileImagePath);
+        return dto;
+    }
+
+    private ProfileDto ToProfileDto(User user)
+    {
+        return new ProfileDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            ProfileImagePath = user.ProfileImagePath,
+            ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
+            IsTwoFactorEnabled = user.IsTwoFactorEnabled
+        };
+    }
+
+    private string? GetImageUrl(string? path)
+    {
+        return string.IsNullOrWhiteSpace(path) ? null : _imageStorageService.GetPublicUrl(path);
+    }
+
+    private static string NormalizeEmail(string email)
+    {
+        return email.Trim().ToLowerInvariant();
+    }
+
+    private static bool IsValidEmail(string email)
+    {
+        try
+        {
+            _ = new System.Net.Mail.MailAddress(email);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

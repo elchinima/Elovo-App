@@ -1,3 +1,6 @@
+using System.Net;
+using Microsoft.Extensions.Logging;
+
 namespace Elovo.Web.Services;
 
 public class SupabaseImageStorageService : IImageStorageService
@@ -6,11 +9,16 @@ public class SupabaseImageStorageService : IImageStorageService
 
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<SupabaseImageStorageService> _logger;
 
-    public SupabaseImageStorageService(HttpClient httpClient, IConfiguration configuration)
+    public SupabaseImageStorageService(
+        HttpClient httpClient,
+        IConfiguration configuration,
+        ILogger<SupabaseImageStorageService> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task<ImageUploadResultDto> UploadAsync(Stream stream, string path, string contentType, CancellationToken cancellationToken = default)
@@ -43,19 +51,25 @@ public class SupabaseImageStorageService : IImageStorageService
     public async Task DeleteAsync(string path, CancellationToken cancellationToken = default)
     {
         var storagePath = NormalizeStoragePath(path);
-        if (!IsImagePath(storagePath))
+        if (!IsManagedImagePath(storagePath))
         {
             return;
         }
 
         using var request = CreateRequest(HttpMethod.Delete, $"object/{Bucket}/{EscapePath(storagePath)}");
         using var response = await _httpClient.SendAsync(request, cancellationToken);
-        if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.NotFound)
+        if (response.IsSuccessStatusCode)
         {
             return;
         }
 
         var details = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound || IsNotFoundResponse(details))
+        {
+            _logger.LogWarning("Supabase image not found: {Path}. Response: {Details}", storagePath, details);
+            return;
+        }
+
         throw new InvalidOperationException($"Supabase image delete failed: {(int)response.StatusCode} {response.ReasonPhrase}. {details}");
     }
 
@@ -64,23 +78,46 @@ public class SupabaseImageStorageService : IImageStorageService
         return NormalizeStoragePath(path).StartsWith("messages/", StringComparison.Ordinal);
     }
 
+    private bool IsManagedImagePath(string path)
+    {
+        var normalizedPath = NormalizeStoragePath(path);
+        return normalizedPath.StartsWith("messages/", StringComparison.Ordinal) ||
+            normalizedPath.StartsWith("profiles/", StringComparison.Ordinal);
+    }
+
     private async Task EnsureBucketAsync(CancellationToken cancellationToken)
     {
         using var request = CreateRequest(HttpMethod.Post, "bucket");
-        request.Content = JsonContent.Create(new
+        request.Content = JsonContent.Create(CreateBucketOptions());
+
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            using var updateRequest = CreateRequest(HttpMethod.Put, $"bucket/{Uri.EscapeDataString(Bucket)}");
+            updateRequest.Content = JsonContent.Create(CreateBucketOptions());
+            using var updateResponse = await _httpClient.SendAsync(updateRequest, cancellationToken);
+            if (updateResponse.IsSuccessStatusCode)
+            {
+                return;
+            }
+        }
+    }
+
+    private object CreateBucketOptions()
+    {
+        return new
         {
             id = Bucket,
             name = Bucket,
             @public = true,
             file_size_limit = 10 * 1024 * 1024,
-            allowed_mime_types = new[] { "image/png", "image/jpeg", "image/gif" }
-        });
-
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
-        if (response.IsSuccessStatusCode || response.StatusCode == System.Net.HttpStatusCode.Conflict)
-        {
-            return;
-        }
+            allowed_mime_types = new[] { "image/png", "image/jpeg", "image/gif", "image/webp" }
+        };
     }
 
     private HttpRequestMessage CreateRequest(HttpMethod method, string path)
@@ -118,6 +155,12 @@ public class SupabaseImageStorageService : IImageStorageService
     private static string EscapePath(string path)
     {
         return string.Join("/", path.Split('/', StringSplitOptions.RemoveEmptyEntries).Select(Uri.EscapeDataString));
+    }
+
+    private static bool IsNotFoundResponse(string details)
+    {
+        return details.Contains("not_found", StringComparison.OrdinalIgnoreCase) ||
+            details.Contains("Object not found", StringComparison.OrdinalIgnoreCase);
     }
 
     private string NormalizeStoragePath(string path)

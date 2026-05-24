@@ -3,15 +3,19 @@ namespace Elovo.Application.Services;
 
 public class AuthService : IAuthService
 {
+    private static readonly TimeSpan TwoFactorCodeLifetime = TimeSpan.FromMinutes(15);
+
     private readonly IConfiguration _configuration;
+    private readonly IEmailSender _emailSender;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
 
-    public AuthService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration)
+    public AuthService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration, IEmailSender emailSender)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _configuration = configuration;
+        _emailSender = emailSender;
     }
 
     public async Task<AuthResultDto> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
@@ -45,6 +49,50 @@ public class AuthService : IAuthService
             return AuthResultDto.Failure("Invalid username or password.");
         }
 
+        if (user.IsTwoFactorEnabled && !string.IsNullOrWhiteSpace(user.Email))
+        {
+            var code = GenerateTwoFactorCode();
+            user.TwoFactorCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
+            user.TwoFactorCodeExpiresAt = DateTime.UtcNow.Add(TwoFactorCodeLifetime);
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _emailSender.SendTwoFactorCodeAsync(user.Email, user.Username, code, cancellationToken);
+            return AuthResultDto.TwoFactorRequired(user);
+        }
+
+        user.TwoFactorCodeHash = null;
+        user.TwoFactorCodeExpiresAt = null;
+        user.IsOnline = true;
+        user.LastSeenAt = null;
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return AuthResultDto.Success(_mapper.Map<UserDto>(user), CreateToken(user));
+    }
+
+    public async Task<AuthResultDto> VerifyTwoFactorAsync(Guid userId, string code, CancellationToken cancellationToken = default)
+    {
+        var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        if (user is null || string.IsNullOrWhiteSpace(user.TwoFactorCodeHash) || user.TwoFactorCodeExpiresAt is null)
+        {
+            return AuthResultDto.Failure("Verification code is invalid.");
+        }
+
+        if (user.TwoFactorCodeExpiresAt <= DateTime.UtcNow)
+        {
+            ClearTwoFactorCode(user);
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return AuthResultDto.Failure("Verification code expired.");
+        }
+
+        var normalizedCode = NormalizeTwoFactorCode(code);
+        if (normalizedCode.Length != 7 || !BCrypt.Net.BCrypt.Verify(normalizedCode, user.TwoFactorCodeHash))
+        {
+            return AuthResultDto.Failure("Verification code is invalid.");
+        }
+
+        ClearTwoFactorCode(user);
         user.IsOnline = true;
         user.LastSeenAt = null;
         _unitOfWork.Users.Update(user);
@@ -76,5 +124,23 @@ public class AuthService : IAuthService
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static string GenerateTwoFactorCode()
+    {
+        return System.Security.Cryptography.RandomNumberGenerator
+            .GetInt32(1_000_000, 10_000_000)
+            .ToString();
+    }
+
+    private static string NormalizeTwoFactorCode(string code)
+    {
+        return new string((code ?? string.Empty).Where(char.IsDigit).ToArray());
+    }
+
+    private static void ClearTwoFactorCode(User user)
+    {
+        user.TwoFactorCodeHash = null;
+        user.TwoFactorCodeExpiresAt = null;
     }
 }

@@ -7,7 +7,14 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="brand-mark">
-                    <img src="~/Assets/Images/Logo/Elovo-Logo.png" alt="">
+                    @if (!string.IsNullOrWhiteSpace(ViewBag.CurrentUserProfileImageUrl as string))
+                    {
+                        <img class="profile-image" src="@ViewBag.CurrentUserProfileImageUrl" alt="">
+                    }
+                    else
+                    {
+                        <span>@(ViewBag.CurrentUserInitial ?? "E")</span>
+                    }
                 </div>
                 <div>
                     <p>Elovo</p>
@@ -112,4 +119,5 @@
 
 <script>
     window.elovoCurrentUserId = "@ViewBag.CurrentUserId";
+    window.elovoCurrentUserProfileImageUrl = "@ViewBag.CurrentUserProfileImageUrl";
 </script>

@@ -5,10 +5,29 @@ namespace Elovo.Web.Controllers;
 [Route("chat")]
 public class ChatController : Controller
 {
-    [HttpGet("")]
-    public IActionResult Index()
+    private readonly IUserService _userService;
+
+    public ChatController(IUserService userService)
     {
-        ViewBag.CurrentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        _userService = userService;
+    }
+
+    [HttpGet("")]
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        var profile = await _userService.GetProfileAsync(userId, cancellationToken);
+        ViewBag.CurrentUserId = userId;
+        ViewBag.CurrentUserInitial = profile.Initial;
+        ViewBag.CurrentUserProfileImageUrl = profile.ProfileImageUrl;
         return View();
+    }
+
+    private Guid GetCurrentUserId()
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(value, out var userId)
+            ? userId
+            : throw new InvalidOperationException("Current user id is missing.");
     }
 }

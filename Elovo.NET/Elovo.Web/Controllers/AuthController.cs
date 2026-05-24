@@ -5,6 +5,7 @@ namespace Elovo.Web.Controllers;
 public class AuthController : Controller
 {
     private const string AuthCookieName = "ElovoAuthToken";
+    private const string TwoFactorCookieName = "ElovoTwoFactorUser";
     private readonly IAuthService _authService;
     private readonly IValidator<LoginDto> _loginValidator;
     private readonly IValidator<RegisterDto> _registerValidator;
@@ -39,12 +40,60 @@ public class AuthController : Controller
         }
 
         var result = await _authService.LoginAsync(dto, cancellationToken);
+        if (result.RequiresTwoFactor && result.TwoFactorUserId is not null)
+        {
+            SetTwoFactorCookie(result.TwoFactorUserId.Value);
+            TempData["TwoFactorEmail"] = MaskEmail(result.TwoFactorEmail);
+            return RedirectToAction(nameof(TwoFactor));
+        }
+
         if (!result.Succeeded || result.Token is null)
         {
             ViewBag.Error = result.Error ?? "Invalid username or password.";
             return View(dto);
         }
 
+        SetAuthCookie(result.Token);
+        return RedirectToAction("Index", "Chat");
+    }
+
+    [HttpGet("two-factor")]
+    [AllowAnonymous]
+    public IActionResult TwoFactor()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Chat");
+        }
+
+        if (!TryGetTwoFactorUserId(out _))
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        ViewBag.Email = TempData.Peek("TwoFactorEmail");
+        return View(new VerifyTwoFactorDto());
+    }
+
+    [HttpPost("two-factor")]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TwoFactor(VerifyTwoFactorDto dto, CancellationToken cancellationToken)
+    {
+        if (!TryGetTwoFactorUserId(out var userId))
+        {
+            return RedirectToAction(nameof(Login));
+        }
+
+        var result = await _authService.VerifyTwoFactorAsync(userId, dto.Code, cancellationToken);
+        if (!result.Succeeded || result.Token is null)
+        {
+            ViewBag.Error = result.Error ?? "Verification failed.";
+            ViewBag.Email = TempData.Peek("TwoFactorEmail");
+            return View(dto);
+        }
+
+        Response.Cookies.Delete(TwoFactorCookieName);
         SetAuthCookie(result.Token);
         return RedirectToAction("Index", "Chat");
     }
@@ -85,6 +134,7 @@ public class AuthController : Controller
     public IActionResult Logout()
     {
         Response.Cookies.Delete(AuthCookieName);
+        Response.Cookies.Delete(TwoFactorCookieName);
         return RedirectToAction(nameof(Login));
     }
 
@@ -97,5 +147,41 @@ public class AuthController : Controller
             SameSite = SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddDays(7)
         });
+    }
+
+    private void SetTwoFactorCookie(Guid userId)
+    {
+        Response.Cookies.Append(TwoFactorCookieName, userId.ToString(), new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddMinutes(15)
+        });
+    }
+
+    private bool TryGetTwoFactorUserId(out Guid userId)
+    {
+        userId = Guid.Empty;
+        return Request.Cookies.TryGetValue(TwoFactorCookieName, out var value) &&
+            Guid.TryParse(value, out userId);
+    }
+
+    private static string MaskEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email) || !email.Contains('@'))
+        {
+            return string.Empty;
+        }
+
+        var parts = email.Split('@', 2);
+        var name = parts[0];
+        if (string.IsNullOrEmpty(name))
+        {
+            return $"***@{parts[1]}";
+        }
+
+        var visible = name.Length <= 2 ? name[..1] : name[..2];
+        return $"{visible}***@{parts[1]}";
     }
 }

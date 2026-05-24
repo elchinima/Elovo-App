@@ -1,0 +1,141 @@
+@model Elovo.Application.DTOs.ProfileDto
+@{
+    ViewData["Title"] = "Elovo Profile";
+}
+
+<main class="app-shell">
+    <section class="profile-view is-active" id="profileView" aria-label="Profile">
+        <header class="profile-topbar">
+            <a class="icon-button" asp-controller="Chat" asp-action="Index" aria-label="Back to chat" title="Back to chat">
+                <img class="button-icon" src="~/Assets/Images/Icons/back.svg" alt="">
+            </a>
+            <div>
+                <p class="eyebrow">Elovo Profile</p>
+                <h1>@Model.Username</h1>
+            </div>
+        </header>
+
+        <div class="profile-grid">
+            <section class="profile-panel profile-avatar-panel">
+                <div class="profile-avatar" id="profileAvatar">
+                    @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                    {
+                        <img src="@Model.ProfileImageUrl" alt="">
+                    }
+                    else
+                    {
+                        <span>@Model.Initial</span>
+                    }
+                </div>
+                <div class="profile-panel-copy">
+                    <h2>Profile image</h2>
+                    <p>PNG, JPEG or JPG. The final image is saved as a 512 x 512 WebP file.</p>
+                </div>
+                <input class="visually-hidden-file" type="file" id="profileImageInput" accept="image/png,image/jpeg,image/jpg">
+                @Html.AntiForgeryToken()
+                <div class="profile-actions">
+                    <button class="primary-icon-button" id="profileImageButton" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/profile-image.svg" alt="">
+                        <span>Choose image</span>
+                    </button>
+                    <button class="secondary-icon-button" id="deleteProfileImageButton" type="button" @(string.IsNullOrWhiteSpace(Model.ProfileImageUrl) ? "disabled" : "")>
+                        <img class="button-icon" src="~/Assets/Images/Icons/delete-local.svg" alt="">
+                        <span>Delete</span>
+                    </button>
+                </div>
+                <p class="profile-status" id="profileImageStatus"></p>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel-heading">
+                    <img src="~/Assets/Images/Icons/email.svg" alt="">
+                    <h2>Email</h2>
+                </div>
+                <form class="profile-form" id="profileEmailForm">
+                    <label>
+                        Email address
+                        <input type="email" id="profileEmail" value="@Model.Email" placeholder="name@example.com" required>
+                    </label>
+                    <button class="primary-icon-button" type="submit">
+                        <img class="button-icon" src="~/Assets/Images/Icons/sent-action.svg" alt="">
+                        <span>Save email</span>
+                    </button>
+                    <p class="profile-status" id="profileEmailStatus"></p>
+                </form>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel-heading">
+                    <img src="~/Assets/Images/Icons/password.svg" alt="">
+                    <h2>Password</h2>
+                </div>
+                <form class="profile-form" id="profilePasswordForm">
+                    <label>
+                        Current password
+                        <input type="password" id="currentPassword" autocomplete="current-password" required>
+                    </label>
+                    <label>
+                        New password
+                        <input type="password" id="newPassword" autocomplete="new-password" minlength="8" maxlength="128" required>
+                    </label>
+                    <button class="primary-icon-button" type="submit">
+                        <img class="button-icon" src="~/Assets/Images/Icons/password.svg" alt="">
+                        <span>Change password</span>
+                    </button>
+                    <p class="profile-status" id="profilePasswordStatus"></p>
+                </form>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel-heading">
+                    <img src="~/Assets/Images/Icons/two-factor.svg" alt="">
+                    <h2>Two-factor authentication</h2>
+                </div>
+                <div class="profile-toggle-row">
+                    <div>
+                        <strong>Email code on every sign in</strong>
+                        <span>Available after adding an email address.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="twoFactorToggle" @(Model.IsTwoFactorEnabled ? "checked" : "") @(string.IsNullOrWhiteSpace(Model.Email) ? "disabled" : "")>
+                        <span></span>
+                    </label>
+                </div>
+                <p class="profile-status" id="twoFactorStatus"></p>
+            </section>
+        </div>
+    </section>
+
+    <div class="modal-backdrop" id="avatarCropModal" aria-hidden="true">
+        <section class="modal-panel avatar-crop-panel" role="dialog" aria-modal="true" aria-labelledby="avatarCropTitle">
+            <header class="modal-header">
+                <h2 id="avatarCropTitle">Crop profile image</h2>
+                <button class="icon-button" type="button" id="avatarCropCancel" aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <div class="avatar-crop-body">
+                <div class="avatar-crop-stage" id="avatarCropStage">
+                    <img id="avatarCropImage" alt="">
+                </div>
+                <label class="avatar-zoom">
+                    Zoom
+                    <input type="range" id="avatarZoom" min="1" max="3" step="0.01" value="1">
+                </label>
+                <button class="primary-icon-button" id="avatarCropSave" type="button">
+                    <img class="button-icon" src="~/Assets/Images/Icons/profile-image.svg" alt="">
+                    <span>Save image</span>
+                </button>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script>
+    window.elovoProfile = {
+        username: "@Model.Username",
+        initial: "@Model.Initial",
+        profileImageUrl: "@Model.ProfileImageUrl",
+        hasEmail: @Json.Serialize(!string.IsNullOrWhiteSpace(Model.Email))
+    };
+</script>

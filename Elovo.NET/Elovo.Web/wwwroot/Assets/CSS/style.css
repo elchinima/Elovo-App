@@ -583,6 +583,7 @@ input:disabled {
     overflow-wrap: anywhere;
     word-break: break-word;
     white-space: pre-wrap;
+    touch-action: pan-y;
 }
 
 .message.mine {
@@ -794,29 +795,71 @@ input:disabled {
     opacity: 0;
 }
 
+.image-upload-status {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: calc(100% + 8px);
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border: 1px solid rgba(125, 134, 255, 0.22);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(18, 24, 50, 0.94);
+    backdrop-filter: blur(18px);
+    box-shadow: none;
+    font-size: 0.78rem;
+    font-weight: 800;
+    pointer-events: none;
+}
+
+.image-upload-status img {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+}
+
+.image-upload-status span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .image-preview-backdrop {
     position: fixed;
     inset: 0;
     z-index: 90;
     display: grid;
     place-items: center;
-    padding: 28px;
+    padding: max(28px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left));
     background: rgba(4, 7, 18, 0.86);
     backdrop-filter: blur(18px);
+    overflow: hidden;
 }
 
 .image-preview-backdrop img {
     max-width: min(980px, 96vw);
-    max-height: 88vh;
+    max-height: min(88vh, calc(100dvh - 96px));
     object-fit: contain;
     border-radius: var(--radius);
     background: rgba(255, 255, 255, 0.04);
+    cursor: zoom-in;
+    transition: transform 180ms ease;
+}
+
+.image-preview-backdrop img.is-zoomed {
+    cursor: zoom-out;
+    transform: scale(3);
 }
 
 .image-preview-close {
     position: fixed;
-    top: 18px;
-    right: 18px;
+    top: max(12px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
     width: 46px;
     height: 46px;
     display: grid;
@@ -825,8 +868,53 @@ input:disabled {
     border-radius: var(--radius);
     color: var(--text);
     background: rgba(18, 24, 50, 0.9);
-    font-size: 1.6rem;
-    line-height: 1;
+    padding: 0;
+}
+
+.image-preview-close img {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+.message-actions-popover {
+    position: fixed;
+    z-index: 95;
+    width: min(200px, calc(100vw - 24px));
+    display: grid;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid rgba(125, 134, 255, 0.22);
+    border-radius: var(--radius);
+    background: rgba(18, 24, 50, 0.96);
+    backdrop-filter: blur(18px);
+}
+
+.message-action-button {
+    width: 100%;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border: 0;
+    border-radius: calc(var(--radius) - 2px);
+    color: var(--text);
+    background: transparent;
+    padding: 8px 9px;
+    text-align: left;
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.message-action-button:hover,
+.message-action-button:focus-visible {
+    background: rgba(109, 103, 255, 0.16);
+}
+
+.message-action-button img {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
 }
 
 .modal-backdrop {

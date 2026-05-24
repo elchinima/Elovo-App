@@ -50,6 +50,7 @@ public class MessageService : IMessageService
             SentAt = sentAt,
             IsImage = isImage,
             ImagePath = isImage ? dto.ImagePath : null,
+            ImageStoragePath = isImage ? dto.ImagePath : null,
             ImageFileName = isImage ? dto.ImageFileName : null
         };
     }

@@ -13,5 +13,7 @@ public class MessageDto
     public string? VoiceUrl { get; set; }
     public bool IsImage { get; set; }
     public string? ImagePath { get; set; }
+    public string? ImageStoragePath { get; set; }
     public string? ImageFileName { get; set; }
+    public bool IsPending { get; set; }
 }

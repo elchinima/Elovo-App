@@ -32,8 +32,18 @@ let typingTimer = null;
 let userSearchTimer = null;
 let latestMessageId = "";
 let isSending = false;
+let messageActionTimer = null;
+let activeMessageActions = null;
+let imageTransferStatus = null;
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
+const keepAliveIntervalMs = 14 * 60 * 1000;
+
+function keepAlive() {
+    fetch("/health", { cache: "no-store" }).catch(() => { });
+}
+
+window.setInterval(keepAlive, keepAliveIntervalMs);
 
 function showPageLoader() {
     if (!pageLoader) {
@@ -89,6 +99,36 @@ function readStoredMessages(userId) {
 
 function writeStoredMessages(userId, messages) {
     window.localStorage.setItem(getConversationStorageKey(userId), JSON.stringify(messages));
+}
+
+function updateStoredMessage(otherUserId, messageId, update) {
+    const messages = readStoredMessages(otherUserId);
+    let changed = false;
+    const updatedMessages = messages.map((message) => {
+        if (message.id !== messageId) {
+            return message;
+        }
+
+        changed = true;
+        return { ...message, ...update };
+    });
+
+    if (changed) {
+        writeStoredMessages(otherUserId, updatedMessages);
+    }
+
+    return changed;
+}
+
+function removeStoredMessage(otherUserId, messageId) {
+    const messages = readStoredMessages(otherUserId);
+    const updatedMessages = messages.filter((message) => message.id !== messageId);
+    if (updatedMessages.length === messages.length) {
+        return false;
+    }
+
+    writeStoredMessages(otherUserId, updatedMessages);
+    return true;
 }
 
 function getMessageParticipantId(message) {
@@ -330,6 +370,7 @@ function appendMessage(message) {
     const isMine = (message.senderId || "").toLowerCase() === currentUserId;
 
     bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}${message.isImage ? " has-image" : ""}`;
+    bubble.dataset.messageId = message.id;
     meta.className = "message-meta";
     time.textContent = formatTime(message.sentAt);
     meta.appendChild(time);
@@ -352,7 +393,123 @@ function appendMessage(message) {
     }
 
     bubble.appendChild(meta);
+    if (isMine) {
+        attachMessageActions(bubble, message);
+    }
     messageStream.appendChild(bubble);
+}
+
+function attachMessageActions(bubble, message) {
+    const open = (event) => {
+        event.preventDefault();
+        showMessageActions(message, bubble);
+    };
+
+    bubble.addEventListener("contextmenu", open);
+    bubble.addEventListener("pointerdown", (event) => {
+        if (event.pointerType === "mouse" && event.button !== 0) {
+            return;
+        }
+
+        window.clearTimeout(messageActionTimer);
+        messageActionTimer = window.setTimeout(() => open(event), 520);
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((name) => {
+        bubble.addEventListener(name, () => window.clearTimeout(messageActionTimer));
+    });
+}
+
+function closeMessageActions() {
+    if (activeMessageActions) {
+        activeMessageActions.remove();
+        activeMessageActions = null;
+    }
+}
+
+function createActionButton(icon, text, action) {
+    const button = document.createElement("button");
+    const image = document.createElement("img");
+    const label = document.createElement("span");
+
+    button.type = "button";
+    button.className = "message-action-button";
+    image.src = icon;
+    image.alt = "";
+    label.textContent = text;
+    button.append(image, label);
+    button.addEventListener("click", action);
+    return button;
+}
+
+function showMessageActions(message, bubble) {
+    closeMessageActions();
+
+    const menu = document.createElement("div");
+    const canModifyPending = message.isPending === true;
+    const rect = bubble.getBoundingClientRect();
+    const top = Math.max(12, Math.min(window.innerHeight - 170, Math.max(12, rect.top - 8)));
+    const left = Math.min(window.innerWidth - 212, Math.max(12, rect.left));
+
+    menu.className = "message-actions-popover";
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
+    menu.addEventListener("pointerdown", (event) => event.stopPropagation());
+    menu.appendChild(createActionButton("/Assets/Images/Icons/delete-local.svg", "Удалить у меня", async () => {
+        closeMessageActions();
+        await deleteMessageForMe(message);
+    }));
+
+    if (canModifyPending) {
+        menu.appendChild(createActionButton("/Assets/Images/Icons/delete-all.svg", "Удалить у всех", async () => {
+            closeMessageActions();
+            await deleteMessageForEveryone(message);
+        }));
+
+        if (!message.isImage) {
+            menu.appendChild(createActionButton("/Assets/Images/Icons/edit-message.svg", "Редактирование", () => {
+                closeMessageActions();
+                startPendingMessageEdit(message);
+            }));
+        }
+    }
+
+    document.body.appendChild(menu);
+    activeMessageActions = menu;
+    window.setTimeout(() => {
+        document.addEventListener("pointerdown", closeMessageActions, { once: true });
+        document.addEventListener("keydown", closeMessageActions, { once: true });
+    });
+}
+
+async function deleteMessageForMe(message) {
+    if (!activeConversation) {
+        return;
+    }
+
+    removeStoredMessage(activeConversation.userId, message.id);
+    await loadMessages(activeConversation.userId);
+    await loadConversations();
+}
+
+async function deleteMessageForEveryone(message) {
+    if (connection && message.isPending) {
+        const deleted = await connection.invoke("DeletePendingMessage", message.id).catch(() => false);
+        if (!deleted) {
+            updateStoredMessage(activeConversation.userId, message.id, { isPending: false });
+        }
+    }
+
+    await deleteMessageForMe(message);
+}
+
+function startPendingMessageEdit(message) {
+    if (!messageInput || !messageForm || !activeConversation || message.isImage) {
+        return;
+    }
+
+    messageInput.value = message.content || "";
+    messageInput.focus();
+    messageForm.dataset.editingMessageId = message.id;
 }
 
 function createImageMessage(message) {
@@ -392,10 +549,18 @@ function openImagePreview(path, fileName) {
     backdrop.setAttribute("aria-modal", "true");
     image.src = path;
     image.alt = fileName || "Image preview";
+    image.draggable = false;
     close.type = "button";
     close.className = "image-preview-close";
     close.setAttribute("aria-label", "Close");
     close.textContent = "×";
+
+    close.title = "Close";
+
+    const closeIcon = document.createElement("img");
+    closeIcon.src = "/Assets/Images/Icons/close.svg";
+    closeIcon.alt = "";
+    close.replaceChildren(closeIcon);
 
     const closePreview = () => {
         document.removeEventListener("keydown", onKeyDown);
@@ -409,6 +574,23 @@ function openImagePreview(path, fileName) {
     };
 
     close.addEventListener("click", closePreview);
+    image.addEventListener("click", (event) => {
+        event.stopPropagation();
+        image.classList.toggle("is-zoomed");
+        if (!image.classList.contains("is-zoomed")) {
+            image.style.transformOrigin = "50% 50%";
+        }
+    });
+    image.addEventListener("pointermove", (event) => {
+        if (!image.classList.contains("is-zoomed")) {
+            return;
+        }
+
+        const rect = image.getBoundingClientRect();
+        const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+        image.style.transformOrigin = `${x}% ${y}%`;
+    });
     backdrop.addEventListener("click", (event) => {
         if (event.target === backdrop) {
             closePreview();
@@ -771,12 +953,12 @@ async function startSignalR() {
         await loadConversations();
     });
 
-    connection.on("UserOnline", (userId) => {
-        updateUserStatus(userId, true);
+    connection.on("UserOnline", (userId, lastSeenAt) => {
+        updateUserStatus(userId, true, lastSeenAt);
     });
 
-    connection.on("UserOffline", (userId) => {
-        updateUserStatus(userId, false);
+    connection.on("UserOffline", (userId, lastSeenAt) => {
+        updateUserStatus(userId, false, lastSeenAt);
     });
 
     connection.on("UserTyping", (userId) => {
@@ -811,14 +993,14 @@ function messageBelongsToActiveConversation(message) {
             sameId(message.receiverId, activeConversation.userId));
 }
 
-function updateUserStatus(userId, isOnline) {
+function updateUserStatus(userId, isOnline, lastSeenAt = null) {
     const chat = conversations.find(x => sameId(x.userId, userId));
     if (!chat) {
         return;
     }
 
     chat.isOnline = isOnline;
-    chat.lastSeenAt = isOnline ? null : new Date().toISOString();
+    chat.lastSeenAt = isOnline ? null : lastSeenAt;
 
     if (activeConversation && sameId(activeConversation.userId, userId)) {
         activeConversation = chat;
@@ -837,6 +1019,33 @@ async function sendCurrentMessage(event) {
 
     const text = messageInput.value.trim();
     if (!text) {
+        return;
+    }
+
+    const editingMessageId = messageForm.dataset.editingMessageId;
+    if (editingMessageId) {
+        isSending = true;
+        messageInput.disabled = true;
+        messageForm.classList.add("is-sending");
+
+        try {
+            const edited = await connection.invoke("EditPendingMessage", editingMessageId, text).catch(() => false);
+            if (edited) {
+                updateStoredMessage(activeConversation.userId, editingMessageId, { content: text });
+            } else {
+                updateStoredMessage(activeConversation.userId, editingMessageId, { isPending: false });
+            }
+            messageInput.value = "";
+            delete messageForm.dataset.editingMessageId;
+            await loadMessages(activeConversation.userId);
+            await loadConversations();
+        } finally {
+            messageForm.classList.remove("is-sending");
+            messageInput.disabled = false;
+            messageInput.focus();
+            isSending = false;
+        }
+
         return;
     }
 
@@ -862,6 +1071,7 @@ function setImageTransferState(active, progress = 0) {
 
     messageForm.classList.toggle("is-image-transfer", active);
     messageForm.style.setProperty("--image-progress", `${Math.max(0, Math.min(100, progress))}%`);
+    updateImageTransferStatus(active, progress);
 
     if (attachImageButton) {
         attachImageButton.disabled = active;
@@ -870,6 +1080,45 @@ function setImageTransferState(active, progress = 0) {
     if (messageInput) {
         messageInput.disabled = active || isSending;
     }
+}
+
+function updateImageTransferStatus(active, progress = 0, loaded = 0, total = 0) {
+    if (!messageForm) {
+        return;
+    }
+
+    if (!imageTransferStatus) {
+        imageTransferStatus = document.createElement("span");
+        imageTransferStatus.className = "image-upload-status";
+        messageForm.appendChild(imageTransferStatus);
+    }
+
+    if (!active) {
+        imageTransferStatus.remove();
+        imageTransferStatus = null;
+        return;
+    }
+
+    const percent = Math.max(0, Math.min(100, Math.round(progress)));
+    const remaining = total > 0 ? Math.max(0, total - loaded) : 0;
+    const remainingText = total > 0 ? `, ${formatBytes(remaining)} осталось` : "";
+    imageTransferStatus.innerHTML = `<img src="/Assets/Images/Icons/image-upload-loader.svg" alt=""> <span>${percent}%${remainingText}</span>`;
+}
+
+function formatBytes(value) {
+    if (!value) {
+        return "0 KB";
+    }
+
+    const units = ["B", "KB", "MB"];
+    let size = value;
+    let unit = 0;
+    while (size >= 1024 && unit < units.length - 1) {
+        size /= 1024;
+        unit += 1;
+    }
+
+    return `${size >= 10 || unit === 0 ? Math.round(size) : size.toFixed(1)} ${units[unit]}`;
 }
 
 function uploadImage(file) {
@@ -884,7 +1133,9 @@ function uploadImage(file) {
 
         request.upload.addEventListener("progress", (event) => {
             if (event.lengthComputable) {
-                setImageTransferState(true, Math.round((event.loaded / event.total) * 100));
+                const progress = Math.round((event.loaded / event.total) * 100);
+                setImageTransferState(true, progress);
+                updateImageTransferStatus(true, progress, event.loaded, event.total);
             }
         });
 

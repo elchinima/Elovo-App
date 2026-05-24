@@ -97,13 +97,13 @@
 @keyframes sendPop {
     0% {
         opacity: 0;
-        transform: translate(12px, 12px) scale(0.85);
+        transform: translateY(10px) scale(0.92);
         filter: blur(2px);
     }
 
     50% {
         opacity: 1;
-        transform: translate(-2px, -2px) scale(1.03);
+        transform: translateY(-2px) scale(1.015);
         filter: blur(0);
     }
 

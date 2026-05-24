@@ -44,6 +44,12 @@
         pointer-events: none;
     }
 
+    .image-preview-backdrop img,
+    .message-actions-popover img,
+    .image-upload-status img {
+        pointer-events: auto;
+    }
+
     .app-shell {
         position: relative;
         height: 100vh;
@@ -175,11 +181,30 @@
     }
 
     .message.has-image {
-        width: min(84%, 320px);
+        width: min(84%, calc(100vw - 64px));
+        max-width: 320px;
+    }
+
+    .image-upload-status {
+        left: 10px;
+        right: 10px;
+        bottom: calc(100% + 6px);
     }
 
     .image-preview-backdrop {
-        padding: 16px;
+        padding: max(56px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    }
+
+    .image-preview-backdrop img {
+        max-width: calc(100vw - 24px);
+        max-height: calc(100dvh - 88px);
+    }
+
+    .image-preview-close {
+        top: max(8px, env(safe-area-inset-top));
+        right: max(8px, env(safe-area-inset-right));
+        width: 42px;
+        height: 42px;
     }
 
     .modal-backdrop {

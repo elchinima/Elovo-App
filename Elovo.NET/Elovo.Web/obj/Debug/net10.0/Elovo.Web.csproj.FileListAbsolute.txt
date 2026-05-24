@@ -151,8 +151,6 @@ C:\Users\dmatc\AppData\Local\Temp\ElovoVerifyBuild\Elovo.Web.pdb
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Npgsql.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\Elovo.Web.sourcelink.json
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9p1nll2w5m-{0}-z0ru0trocy-z0ru0trocy.gz
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9mk41yyx3w-{0}-7ie24p6iyw-7ie24p6iyw.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\rahyuh7kxs-{0}-174k3jdgmm-174k3jdgmm.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\t1s9k41pt6-{0}-qk0e21upz2-qk0e21upz2.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\qeunl7b8vq-{0}-dfpj0yt0ea-dfpj0yt0ea.gz
@@ -166,4 +164,14 @@ D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compresse
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\poaq9tfdbq-{0}-6rjeguraua-6rjeguraua.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\vf8094770q-{0}-jl7tx5cl1e-jl7tx5cl1e.gz
 D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\uz6h7o5r9z-{0}-zpgmp69dfx-zpgmp69dfx.gz
-D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\ofcyoaq11k-{0}-cc47x6zjs5-cc47x6zjs5.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\bin\Debug\net10.0\SixLabors.ImageSharp.dll
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\454n4tcy3u-{0}-6sbakg8s0h-6sbakg8s0h.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9p1nll2w5m-{0}-szhuxiem9l-szhuxiem9l.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9mk41yyx3w-{0}-m9z1txumnt-m9z1txumnt.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\dq2h9r98sp-{0}-83tdhij59d-83tdhij59d.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\2u24ogubax-{0}-nqufnfw0c0-nqufnfw0c0.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\h0zvyltj85-{0}-c3m9by8q0q-c3m9by8q0q.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\9qha5vpqrt-{0}-pwtup6x4j7-pwtup6x4j7.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\embllrthse-{0}-2137i6a625-2137i6a625.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\ihqh32ywtj-{0}-qvae6exgj8-qvae6exgj8.gz
+D:\Project-Work\Elovo\Elovo Chat\Elovo.NET\Elovo.Web\obj\Debug\net10.0\compressed\ofcyoaq11k-{0}-azxz3yvjj9-azxz3yvjj9.gz

@@ -40,6 +40,18 @@ public class SupabaseImageStorageService : IImageStorageService
         return $"{BaseUrl}/storage/v1/object/public/{Bucket}/{EscapePath(path)}";
     }
 
+    public async Task DeleteAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (!IsImagePath(path))
+        {
+            return;
+        }
+
+        using var request = CreateRequest(HttpMethod.Delete, $"object/{Bucket}");
+        request.Content = JsonContent.Create(new { prefixes = new[] { path } });
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+    }
+
     public bool IsImagePath(string path)
     {
         return path.StartsWith("messages/", StringComparison.Ordinal);

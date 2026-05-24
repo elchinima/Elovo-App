@@ -9,5 +9,5 @@ public interface IUserService
     Task<IReadOnlyList<FriendRequestDto>> GetIncomingFriendRequestsAsync(Guid currentUserId, CancellationToken cancellationToken = default);
     Task SendFriendRequestAsync(Guid currentUserId, Guid receiverId, CancellationToken cancellationToken = default);
     Task AcceptFriendRequestAsync(Guid currentUserId, Guid requestId, CancellationToken cancellationToken = default);
-    Task SetOnlineStatusAsync(Guid userId, bool isOnline, CancellationToken cancellationToken = default);
+    Task<DateTime?> SetOnlineStatusAsync(Guid userId, bool isOnline, CancellationToken cancellationToken = default);
 }

@@ -24,9 +24,9 @@ public class ChatHub : Hub
         var userId = GetCurrentUserId();
         ConnectedUsers.AddOrUpdate(userId, 1, (_, count) => count + 1);
         await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
-        await _userService.SetOnlineStatusAsync(userId, true);
+        var lastSeenAt = await _userService.SetOnlineStatusAsync(userId, true);
         await SendPendingMessagesAsync(userId);
-        await Clients.Others.SendAsync("UserOnline", userId);
+        await Clients.Others.SendAsync("UserOnline", userId, lastSeenAt);
         await base.OnConnectedAsync();
     }
 
@@ -37,8 +37,8 @@ public class ChatHub : Hub
         if (isOffline)
         {
             ConnectedUsers.TryRemove(userId, out _);
-            await _userService.SetOnlineStatusAsync(userId, false);
-            await Clients.Others.SendAsync("UserOffline", userId);
+            var lastSeenAt = await _userService.SetOnlineStatusAsync(userId, false);
+            await Clients.Others.SendAsync("UserOffline", userId, lastSeenAt);
         }
 
         await base.OnDisconnectedAsync(exception);
@@ -76,6 +76,7 @@ public class ChatHub : Hub
         });
 
         await _unitOfWork.SaveChangesAsync();
+        message.IsPending = true;
         await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", ToClientMessage(message));
     }
 
@@ -97,7 +98,7 @@ public class ChatHub : Hub
 
         if (IsConnected(receiverId))
         {
-            await Clients.Groups(UserGroup(senderId), UserGroup(receiverId)).SendAsync("ReceiveMessage", message);
+            await Clients.Groups(UserGroup(senderId), UserGroup(receiverId)).SendAsync("ReceiveMessage", ToClientMessage(message));
             return;
         }
 
@@ -113,7 +114,46 @@ public class ChatHub : Hub
         });
 
         await _unitOfWork.SaveChangesAsync();
-        await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", message);
+        message.IsPending = true;
+        await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", ToClientMessage(message));
+    }
+
+    public async Task<bool> DeletePendingMessage(Guid messageId)
+    {
+        var senderId = GetCurrentUserId();
+        var message = await _unitOfWork.PendingMessages.GetByIdAsync(messageId, Context.ConnectionAborted);
+        if (message is null || message.SenderId != senderId)
+        {
+            return false;
+        }
+
+        if (_imageStorageService.IsImagePath(message.Content))
+        {
+            await _imageStorageService.DeleteAsync(message.Content, Context.ConnectionAborted);
+        }
+
+        await _unitOfWork.PendingMessages.DeleteAsync(message, Context.ConnectionAborted);
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+        return true;
+    }
+
+    public async Task<bool> EditPendingMessage(Guid messageId, string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return false;
+        }
+
+        var senderId = GetCurrentUserId();
+        var message = await _unitOfWork.PendingMessages.GetByIdAsync(messageId, Context.ConnectionAborted);
+        if (message is null || message.SenderId != senderId || _imageStorageService.IsImagePath(message.Content))
+        {
+            return false;
+        }
+
+        message.Content = content.Trim();
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+        return true;
     }
 
     public async Task StartTyping(Guid receiverId)
@@ -163,6 +203,7 @@ public class ChatHub : Hub
                 VoiceUrl = message.VoiceUrl,
                 IsImage = _imageStorageService.IsImagePath(message.Content),
                 ImagePath = _imageStorageService.IsImagePath(message.Content) ? _imageStorageService.GetPublicUrl(message.Content) : null,
+                ImageStoragePath = _imageStorageService.IsImagePath(message.Content) ? message.Content : null,
                 ImageFileName = _imageStorageService.IsImagePath(message.Content) ? message.VoiceUrl : null
             }, Context.ConnectionAborted);
         }
@@ -191,6 +232,8 @@ public class ChatHub : Hub
             VoiceUrl = message.VoiceUrl,
             IsImage = true,
             ImagePath = _imageStorageService.GetPublicUrl(message.ImagePath),
+            ImageStoragePath = message.ImageStoragePath ?? message.ImagePath,
+            IsPending = message.IsPending,
             ImageFileName = message.ImageFileName
         };
     }

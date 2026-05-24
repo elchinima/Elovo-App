@@ -20,9 +20,14 @@ logs/
 .env
 .env.*
 !.env.example
+appsettings.Development.json
+**/appsettings.Development.json
 appsettings.Local.json
+**/appsettings.Local.json
 appsettings.*.local.json
 appsettings.Production.json
+secrets.json
+**/secrets.json
 
 # OS files
 Thumbs.db

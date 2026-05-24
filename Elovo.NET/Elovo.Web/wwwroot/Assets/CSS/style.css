@@ -444,7 +444,7 @@ input:disabled {
 .chat-list {
     min-height: 0;
     overflow: auto;
-    padding: 8px;
+    padding: 10px;
     scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -463,22 +463,25 @@ input:disabled {
     grid-template-columns: 46px minmax(0, 1fr) auto;
     gap: 12px;
     align-items: center;
-    border: 0;
+    border: 1px solid rgba(125, 134, 255, 0.14);
     border-radius: var(--radius);
     color: var(--text);
-    background: transparent;
+    background: rgba(18, 24, 50, 0.72);
     padding: 12px;
     text-align: left;
     position: relative;
     z-index: 2;
+    box-shadow: 0 12px 28px rgba(3, 6, 18, 0.18);
     touch-action: pan-y;
     will-change: transform;
-    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
 }
 
 .chat-item:hover,
 .chat-item.is-active {
-    background: rgba(109, 103, 255, 0.12);
+    border-color: rgba(139, 124, 255, 0.34);
+    background: rgba(109, 103, 255, 0.14);
+    box-shadow: 0 16px 34px rgba(3, 6, 18, 0.24);
 }
 
 .chat-item:hover {
@@ -497,6 +500,9 @@ input:disabled {
     position: relative;
     border-radius: var(--radius);
     overflow: hidden;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, rgba(255, 93, 125, 0.72), rgba(139, 124, 255, 0.9));
+    --swipe-progress: 0;
 }
 
 .chat-swipe-shell.is-revealed .chat-item {
@@ -507,12 +513,22 @@ input:disabled {
     position: absolute;
     inset: 0 0 0 auto;
     width: 84px;
+    display: grid;
+    place-items: center;
     border: 0;
     border-radius: 0;
     color: #fff;
-    background: linear-gradient(135deg, #ff5d7d, #8b7cff);
-    font-size: 0.82rem;
-    font-weight: 900;
+    background: transparent;
+}
+
+.chat-hide-icon {
+    width: 30px;
+    height: 30px;
+    display: block;
+    filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.24));
+    opacity: calc(0.55 + (var(--swipe-progress) * 0.45));
+    transform: translateX(calc(10px - (var(--swipe-progress) * 10px))) scale(calc(0.82 + (var(--swipe-progress) * 0.18)));
+    transition: opacity 160ms ease, transform 160ms ease;
 }
 
 .avatar {
@@ -1069,6 +1085,88 @@ body.is-page-loading .page-loader {
     display: grid;
     gap: 14px;
     padding: 18px;
+}
+
+.restore-hidden-panel {
+    width: min(460px, 100%);
+    border-color: rgba(139, 124, 255, 0.28);
+    background:
+        radial-gradient(circle at 22% 12%, rgba(109, 103, 255, 0.22), transparent 14rem),
+        radial-gradient(circle at 82% 88%, rgba(79, 140, 255, 0.18), transparent 13rem),
+        var(--panel-solid);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.restore-hidden-panel .modal-header {
+    border-bottom-color: rgba(125, 134, 255, 0.14);
+}
+
+.restore-hidden-panel .confirm-modal-body {
+    padding: 22px;
+}
+
+.restore-hidden-art {
+    min-height: 142px;
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(125, 134, 255, 0.16);
+    border-radius: var(--radius);
+    background: rgba(7, 9, 20, 0.36);
+}
+
+.restore-hidden-card {
+    display: block;
+    pointer-events: none;
+}
+
+.restore-hidden-card-main {
+    width: 82px;
+    height: 82px;
+    padding: 15px;
+    border: 1px solid rgba(125, 134, 255, 0.22);
+    border-radius: var(--radius);
+    background: rgba(18, 24, 50, 0.88);
+    box-shadow: 0 20px 46px rgba(3, 6, 18, 0.36);
+}
+
+.restore-hidden-card-accent {
+    position: absolute;
+    right: calc(50% - 108px);
+    bottom: 23px;
+    width: 58px;
+    height: 58px;
+    padding: 12px;
+    border: 1px solid rgba(83, 214, 164, 0.28);
+    border-radius: var(--radius);
+    background: rgba(18, 24, 50, 0.9);
+    box-shadow: 0 16px 34px rgba(3, 6, 18, 0.32);
+}
+
+.restore-hidden-copy {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.restore-hidden-actions {
+    display: grid;
+    grid-template-columns: 0.86fr 1.14fr;
+    gap: 10px;
+}
+
+.restore-hidden-actions .primary-icon-button,
+.restore-hidden-actions .secondary-icon-button {
+    min-height: 48px;
+    border-radius: var(--radius);
+    font-weight: 900;
+}
+
+.restore-hidden-actions .primary-icon-button {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
 .modal-header {

@@ -103,7 +103,7 @@ public class AuthService : IAuthService
 
     private string CreateToken(User user)
     {
-        var secret = _configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Jwt:Secret is not configured.");
+        var secret = GetRequiredConfigurationValue("Jwt:Secret");
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expiryDays = int.TryParse(_configuration["Jwt:ExpiryDays"], out var days) ? days : 7;
@@ -124,6 +124,14 @@ public class AuthService : IAuthService
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private string GetRequiredConfigurationValue(string key)
+    {
+        var value = _configuration[key];
+        return string.IsNullOrWhiteSpace(value) || value.StartsWith("Set via ", StringComparison.OrdinalIgnoreCase)
+            ? throw new InvalidOperationException($"{key} is not configured.")
+            : value;
     }
 
     private static string GenerateTwoFactorCode()

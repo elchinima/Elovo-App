@@ -139,3 +139,7 @@
         hasEmail: @Json.Serialize(!string.IsNullOrWhiteSpace(Model.Email))
     };
 </script>
+
+@section Scripts {
+    <script src="~/Assets/Script/profile.js" asp-append-version="true"></script>
+}

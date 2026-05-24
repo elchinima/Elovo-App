@@ -1,6 +1,7 @@
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
+var jwtSecret = GetRequiredConfigurationValue(config, "Jwt:Secret");
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
@@ -26,7 +27,7 @@ builder.Services
             ValidateIssuerSigningKey = true,
             ValidIssuer = config["Jwt:Issuer"],
             ValidAudience = config["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["Jwt:Secret"]!)),
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
             ClockSkew = TimeSpan.FromMinutes(2)
         };
 
@@ -113,6 +114,14 @@ app.MapControllerRoute(
     pattern: "{controller=Auth}/{action=Login}/{id?}");
 
 app.Run();
+
+static string GetRequiredConfigurationValue(IConfiguration config, string key)
+{
+    var value = config[key];
+    return string.IsNullOrWhiteSpace(value) || value.StartsWith("Set via ", StringComparison.OrdinalIgnoreCase)
+        ? throw new InvalidOperationException($"{key} is not configured.")
+        : value;
+}
 
 internal sealed class BandwidthThrottledReadStream : Stream
 {

@@ -220,6 +220,27 @@
         border-radius: 0;
     }
 
+    .restore-hidden-backdrop {
+        align-items: end;
+        padding: 50px 12px calc(37px + env(safe-area-inset-bottom));
+    }
+
+    .restore-hidden-panel {
+        width: 100%;
+        height: auto;
+        max-height: calc(100dvh - 99px);
+        border: 1px solid rgba(139, 124, 255, 0.28);
+        border-radius: var(--radius);
+    }
+
+    .restore-hidden-panel .confirm-modal-body {
+        padding: 18px;
+    }
+
+    .restore-hidden-actions {
+        grid-template-columns: 1fr;
+    }
+
     .profile-view {
         height: 100%;
         overflow: auto;

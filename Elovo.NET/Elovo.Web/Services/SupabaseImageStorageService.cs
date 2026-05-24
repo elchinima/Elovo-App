@@ -132,7 +132,16 @@ public class SupabaseImageStorageService : IImageStorageService
         return request;
     }
 
-    private string BaseUrl => (_configuration["Supabase:Url"] ?? "https://stwmvvnzcgtagztttboy.supabase.co").TrimEnd('/');
+    private string BaseUrl
+    {
+        get
+        {
+            var url = _configuration["Supabase:Url"];
+            return string.IsNullOrWhiteSpace(url) || IsPlaceholder(url)
+                ? throw new InvalidOperationException("Supabase:Url is not configured.")
+                : url.TrimEnd('/');
+        }
+    }
 
     private string Bucket => GetConfiguredBucket("Supabase:StorageBucket", DefaultBucket);
 
@@ -163,7 +172,7 @@ public class SupabaseImageStorageService : IImageStorageService
         get
         {
             var key = FirstConfigured("Supabase:ServiceRoleKey", "Supabase:StorageKey", "Supabase:AnonKey");
-            return string.IsNullOrWhiteSpace(key)
+            return string.IsNullOrWhiteSpace(key) || IsPlaceholder(key)
                 ? throw new InvalidOperationException("Supabase storage key is missing.")
                 : key;
         }
@@ -185,6 +194,11 @@ public class SupabaseImageStorageService : IImageStorageService
     {
         return details.Contains("not_found", StringComparison.OrdinalIgnoreCase) ||
             details.Contains("Object not found", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPlaceholder(string value)
+    {
+        return value.StartsWith("Set via ", StringComparison.OrdinalIgnoreCase);
     }
 
     private string NormalizeStoragePath(string path)

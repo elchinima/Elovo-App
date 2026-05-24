@@ -106,8 +106,8 @@
         </section>
     </div>
 
-    <div class="modal-backdrop" id="restoreHiddenModal" aria-hidden="true">
-        <section class="modal-panel confirm-modal-panel" role="dialog" aria-modal="true" aria-labelledby="restoreHiddenTitle">
+    <div class="modal-backdrop restore-hidden-backdrop" id="restoreHiddenModal" aria-hidden="true">
+        <section class="modal-panel confirm-modal-panel restore-hidden-panel" role="dialog" aria-modal="true" aria-labelledby="restoreHiddenTitle">
             <header class="modal-header">
                 <h2 id="restoreHiddenTitle">Show hidden conversations?</h2>
                 <button class="icon-button" type="button" data-close-modal aria-label="Close" title="Close">
@@ -115,10 +115,21 @@
                 </button>
             </header>
             <div class="confirm-modal-body">
-                <button class="primary-icon-button" id="confirmRestoreHiddenButton" type="button">
-                    <img class="button-icon" src="~/Assets/Images/Icons/hidden-chats.svg" alt="">
-                    <span>Show conversations</span>
-                </button>
+                <div class="restore-hidden-art" aria-hidden="true">
+                    <img class="restore-hidden-card restore-hidden-card-main" src="~/Assets/Images/Icons/restore-hidden.svg" alt="">
+                    <img class="restore-hidden-card restore-hidden-card-accent" src="~/Assets/Images/Icons/hidden-chat-spark.svg" alt="">
+                </div>
+                <p class="restore-hidden-copy">Hidden conversations will return to your chat list with their messages unchanged.</p>
+                <div class="restore-hidden-actions">
+                    <button class="secondary-icon-button" type="button" data-close-modal>
+                        <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                        <span>Cancel</span>
+                    </button>
+                    <button class="primary-icon-button" id="confirmRestoreHiddenButton" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/restore-hidden.svg" alt="">
+                        <span>Show conversations</span>
+                    </button>
+                </div>
             </div>
         </section>
     </div>
@@ -152,3 +163,8 @@
     window.elovoCurrentUserId = "@ViewBag.CurrentUserId";
     window.elovoCurrentUserProfileImageUrl = "@ViewBag.CurrentUserProfileImageUrl";
 </script>
+
+@section Scripts {
+    <script src="~/microsoft/signalr/dist/browser/signalr.min.js"></script>
+    <script src="~/Assets/Script/chat.js" asp-append-version="true"></script>
+}

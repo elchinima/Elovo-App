@@ -29,8 +29,8 @@ public class SmtpEmailSender : IEmailSender
             EnableSsl = EnableSsl
         };
 
-        var userName = _configuration["Email:SmtpUsername"];
-        var password = _configuration["Email:SmtpPassword"];
+        var userName = GetOptionalConfigurationValue("Email:SmtpUsername");
+        var password = GetOptionalConfigurationValue("Email:SmtpPassword");
         if (!string.IsNullOrWhiteSpace(userName) && !string.IsNullOrWhiteSpace(password))
         {
             client.Credentials = new NetworkCredential(userName, password);
@@ -39,19 +39,36 @@ public class SmtpEmailSender : IEmailSender
         await client.SendMailAsync(message, cancellationToken);
     }
 
-    private string Host => _configuration["Email:SmtpHost"]
-        ?? throw new InvalidOperationException("Email:SmtpHost is not configured.");
+    private string Host => GetRequiredConfigurationValue("Email:SmtpHost");
 
     private int Port => int.TryParse(_configuration["Email:SmtpPort"], out var port) ? port : 587;
 
     private bool EnableSsl => !bool.TryParse(_configuration["Email:EnableSsl"], out var enableSsl) || enableSsl;
 
-    private string FromAddress => _configuration["Email:From"]
-        ?? throw new InvalidOperationException("Email:From is not configured.");
+    private string FromAddress => GetRequiredConfigurationValue("Email:From");
 
     private string FromName => string.IsNullOrWhiteSpace(_configuration["Email:FromName"])
         ? "Elovo Messages"
         : _configuration["Email:FromName"]!;
+
+    private string GetRequiredConfigurationValue(string key)
+    {
+        var value = _configuration[key];
+        return string.IsNullOrWhiteSpace(value) || IsPlaceholder(value)
+            ? throw new InvalidOperationException($"{key} is not configured.")
+            : value;
+    }
+
+    private string? GetOptionalConfigurationValue(string key)
+    {
+        var value = _configuration[key];
+        return string.IsNullOrWhiteSpace(value) || IsPlaceholder(value) ? null : value;
+    }
+
+    private static bool IsPlaceholder(string value)
+    {
+        return value.StartsWith("Set via ", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static string BuildTwoFactorBody(string username, string code)
     {

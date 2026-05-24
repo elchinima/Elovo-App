@@ -57,6 +57,8 @@ Elovo Chat/
 ```bash
 dotnet user-secrets set "ConnectionStrings:Default" "Host=...;Database=...;Username=...;Password=..."
 dotnet user-secrets set "Jwt:Secret" "replace-with-a-long-random-secret"
+dotnet user-secrets set "Supabase:Url" "https://your-project.supabase.co"
+dotnet user-secrets set "Supabase:ServiceRoleKey" "your-private-storage-key"
 ```
 
 3. Run the web app:
@@ -84,6 +86,22 @@ docker run --rm -p 8080:8080 \
 ```
 
 The container listens on port `8080` by default and is ready for Render or any container platform.
+
+## Render Environment
+
+For a public repository, keep production secrets in Render instead of `appsettings.json`.
+Add these environment variables in the Render service settings:
+
+```text
+ConnectionStrings__Default=Host=...;Database=...;Username=...;Password=...
+Jwt__Secret=replace-with-a-long-random-secret
+Jwt__Issuer=Elovo
+Jwt__Audience=ElovoUsers
+Jwt__ExpiryDays=7
+Supabase__Url=https://your-project.supabase.co
+Supabase__StorageBucket=chat-images
+Supabase__ServiceRoleKey=your-private-storage-key
+```
 
 ## Highlights 🌌
 

@@ -849,11 +849,11 @@ input:disabled {
     background: rgba(255, 255, 255, 0.04);
     cursor: zoom-in;
     transition: transform 180ms ease;
+    touch-action: none;
 }
 
 .image-preview-backdrop img.is-zoomed {
     cursor: zoom-out;
-    transform: scale(3);
 }
 
 .image-preview-close {

@@ -134,6 +134,7 @@ public class ChatHub : Hub
 
         await _unitOfWork.PendingMessages.DeleteAsync(message, Context.ConnectionAborted);
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+        await Clients.Group(UserGroup(senderId)).SendAsync("PendingMessageDeleted", message.ReceiverId, message.Id, Context.ConnectionAborted);
         return true;
     }
 
@@ -153,6 +154,7 @@ public class ChatHub : Hub
 
         message.Content = content.Trim();
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+        await Clients.Group(UserGroup(senderId)).SendAsync("PendingMessageEdited", message.ReceiverId, message.Id, message.Content, Context.ConnectionAborted);
         return true;
     }
 
@@ -190,26 +192,48 @@ public class ChatHub : Hub
     private async Task SendPendingMessagesAsync(Guid userId)
     {
         var messages = await _unitOfWork.PendingMessages.GetByReceiverIdAsync(userId, Context.ConnectionAborted);
+        var deliveredMessageIdsBySender = new Dictionary<Guid, List<Guid>>();
+
         foreach (var message in messages)
         {
+            var isImage = _imageStorageService.IsImagePath(message.Content);
             await Clients.Group(UserGroup(userId)).SendAsync("ReceiveMessage", new MessageDto
             {
                 Id = message.Id,
                 SenderId = message.SenderId,
                 ReceiverId = message.ReceiverId,
-                Content = _imageStorageService.IsImagePath(message.Content) ? "Image" : message.Content,
+                Content = isImage ? "Image" : message.Content,
                 SentAt = message.SentAt,
                 IsVoice = message.IsVoice,
                 VoiceUrl = message.VoiceUrl,
-                IsImage = _imageStorageService.IsImagePath(message.Content),
-                ImagePath = _imageStorageService.IsImagePath(message.Content) ? _imageStorageService.GetPublicUrl(message.Content) : null,
-                ImageStoragePath = _imageStorageService.IsImagePath(message.Content) ? message.Content : null,
-                ImageFileName = _imageStorageService.IsImagePath(message.Content) ? message.VoiceUrl : null
+                IsImage = isImage,
+                ImagePath = isImage ? _imageStorageService.GetPublicUrl(message.Content) : null,
+                ImageStoragePath = isImage ? message.Content : null,
+                ImageFileName = isImage ? message.VoiceUrl : null
             }, Context.ConnectionAborted);
+
+            if (isImage)
+            {
+                await _imageStorageService.DeleteAsync(message.Content, Context.ConnectionAborted);
+            }
+
+            if (!deliveredMessageIdsBySender.TryGetValue(message.SenderId, out var deliveredMessageIds))
+            {
+                deliveredMessageIds = [];
+                deliveredMessageIdsBySender[message.SenderId] = deliveredMessageIds;
+            }
+
+            deliveredMessageIds.Add(message.Id);
         }
 
         await _unitOfWork.PendingMessages.DeleteRangeAsync(messages, Context.ConnectionAborted);
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+
+        var deliveredAt = DateTime.UtcNow;
+        foreach (var item in deliveredMessageIdsBySender)
+        {
+            await Clients.Group(UserGroup(item.Key)).SendAsync("MessagesDelivered", userId, item.Value, deliveredAt, Context.ConnectionAborted);
+        }
     }
 
     private MessageDto ToClientMessage(MessageDto message)

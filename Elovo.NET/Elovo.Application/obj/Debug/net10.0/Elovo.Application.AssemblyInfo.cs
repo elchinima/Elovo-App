@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Elovo.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+18789cc425f11095983a98f66187030ebd8adae3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cadf4baa6d6463134a7e6f8c26ef554c6613545f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Elovo.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Elovo.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

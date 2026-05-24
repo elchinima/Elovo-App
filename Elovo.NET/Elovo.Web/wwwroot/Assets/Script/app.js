@@ -182,6 +182,42 @@ function markOutgoingMessagesRead(userId, readAt) {
     return changed;
 }
 
+function markOutgoingMessagesDelivered(userId, messageIds, deliveredAt) {
+    const otherUserId = normalizeId(userId);
+    const ids = Array.isArray(messageIds) ? messageIds : [];
+    if (!otherUserId || ids.length === 0) {
+        return false;
+    }
+
+    const idSet = new Set(ids.map((id) => `${id}`));
+    const currentUserId = getCurrentUserId();
+    const messages = readStoredMessages(otherUserId);
+    let changed = false;
+
+    const updatedMessages = messages.map((message) => {
+        if (sameId(message.senderId, currentUserId) && idSet.has(`${message.id}`)) {
+            changed = true;
+            return { ...message, isPending: false, deliveredAt };
+        }
+
+        return message;
+    });
+
+    if (changed) {
+        writeStoredMessages(otherUserId, updatedMessages);
+    }
+
+    return changed;
+}
+
+async function refreshConversationAfterMessageChange(userId) {
+    if (activeConversation && sameId(activeConversation.userId, userId)) {
+        await loadMessages(activeConversation.userId);
+    }
+
+    await loadConversations();
+}
+
 function notifyActiveConversationRead() {
     if (!connection || !activeConversation) {
         return;
@@ -383,12 +419,13 @@ function appendMessage(message) {
 
     if (isMine) {
         const status = document.createElement("img");
+        const statusText = message.readAt ? "Read" : message.isPending ? "Pending" : "Delivered";
         status.className = "message-status-icon";
         status.src = message.readAt
             ? "/Assets/Images/Icons/message-read.svg"
             : "/Assets/Images/Icons/sent-action.svg";
-        status.alt = message.readAt ? "Read" : "Sent";
-        status.title = message.readAt ? "Read" : "Sent";
+        status.alt = statusText;
+        status.title = statusText;
         meta.appendChild(status);
     }
 
@@ -454,19 +491,19 @@ function showMessageActions(message, bubble) {
     menu.style.top = `${top}px`;
     menu.style.left = `${left}px`;
     menu.addEventListener("pointerdown", (event) => event.stopPropagation());
-    menu.appendChild(createActionButton("/Assets/Images/Icons/delete-local.svg", "Удалить у меня", async () => {
+    menu.appendChild(createActionButton("/Assets/Images/Icons/delete-local.svg", "Delete for me", async () => {
         closeMessageActions();
         await deleteMessageForMe(message);
     }));
 
     if (canModifyPending) {
-        menu.appendChild(createActionButton("/Assets/Images/Icons/delete-all.svg", "Удалить у всех", async () => {
+        menu.appendChild(createActionButton("/Assets/Images/Icons/delete-all.svg", "Delete for everyone", async () => {
             closeMessageActions();
             await deleteMessageForEveryone(message);
         }));
 
         if (!message.isImage) {
-            menu.appendChild(createActionButton("/Assets/Images/Icons/edit-message.svg", "Редактирование", () => {
+            menu.appendChild(createActionButton("/Assets/Images/Icons/edit-message.svg", "Edit", () => {
                 closeMessageActions();
                 startPendingMessageEdit(message);
             }));
@@ -543,6 +580,17 @@ function openImagePreview(path, fileName) {
     const backdrop = document.createElement("div");
     const image = document.createElement("img");
     const close = document.createElement("button");
+    const pointers = new Map();
+    let previewScale = 1;
+    let translateX = 0;
+    let translateY = 0;
+    let startScale = 1;
+    let startTranslateX = 0;
+    let startTranslateY = 0;
+    let startX = 0;
+    let startY = 0;
+    let startDistance = 0;
+    let moved = false;
 
     backdrop.className = "image-preview-backdrop is-open";
     backdrop.setAttribute("role", "dialog");
@@ -574,22 +622,122 @@ function openImagePreview(path, fileName) {
     };
 
     close.addEventListener("click", closePreview);
+
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const getDistance = () => {
+        const values = [...pointers.values()];
+        if (values.length < 2) {
+            return 0;
+        }
+
+        return Math.hypot(values[0].clientX - values[1].clientX, values[0].clientY - values[1].clientY);
+    };
+    const getCenter = () => {
+        const values = [...pointers.values()];
+        const total = values.reduce((point, item) => {
+            point.x += item.clientX;
+            point.y += item.clientY;
+            return point;
+        }, { x: 0, y: 0 });
+
+        return {
+            x: total.x / values.length,
+            y: total.y / values.length
+        };
+    };
+    const clampTranslate = () => {
+        const maxX = Math.max(0, ((previewScale - 1) * image.offsetWidth) / 2);
+        const maxY = Math.max(0, ((previewScale - 1) * image.offsetHeight) / 2);
+        translateX = clamp(translateX, -maxX, maxX);
+        translateY = clamp(translateY, -maxY, maxY);
+    };
+    const applyTransform = () => {
+        previewScale = clamp(previewScale, 1, 3);
+        if (previewScale === 1) {
+            translateX = 0;
+            translateY = 0;
+            image.classList.remove("is-zoomed");
+            image.style.transform = "";
+            return;
+        }
+
+        clampTranslate();
+        image.classList.add("is-zoomed");
+        image.style.transform = `translate(${translateX}px, ${translateY}px) scale(${previewScale})`;
+    };
+    const beginPointerGesture = () => {
+        startScale = previewScale;
+        startTranslateX = translateX;
+        startTranslateY = translateY;
+
+        if (pointers.size === 1) {
+            const point = [...pointers.values()][0];
+            startX = point.clientX;
+            startY = point.clientY;
+            return;
+        }
+
+        const center = getCenter();
+        startX = center.x;
+        startY = center.y;
+        startDistance = getDistance();
+    };
+
     image.addEventListener("click", (event) => {
         event.stopPropagation();
-        image.classList.toggle("is-zoomed");
-        if (!image.classList.contains("is-zoomed")) {
-            image.style.transformOrigin = "50% 50%";
-        }
-    });
-    image.addEventListener("pointermove", (event) => {
-        if (!image.classList.contains("is-zoomed")) {
+        if (moved) {
+            moved = false;
             return;
         }
 
         const rect = image.getBoundingClientRect();
-        const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
-        const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
-        image.style.transformOrigin = `${x}% ${y}%`;
+        image.style.transformOrigin = `${clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100)}% ${clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100)}%`;
+        previewScale = previewScale > 1 ? 1 : 2;
+        applyTransform();
+    });
+    image.addEventListener("pointerdown", (event) => {
+        pointers.set(event.pointerId, event);
+        image.setPointerCapture(event.pointerId);
+        beginPointerGesture();
+    });
+    image.addEventListener("pointermove", (event) => {
+        if (!pointers.has(event.pointerId)) {
+            return;
+        }
+
+        pointers.set(event.pointerId, event);
+
+        if (pointers.size === 1 && previewScale > 1) {
+            translateX = startTranslateX + event.clientX - startX;
+            translateY = startTranslateY + event.clientY - startY;
+            moved = Math.abs(event.clientX - startX) > 4 || Math.abs(event.clientY - startY) > 4;
+            applyTransform();
+            return;
+        }
+
+        if (pointers.size >= 2 && startDistance > 0) {
+            const center = getCenter();
+            previewScale = startScale * (getDistance() / startDistance);
+            translateX = startTranslateX + center.x - startX;
+            translateY = startTranslateY + center.y - startY;
+            moved = true;
+            applyTransform();
+        }
+    });
+    const endPointerGesture = (event) => {
+        pointers.delete(event.pointerId);
+        if (pointers.size > 0) {
+            beginPointerGesture();
+        }
+    };
+
+    image.addEventListener("pointerup", endPointerGesture);
+    image.addEventListener("pointercancel", endPointerGesture);
+    image.addEventListener("lostpointercapture", endPointerGesture);
+    image.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        previewScale += event.deltaY < 0 ? 0.18 : -0.18;
+        applyTransform();
     });
     backdrop.addEventListener("click", (event) => {
         if (event.target === backdrop) {
@@ -978,9 +1126,31 @@ async function startSignalR() {
             return;
         }
 
-        if (activeConversation && sameId(activeConversation.userId, readerId)) {
-            await loadMessages(activeConversation.userId);
+        await refreshConversationAfterMessageChange(readerId);
+    });
+
+    connection.on("MessagesDelivered", async (receiverId, messageIds, deliveredAt) => {
+        if (!markOutgoingMessagesDelivered(receiverId, messageIds, deliveredAt)) {
+            return;
         }
+
+        await refreshConversationAfterMessageChange(receiverId);
+    });
+
+    connection.on("PendingMessageDeleted", async (receiverId, messageId) => {
+        if (!removeStoredMessage(receiverId, messageId)) {
+            return;
+        }
+
+        await refreshConversationAfterMessageChange(receiverId);
+    });
+
+    connection.on("PendingMessageEdited", async (receiverId, messageId, content) => {
+        if (!updateStoredMessage(receiverId, messageId, { content })) {
+            return;
+        }
+
+        await refreshConversationAfterMessageChange(receiverId);
     });
 
     await connection.start();
@@ -1101,7 +1271,7 @@ function updateImageTransferStatus(active, progress = 0, loaded = 0, total = 0) 
 
     const percent = Math.max(0, Math.min(100, Math.round(progress)));
     const remaining = total > 0 ? Math.max(0, total - loaded) : 0;
-    const remainingText = total > 0 ? `, ${formatBytes(remaining)} осталось` : "";
+    const remainingText = total > 0 ? `, ${formatBytes(remaining)} left` : "";
     imageTransferStatus.innerHTML = `<img src="/Assets/Images/Icons/image-upload-loader.svg" alt=""> <span>${percent}%${remainingText}</span>`;
 }
 

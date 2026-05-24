@@ -6,6 +6,7 @@ namespace Elovo.Web.Services;
 public class SupabaseImageStorageService : IImageStorageService
 {
     private const string DefaultBucket = "chat-images";
+    private const string DefaultProfileImagesBucket = "profile-images";
 
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
@@ -23,9 +24,10 @@ public class SupabaseImageStorageService : IImageStorageService
 
     public async Task<ImageUploadResultDto> UploadAsync(Stream stream, string path, string contentType, CancellationToken cancellationToken = default)
     {
-        await EnsureBucketAsync(cancellationToken);
+        var bucket = GetBucketForPath(path);
+        await EnsureBucketAsync(bucket, cancellationToken);
 
-        using var request = CreateRequest(HttpMethod.Post, $"object/{Bucket}/{EscapePath(path)}");
+        using var request = CreateRequest(HttpMethod.Post, $"object/{bucket}/{EscapePath(path)}");
         request.Headers.TryAddWithoutValidation("x-upsert", "false");
         request.Content = new StreamContent(stream);
         request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
@@ -45,7 +47,8 @@ public class SupabaseImageStorageService : IImageStorageService
 
     public string GetPublicUrl(string path)
     {
-        return $"{BaseUrl}/storage/v1/object/public/{Bucket}/{EscapePath(path)}";
+        var storagePath = NormalizeStoragePath(path);
+        return $"{BaseUrl}/storage/v1/object/public/{GetBucketForPath(storagePath)}/{EscapePath(storagePath)}";
     }
 
     public async Task DeleteAsync(string path, CancellationToken cancellationToken = default)
@@ -56,7 +59,8 @@ public class SupabaseImageStorageService : IImageStorageService
             return;
         }
 
-        using var request = CreateRequest(HttpMethod.Delete, $"object/{Bucket}/{EscapePath(storagePath)}");
+        var bucket = GetBucketForPath(storagePath);
+        using var request = CreateRequest(HttpMethod.Delete, $"object/{bucket}/{EscapePath(storagePath)}");
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         if (response.IsSuccessStatusCode)
         {
@@ -85,10 +89,10 @@ public class SupabaseImageStorageService : IImageStorageService
             normalizedPath.StartsWith("profiles/", StringComparison.Ordinal);
     }
 
-    private async Task EnsureBucketAsync(CancellationToken cancellationToken)
+    private async Task EnsureBucketAsync(string bucket, CancellationToken cancellationToken)
     {
         using var request = CreateRequest(HttpMethod.Post, "bucket");
-        request.Content = JsonContent.Create(CreateBucketOptions());
+        request.Content = JsonContent.Create(CreateBucketOptions(bucket));
 
         using var response = await _httpClient.SendAsync(request, cancellationToken);
         if (response.IsSuccessStatusCode)
@@ -98,8 +102,8 @@ public class SupabaseImageStorageService : IImageStorageService
 
         if (response.StatusCode == HttpStatusCode.Conflict)
         {
-            using var updateRequest = CreateRequest(HttpMethod.Put, $"bucket/{Uri.EscapeDataString(Bucket)}");
-            updateRequest.Content = JsonContent.Create(CreateBucketOptions());
+            using var updateRequest = CreateRequest(HttpMethod.Put, $"bucket/{Uri.EscapeDataString(bucket)}");
+            updateRequest.Content = JsonContent.Create(CreateBucketOptions(bucket));
             using var updateResponse = await _httpClient.SendAsync(updateRequest, cancellationToken);
             if (updateResponse.IsSuccessStatusCode)
             {
@@ -108,12 +112,12 @@ public class SupabaseImageStorageService : IImageStorageService
         }
     }
 
-    private object CreateBucketOptions()
+    private object CreateBucketOptions(string bucket)
     {
         return new
         {
-            id = Bucket,
-            name = Bucket,
+            id = bucket,
+            name = bucket,
             @public = true,
             file_size_limit = 10 * 1024 * 1024,
             allowed_mime_types = new[] { "image/png", "image/jpeg", "image/gif", "image/webp" }
@@ -130,9 +134,29 @@ public class SupabaseImageStorageService : IImageStorageService
 
     private string BaseUrl => (_configuration["Supabase:Url"] ?? "https://stwmvvnzcgtagztttboy.supabase.co").TrimEnd('/');
 
-    private string Bucket => string.IsNullOrWhiteSpace(_configuration["Supabase:StorageBucket"])
-        ? DefaultBucket
-        : _configuration["Supabase:StorageBucket"]!;
+    private string Bucket => GetConfiguredBucket("Supabase:StorageBucket", DefaultBucket);
+
+    private string ProfileImagesBucket => GetConfiguredBucket("Supabase:ProfileImagesBucket", DefaultProfileImagesBucket);
+
+    private string GetConfiguredBucket(string key, string fallback)
+    {
+        var value = _configuration[key];
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+
+        _logger.LogInformation("Supabase bucket setting {Key} is missing. Using fallback bucket {Bucket}.", key, fallback);
+        return fallback;
+    }
+
+    private string GetBucketForPath(string path)
+    {
+        var storagePath = NormalizeStoragePath(path);
+        return storagePath.StartsWith("profiles/", StringComparison.Ordinal)
+            ? ProfileImagesBucket
+            : Bucket;
+    }
 
     private string ApiKey
     {
@@ -171,27 +195,37 @@ public class SupabaseImageStorageService : IImageStorageService
         }
 
         var trimmed = path.Trim();
-        var publicPrefix = $"/storage/v1/object/public/{Bucket}/";
-        var objectPrefix = $"/storage/v1/object/{Bucket}/";
-
         if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
         {
-            return NormalizeStoragePathFromUri(uri.AbsolutePath, publicPrefix, objectPrefix);
+            return NormalizeStoragePathFromUri(uri.AbsolutePath, GetKnownBuckets());
         }
 
         return trimmed.TrimStart('/');
     }
 
-    private static string NormalizeStoragePathFromUri(string absolutePath, string publicPrefix, string objectPrefix)
+    private IReadOnlyList<string> GetKnownBuckets()
     {
-        if (absolutePath.StartsWith(publicPrefix, StringComparison.Ordinal))
-        {
-            return Uri.UnescapeDataString(absolutePath[publicPrefix.Length..]);
-        }
+        return Bucket.Equals(ProfileImagesBucket, StringComparison.Ordinal)
+            ? [Bucket]
+            : [Bucket, ProfileImagesBucket];
+    }
 
-        if (absolutePath.StartsWith(objectPrefix, StringComparison.Ordinal))
+    private static string NormalizeStoragePathFromUri(string absolutePath, IReadOnlyList<string> buckets)
+    {
+        foreach (var bucket in buckets)
         {
-            return Uri.UnescapeDataString(absolutePath[objectPrefix.Length..]);
+            var publicPrefix = $"/storage/v1/object/public/{bucket}/";
+            var objectPrefix = $"/storage/v1/object/{bucket}/";
+
+            if (absolutePath.StartsWith(publicPrefix, StringComparison.Ordinal))
+            {
+                return Uri.UnescapeDataString(absolutePath[publicPrefix.Length..]);
+            }
+
+            if (absolutePath.StartsWith(objectPrefix, StringComparison.Ordinal))
+            {
+                return Uri.UnescapeDataString(absolutePath[objectPrefix.Length..]);
+            }
         }
 
         return absolutePath.TrimStart('/');

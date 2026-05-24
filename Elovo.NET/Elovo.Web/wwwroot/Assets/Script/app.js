@@ -3,12 +3,15 @@ const registerForm = document.querySelector("#registerForm");
 const twoFactorForm = document.querySelector("#twoFactorForm");
 const logoutButton = document.querySelector("#logoutButton");
 const settingsButton = document.querySelector("#settingsButton");
+const restoreHiddenButton = document.querySelector("#restoreHiddenButton");
 const messengerView = document.querySelector("#messengerView");
 const chatList = document.querySelector("#chatList");
 const searchInput = document.querySelector("#searchInput");
+const chatSearchButton = document.querySelector("#chatSearchButton");
 const messageStream = document.querySelector("#messageStream");
 const messageForm = document.querySelector("#messageForm");
 const messageInput = document.querySelector("#messageInput");
+const messageSubmitIcon = document.querySelector("#messageSubmitIcon");
 const attachImageButton = document.querySelector("#attachImageButton");
 const imageInput = document.querySelector("#imageInput");
 const activeName = document.querySelector("#activeName");
@@ -21,8 +24,11 @@ const friendRequestsButton = document.querySelector("#friendRequestsButton");
 const allFriendsModal = document.querySelector("#allFriendsModal");
 const addFriendModal = document.querySelector("#addFriendModal");
 const friendRequestsModal = document.querySelector("#friendRequestsModal");
+const restoreHiddenModal = document.querySelector("#restoreHiddenModal");
+const confirmRestoreHiddenButton = document.querySelector("#confirmRestoreHiddenButton");
 const allFriendsList = document.querySelector("#allFriendsList");
 const userSearchInput = document.querySelector("#userSearchInput");
+const userSearchButton = document.querySelector("#userSearchButton");
 const userSearchResults = document.querySelector("#userSearchResults");
 const friendRequestsList = document.querySelector("#friendRequestsList");
 const pageLoader = document.querySelector("#pageLoader");
@@ -49,16 +55,17 @@ const avatarCropSave = document.querySelector("#avatarCropSave");
 const avatarCropCancel = document.querySelector("#avatarCropCancel");
 
 let conversations = [];
+let hiddenConversationIds = new Set();
 let activeConversation = null;
 let connection = null;
 let typingTimer = null;
-let userSearchTimer = null;
 let latestMessageId = "";
 let isSending = false;
 let messageActionTimer = null;
 let activeMessageActions = null;
 let imageTransferStatus = null;
 let avatarCropState = null;
+let conversationSearchTerm = "";
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const allowedProfileImageTypes = ["image/png", "image/jpeg", "image/jpg"];
 const maxImageSize = 10 * 1024 * 1024;
@@ -110,6 +117,32 @@ function getConversationStorageKey(userId) {
     const otherUserId = normalizeId(userId);
     const pair = [currentUserId, otherUserId].sort().join(":");
     return `elovo:messages:${pair}`;
+}
+
+function getHiddenConversationStorageKey() {
+    return `elovo:hidden-conversations:${getCurrentUserId()}`;
+}
+
+function readHiddenConversationIds() {
+    try {
+        const raw = window.localStorage.getItem(getHiddenConversationStorageKey());
+        const ids = raw ? JSON.parse(raw) : [];
+        return new Set(Array.isArray(ids) ? ids.map(normalizeId).filter(Boolean) : []);
+    } catch {
+        return new Set();
+    }
+}
+
+function writeHiddenConversationIds() {
+    window.localStorage.setItem(getHiddenConversationStorageKey(), JSON.stringify([...hiddenConversationIds]));
+}
+
+function updateRestoreHiddenButton() {
+    if (!restoreHiddenButton) {
+        return;
+    }
+
+    restoreHiddenButton.hidden = hiddenConversationIds.size === 0;
 }
 
 function readStoredMessages(userId) {
@@ -404,15 +437,160 @@ function closeModal(modal) {
 }
 
 function getFilteredConversations() {
-    const term = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    const term = conversationSearchTerm.toLowerCase();
+    const visible = conversations.filter((chat) => !hiddenConversationIds.has(normalizeId(chat.userId)));
 
     if (!term) {
-        return conversations;
+        return visible;
     }
 
-    return conversations.filter((chat) => {
+    return visible.filter((chat) => {
         return chat.username.toLowerCase().includes(term);
     });
+}
+
+function applyConversationSearch() {
+    conversationSearchTerm = searchInput ? searchInput.value.trim() : "";
+    renderChatList(getFilteredConversations());
+}
+
+function createChatSwipeShell(chat, button) {
+    const shell = document.createElement("div");
+    const action = document.createElement("button");
+    let startX = 0;
+    let currentX = 0;
+    let dragging = false;
+    let moved = false;
+    let suppressClick = false;
+
+    shell.className = "chat-swipe-shell";
+    action.type = "button";
+    action.className = "chat-hide-action";
+    action.textContent = "Hide";
+    action.addEventListener("click", () => hideConversation(chat.userId));
+
+    const reset = () => {
+        shell.classList.remove("is-revealed");
+        button.style.transform = "";
+    };
+
+    button.addEventListener("pointerdown", (event) => {
+        if (event.pointerType === "mouse" && event.button !== 0) {
+            return;
+        }
+
+        startX = event.clientX;
+        currentX = 0;
+        dragging = true;
+        moved = false;
+        button.setPointerCapture(event.pointerId);
+        button.classList.add("is-swiping");
+    });
+
+    button.addEventListener("pointermove", (event) => {
+        if (!dragging) {
+            return;
+        }
+
+        currentX = Math.min(0, Math.max(-116, event.clientX - startX));
+        moved = Math.abs(currentX) > 8;
+        if (moved) {
+            event.preventDefault();
+            button.style.transform = `translateX(${currentX}px)`;
+        }
+    });
+
+    const finish = () => {
+        if (!dragging) {
+            return;
+        }
+
+        dragging = false;
+        button.classList.remove("is-swiping");
+
+        if (currentX <= -92) {
+            hideConversation(chat.userId);
+            return;
+        }
+
+        if (currentX <= -46) {
+            shell.classList.add("is-revealed");
+            button.style.transform = "";
+        } else {
+            reset();
+        }
+
+        if (moved) {
+            suppressClick = true;
+            window.setTimeout(() => {
+                suppressClick = false;
+            });
+        }
+    };
+
+    button.addEventListener("pointerup", finish);
+    button.addEventListener("pointercancel", finish);
+    button.addEventListener("lostpointercapture", finish);
+    button.addEventListener("click", (event) => {
+        if (suppressClick) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+
+    shell.append(action, button);
+    return shell;
+}
+
+function hideConversation(userId) {
+    const id = normalizeId(userId);
+    if (!id) {
+        return;
+    }
+
+    hiddenConversationIds.add(id);
+    writeHiddenConversationIds();
+    updateRestoreHiddenButton();
+
+    if (activeConversation && sameId(activeConversation.userId, id)) {
+        activeConversation = getFilteredConversations()[0] || null;
+        if (activeConversation) {
+            renderConversationHeader(activeConversation);
+            loadMessages(activeConversation.userId);
+        } else {
+            renderEmptyConversationHeader();
+        }
+    }
+
+    renderChatList(getFilteredConversations());
+}
+
+function restoreHiddenConversations() {
+    hiddenConversationIds.clear();
+    writeHiddenConversationIds();
+    updateRestoreHiddenButton();
+    closeModal(restoreHiddenModal);
+    if (!activeConversation && conversations.length > 0) {
+        activeConversation = conversations[0];
+        renderConversationHeader(activeConversation);
+        loadMessages(activeConversation.userId);
+    }
+    renderChatList(getFilteredConversations());
+    renderAllFriends(conversations);
+}
+
+function updateComposerAction() {
+    const submitButton = messageForm ? messageForm.querySelector(".send-button") : null;
+    if (!messageInput || !messageSubmitIcon || !submitButton) {
+        return;
+    }
+
+    const hasText = messageInput.value.trim().length > 0;
+    messageSubmitIcon.src = hasText
+        ? "/Assets/Images/Icons/send.svg"
+        : "/Assets/Images/Icons/voice-message.svg";
+    submitButton.setAttribute("aria-label", hasText ? "Send message" : "Send voice message");
+    submitButton.setAttribute("title", hasText ? "Send message" : "Send voice message");
 }
 
 function renderChatList(items = conversations) {
@@ -451,7 +629,7 @@ function renderChatList(items = conversations) {
         copy.append(name, preview);
         button.append(avatar, copy, time);
         button.addEventListener("click", () => selectConversation(chat.userId));
-        chatList.appendChild(button);
+        chatList.appendChild(createChatSwipeShell(chat, button));
     });
 }
 
@@ -463,6 +641,25 @@ function renderConversationHeader(chat) {
     activeName.textContent = chat.username;
     activeStatus.textContent = formatStatus(chat);
     setAvatarElement(activeAvatar, chat, chat.initial);
+}
+
+function renderEmptyConversationHeader() {
+    if (activeName) {
+        activeName.textContent = "Elovo";
+    }
+
+    if (activeStatus) {
+        activeStatus.textContent = "Choose a conversation";
+    }
+
+    if (activeAvatar) {
+        activeAvatar.innerHTML = "";
+        activeAvatar.textContent = "E";
+    }
+
+    if (messageStream) {
+        messageStream.innerHTML = "";
+    }
 }
 
 function renderMessages(messages) {
@@ -845,17 +1042,26 @@ async function loadConversations() {
     }
 
     conversations = applyLocalConversationHistory(await response.json());
+    hiddenConversationIds = readHiddenConversationIds();
+    updateRestoreHiddenButton();
+    const visibleConversations = getFilteredConversations();
 
-    if (!activeConversation && conversations.length > 0) {
-        activeConversation = conversations[0];
+    if (activeConversation && hiddenConversationIds.has(normalizeId(activeConversation.userId))) {
+        activeConversation = null;
+    }
+
+    if (!activeConversation && visibleConversations.length > 0) {
+        activeConversation = visibleConversations[0];
     } else if (activeConversation) {
         activeConversation = conversations.find(x => sameId(x.userId, activeConversation.userId)) || activeConversation;
     }
 
-    renderChatList(getFilteredConversations());
+    renderChatList(visibleConversations);
 
     if (activeConversation) {
         renderConversationHeader(activeConversation);
+    } else {
+        renderEmptyConversationHeader();
     }
 }
 
@@ -1290,6 +1496,7 @@ async function sendCurrentMessage(event) {
                 updateStoredMessage(activeConversation.userId, editingMessageId, { isPending: false });
             }
             messageInput.value = "";
+            updateComposerAction();
             delete messageForm.dataset.editingMessageId;
             await loadMessages(activeConversation.userId);
             await loadConversations();
@@ -1305,6 +1512,7 @@ async function sendCurrentMessage(event) {
 
     isSending = true;
     messageInput.value = "";
+    updateComposerAction();
     messageInput.disabled = true;
     messageForm.classList.add("is-sending");
 
@@ -1723,9 +1931,24 @@ if (settingsButton) {
 }
 
 if (searchInput) {
-    searchInput.addEventListener("input", () => {
-        renderChatList(getFilteredConversations());
+    searchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            applyConversationSearch();
+        }
     });
+}
+
+if (chatSearchButton) {
+    chatSearchButton.addEventListener("click", applyConversationSearch);
+}
+
+if (restoreHiddenButton) {
+    restoreHiddenButton.addEventListener("click", () => openModal(restoreHiddenModal));
+}
+
+if (confirmRestoreHiddenButton) {
+    confirmRestoreHiddenButton.addEventListener("click", restoreHiddenConversations);
 }
 
 if (messageForm) {
@@ -1745,7 +1968,10 @@ if (attachImageButton && imageInput) {
 }
 
 if (messageInput) {
+    updateComposerAction();
     messageInput.addEventListener("input", () => {
+        updateComposerAction();
+
         if (!connection || !activeConversation) {
             return;
         }
@@ -1872,10 +2098,16 @@ if (avatarCropStage) {
 }
 
 if (userSearchInput) {
-    userSearchInput.addEventListener("input", () => {
-        window.clearTimeout(userSearchTimer);
-        userSearchTimer = window.setTimeout(searchUsers, 250);
+    userSearchInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchUsers();
+        }
     });
+}
+
+if (userSearchButton) {
+    userSearchButton.addEventListener("click", searchUsers);
 }
 
 document.querySelectorAll("[data-close-modal]").forEach((button) => {

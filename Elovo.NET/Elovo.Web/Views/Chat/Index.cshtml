@@ -20,15 +20,23 @@
                     <p>Elovo</p>
                     <strong>Messages</strong>
                 </div>
-                <button class="icon-button sidebar-settings-button" id="settingsButton" type="button" aria-label="Settings" title="Settings">
-                    <img class="button-icon" src="~/Assets/Images/Icons/settings.svg" alt="">
-                </button>
+                <div class="sidebar-actions">
+                    <button class="icon-button hidden-chats-button" id="restoreHiddenButton" type="button" aria-label="Show hidden chats" title="Show hidden chats" hidden>
+                        <img class="button-icon" src="~/Assets/Images/Icons/hidden-chats.svg" alt="">
+                    </button>
+                    <button class="icon-button sidebar-settings-button" id="settingsButton" type="button" aria-label="Settings" title="Settings">
+                        <img class="button-icon" src="~/Assets/Images/Icons/settings.svg" alt="">
+                    </button>
+                </div>
             </div>
 
-            <label class="search-box">
-                <span>Search</span>
+            <div class="search-box">
+                <label for="searchInput">Search</label>
                 <input type="search" id="searchInput" placeholder="Search chats">
-            </label>
+                <button class="icon-button search-button" id="chatSearchButton" type="button" aria-label="Search chats" title="Search">
+                    <img class="button-icon" src="~/Assets/Images/Icons/search.svg" alt="">
+                </button>
+            </div>
 
             <div class="chat-list" id="chatList" aria-label="Conversation list"></div>
 
@@ -55,6 +63,9 @@
                     <h2 id="activeName">Elovo</h2>
                     <p id="activeStatus">Choose a conversation</p>
                 </div>
+                <button class="ghost-button" id="callButton" type="button" aria-label="Start call" title="Audio or video call">
+                    <img class="button-icon" src="~/Assets/Images/Icons/call.svg" alt="">
+                </button>
                 <button class="ghost-button" id="logoutButton" type="button" aria-label="Log out" title="Log out">
                     <img class="button-icon" src="~/Assets/Images/Icons/logout.svg" alt="">
                 </button>
@@ -70,7 +81,7 @@
                 <input class="visually-hidden-file" type="file" id="imageInput" accept="image/png,image/jpeg,image/jpg,image/gif">
                 <input type="text" id="messageInput" placeholder="Write a message" autocomplete="off">
                 <button class="send-button" type="submit" aria-label="Send message" title="Send message">
-                    <img class="button-icon" src="~/Assets/Images/Icons/send.svg" alt="">
+                    <img class="button-icon" id="messageSubmitIcon" src="~/Assets/Images/Icons/voice-message.svg" alt="">
                 </button>
             </form>
         </section>
@@ -84,11 +95,31 @@
                     <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
                 </button>
             </header>
-            <label class="search-box modal-search">
-                <span>Search users</span>
+            <div class="search-box modal-search">
+                <label for="userSearchInput">Search users</label>
                 <input type="search" id="userSearchInput" placeholder="Search by username">
-            </label>
+                <button class="icon-button search-button" id="userSearchButton" type="button" aria-label="Search users" title="Search">
+                    <img class="button-icon" src="~/Assets/Images/Icons/search.svg" alt="">
+                </button>
+            </div>
             <div class="modal-list" id="userSearchResults"></div>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="restoreHiddenModal" aria-hidden="true">
+        <section class="modal-panel confirm-modal-panel" role="dialog" aria-modal="true" aria-labelledby="restoreHiddenTitle">
+            <header class="modal-header">
+                <h2 id="restoreHiddenTitle">Show hidden conversations?</h2>
+                <button class="icon-button" type="button" data-close-modal aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <div class="confirm-modal-body">
+                <button class="primary-icon-button" id="confirmRestoreHiddenButton" type="button">
+                    <img class="button-icon" src="~/Assets/Images/Icons/hidden-chats.svg" alt="">
+                    <span>Show conversations</span>
+                </button>
+            </div>
         </section>
     </div>
 

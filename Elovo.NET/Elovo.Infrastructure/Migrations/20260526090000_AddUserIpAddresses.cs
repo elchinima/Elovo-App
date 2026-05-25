@@ -1,10 +1,14 @@
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Elovo.Infrastructure.Data;
 
 #nullable disable
 
 namespace Elovo.Infrastructure.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(ElovoDbContext))]
+    [Migration("20260526090000_AddUserIpAddresses")]
     public partial class AddUserIpAddresses : Migration
     {
         /// <inheritdoc />

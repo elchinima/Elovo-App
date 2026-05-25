@@ -42,7 +42,7 @@ public class AuthController : Controller
         AuthResultDto result;
         try
         {
-            result = await _authService.LoginAsync(dto, cancellationToken);
+            result = await _authService.LoginAsync(dto, ClientIpAddressResolver.Resolve(HttpContext), cancellationToken);
         }
         catch (Exception)
         {
@@ -94,7 +94,7 @@ public class AuthController : Controller
             return RedirectToAction(nameof(Login));
         }
 
-        var result = await _authService.VerifyTwoFactorAsync(userId, dto.Code, cancellationToken);
+        var result = await _authService.VerifyTwoFactorAsync(userId, dto.Code, ClientIpAddressResolver.Resolve(HttpContext), cancellationToken);
         if (!result.Succeeded || result.Token is null)
         {
             ViewBag.Error = result.Error ?? "Verification failed.";
@@ -126,7 +126,7 @@ public class AuthController : Controller
             return View(dto);
         }
 
-        var result = await _authService.RegisterAsync(dto, cancellationToken);
+        var result = await _authService.RegisterAsync(dto, ClientIpAddressResolver.Resolve(HttpContext), cancellationToken);
         if (!result.Succeeded || result.Token is null)
         {
             ViewBag.Error = result.Error ?? "Registration failed.";

@@ -13,6 +13,8 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? LastSeenAt { get; set; }
     public bool IsOnline { get; set; }
+    public string? RegistrationIp { get; set; }
+    public string? LastLoginIp { get; set; }
 
     public ICollection<Conversation> ConversationsAsFirstUser { get; set; } = new List<Conversation>();
     public ICollection<Conversation> ConversationsAsSecondUser { get; set; } = new List<Conversation>();

@@ -256,7 +256,7 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<DateTime?> SetOnlineStatusAsync(Guid userId, bool isOnline, CancellationToken cancellationToken = default)
+    public async Task<DateTime?> SetOnlineStatusAsync(Guid userId, bool isOnline, string? clientIp = null, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null)
@@ -266,6 +266,11 @@ public class UserService : IUserService
 
         user.IsOnline = isOnline;
         user.LastSeenAt = isOnline ? null : DateTime.UtcNow;
+        if (isOnline)
+        {
+            ApplyLoginIp(user, clientIp);
+        }
+
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return user.LastSeenAt;
@@ -324,6 +329,19 @@ public class UserService : IUserService
         catch
         {
             return false;
+        }
+    }
+
+    private static void ApplyLoginIp(User user, string? clientIp)
+    {
+        if (!string.IsNullOrWhiteSpace(clientIp))
+        {
+            user.LastLoginIp = clientIp;
+        }
+
+        if (string.IsNullOrWhiteSpace(user.RegistrationIp))
+        {
+            user.RegistrationIp = user.LastLoginIp;
         }
     }
 }

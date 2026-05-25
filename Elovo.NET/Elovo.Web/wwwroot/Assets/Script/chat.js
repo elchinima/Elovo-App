@@ -503,6 +503,7 @@ function createChatSwipeShell(chat, button) {
 
     const reset = () => {
         shell.classList.remove("is-revealed");
+        shell.classList.remove("is-dragging");
         shell.style.removeProperty("--swipe-progress");
         button.style.transform = "";
     };
@@ -518,6 +519,7 @@ function createChatSwipeShell(chat, button) {
         moved = false;
         button.setPointerCapture(event.pointerId);
         button.classList.add("is-swiping");
+        shell.classList.add("is-dragging");
     });
 
     button.addEventListener("pointermove", (event) => {
@@ -541,9 +543,10 @@ function createChatSwipeShell(chat, button) {
 
         dragging = false;
         button.classList.remove("is-swiping");
+        shell.classList.remove("is-dragging");
 
         if (currentX <= -92) {
-            hideConversation(chat.userId);
+            hideConversation(chat.userId, shell, button);
             return;
         }
 
@@ -577,27 +580,55 @@ function createChatSwipeShell(chat, button) {
     return shell;
 }
 
-function hideConversation(userId) {
+function hideConversation(userId, shell = null, button = null) {
     const id = normalizeId(userId);
     if (!id) {
         return;
     }
 
-    hiddenConversationIds.add(id);
-    writeHiddenConversationIds();
-    updateRestoreHiddenButton();
+    const completeHide = () => {
+        hiddenConversationIds.add(id);
+        writeHiddenConversationIds();
+        updateRestoreHiddenButton();
 
-    if (activeConversation && sameId(activeConversation.userId, id)) {
-        activeConversation = getFilteredConversations()[0] || null;
-        if (activeConversation) {
-            renderConversationHeader(activeConversation);
-            loadMessages(activeConversation.userId);
+        if (activeConversation && sameId(activeConversation.userId, id)) {
+            activeConversation = getFilteredConversations()[0] || null;
+            if (activeConversation) {
+                renderConversationHeader(activeConversation);
+                loadMessages(activeConversation.userId);
+            } else {
+                renderEmptyConversationHeader();
+            }
+        }
+
+        renderChatList(getFilteredConversations());
+    };
+
+    if (shell && button) {
+        shell.classList.add("is-hiding");
+        shell.style.setProperty("--swipe-progress", "1");
+        button.style.transform = "translateX(-118%)";
+        window.setTimeout(completeHide, 260);
+        return;
+    }
+
+    const currentShell = chatList ? [...chatList.querySelectorAll(".chat-swipe-shell")].find((item) => {
+        return item.querySelector(".chat-item") && item.querySelector(".chat-item").dataset.userId === id;
+    }) : null;
+
+    if (currentShell) {
+        const currentButton = currentShell.querySelector(".chat-item");
+        if (currentButton) {
+            hideConversation(id, currentShell, currentButton);
+            return;
         } else {
-            renderEmptyConversationHeader();
+            currentShell.classList.add("is-hiding");
+            window.setTimeout(completeHide, 260);
+            return;
         }
     }
 
-    renderChatList(getFilteredConversations());
+    completeHide();
 }
 
 function restoreHiddenConversations() {
@@ -646,23 +677,35 @@ function renderChatList(items = conversations) {
     items.forEach((chat, index) => {
         const button = document.createElement("button");
         const avatar = document.createElement("span");
+        const avatarRing = document.createElement("span");
         const copy = document.createElement("span");
+        const nameRow = document.createElement("span");
         const name = document.createElement("strong");
         const preview = document.createElement("span");
+        const meta = document.createElement("span");
         const time = document.createElement("span");
+        const status = document.createElement("span");
 
         button.type = "button";
         button.className = `chat-item${activeConversation && sameId(chat.userId, activeConversation.userId) ? " is-active" : ""}`;
+        button.dataset.userId = normalizeId(chat.userId);
         button.style.animationDelay = `${index * 45}ms`;
         avatar.className = "avatar";
+        avatarRing.className = "chat-avatar-ring";
         copy.className = "chat-copy";
+        nameRow.className = "chat-name-row";
+        meta.className = "chat-meta";
         time.className = "time";
+        status.className = `chat-status-dot${chat.isOnline ? " is-online" : ""}`;
         setAvatarElement(avatar, chat, chat.initial);
         name.textContent = chat.username;
         preview.textContent = chat.lastMessage || "Start a conversation.";
         time.textContent = formatTime(chat.lastMessageAt);
-        copy.append(name, preview);
-        button.append(avatar, copy, time);
+        avatarRing.appendChild(avatar);
+        nameRow.append(name, status);
+        meta.append(time);
+        copy.append(nameRow, preview);
+        button.append(avatarRing, copy, meta);
         button.addEventListener("click", () => selectConversation(chat.userId));
         chatList.appendChild(createChatSwipeShell(chat, button));
     });

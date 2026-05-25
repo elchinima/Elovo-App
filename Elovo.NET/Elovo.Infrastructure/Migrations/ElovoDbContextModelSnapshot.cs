@@ -134,6 +134,10 @@ namespace Elovo.Infrastructure.Migrations
                     b.Property<DateTime?>("LastSeenAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("LastLoginIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -142,6 +146,10 @@ namespace Elovo.Infrastructure.Migrations
                     b.Property<string>("ProfileImagePath")
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
+
+                    b.Property<string>("RegistrationIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("character varying(45)");
 
                     b.Property<DateTime?>("TwoFactorCodeExpiresAt")
                         .HasColumnType("timestamp with time zone");

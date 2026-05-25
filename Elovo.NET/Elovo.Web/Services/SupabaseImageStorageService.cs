@@ -48,7 +48,35 @@ public class SupabaseImageStorageService : IImageStorageService
     public string GetPublicUrl(string path)
     {
         var storagePath = NormalizeStoragePath(path);
+        if (storagePath.StartsWith("messages/", StringComparison.Ordinal))
+        {
+            return $"/api/messages/images/file?path={Uri.EscapeDataString(storagePath)}";
+        }
+
         return $"{BaseUrl}/storage/v1/object/public/{GetBucketForPath(storagePath)}/{EscapePath(storagePath)}";
+    }
+
+    public async Task<ImageDownloadResultDto> DownloadAsync(string path, CancellationToken cancellationToken = default)
+    {
+        var storagePath = NormalizeStoragePath(path);
+        if (!IsImagePath(storagePath))
+        {
+            throw new InvalidOperationException("Image path is invalid.");
+        }
+
+        var bucket = GetBucketForPath(storagePath);
+        using var request = CreateRequest(HttpMethod.Get, $"object/{bucket}/{EscapePath(storagePath)}");
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException("Supabase image download failed.");
+        }
+
+        return new ImageDownloadResultDto
+        {
+            Bytes = await response.Content.ReadAsByteArrayAsync(cancellationToken),
+            ContentType = response.Content.Headers.ContentType?.MediaType ?? GetContentType(storagePath)
+        };
     }
 
     public async Task DeleteAsync(string path, CancellationToken cancellationToken = default)
@@ -194,6 +222,27 @@ public class SupabaseImageStorageService : IImageStorageService
     {
         return details.Contains("not_found", StringComparison.OrdinalIgnoreCase) ||
             details.Contains("Object not found", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetContentType(string path)
+    {
+        var extension = Path.GetExtension(path);
+        if (extension.Equals(".png", StringComparison.OrdinalIgnoreCase))
+        {
+            return "image/png";
+        }
+
+        if (extension.Equals(".gif", StringComparison.OrdinalIgnoreCase))
+        {
+            return "image/gif";
+        }
+
+        if (extension.Equals(".webp", StringComparison.OrdinalIgnoreCase))
+        {
+            return "image/webp";
+        }
+
+        return "image/jpeg";
     }
 
     private static bool IsPlaceholder(string value)

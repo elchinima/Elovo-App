@@ -18,7 +18,7 @@ public class AuthService : IAuthService
         _emailSender = emailSender;
     }
 
-    public async Task<AuthResultDto> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken = default)
+    public async Task<AuthResultDto> RegisterAsync(RegisterDto dto, string? clientIp, CancellationToken cancellationToken = default)
     {
         var username = dto.Username.Trim();
         var existingUser = await _unitOfWork.Users.GetByUsernameAsync(username, cancellationToken);
@@ -32,7 +32,9 @@ public class AuthService : IAuthService
             Id = Guid.NewGuid(),
             Username = username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            RegistrationIp = clientIp,
+            LastLoginIp = clientIp
         };
 
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
@@ -41,7 +43,7 @@ public class AuthService : IAuthService
         return AuthResultDto.Success(_mapper.Map<UserDto>(user), CreateToken(user));
     }
 
-    public async Task<AuthResultDto> LoginAsync(LoginDto dto, CancellationToken cancellationToken = default)
+    public async Task<AuthResultDto> LoginAsync(LoginDto dto, string? clientIp, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByUsernameAsync(dto.Username.Trim(), cancellationToken);
         if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
@@ -64,13 +66,14 @@ public class AuthService : IAuthService
         user.TwoFactorCodeExpiresAt = null;
         user.IsOnline = true;
         user.LastSeenAt = null;
+        ApplyLoginIp(user, clientIp);
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return AuthResultDto.Success(_mapper.Map<UserDto>(user), CreateToken(user));
     }
 
-    public async Task<AuthResultDto> VerifyTwoFactorAsync(Guid userId, string code, CancellationToken cancellationToken = default)
+    public async Task<AuthResultDto> VerifyTwoFactorAsync(Guid userId, string code, string? clientIp, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null || string.IsNullOrWhiteSpace(user.TwoFactorCodeHash) || user.TwoFactorCodeExpiresAt is null)
@@ -95,6 +98,7 @@ public class AuthService : IAuthService
         ClearTwoFactorCode(user);
         user.IsOnline = true;
         user.LastSeenAt = null;
+        ApplyLoginIp(user, clientIp);
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -150,5 +154,18 @@ public class AuthService : IAuthService
     {
         user.TwoFactorCodeHash = null;
         user.TwoFactorCodeExpiresAt = null;
+    }
+
+    private static void ApplyLoginIp(User user, string? clientIp)
+    {
+        if (!string.IsNullOrWhiteSpace(clientIp))
+        {
+            user.LastLoginIp = clientIp;
+        }
+
+        if (string.IsNullOrWhiteSpace(user.RegistrationIp))
+        {
+            user.RegistrationIp = user.LastLoginIp;
+        }
     }
 }

@@ -67,6 +67,26 @@ public class ImageMessagesController : ControllerBase
         });
     }
 
+    [HttpGet("/api/messages/images/file")]
+    public async Task<IActionResult> Download([FromQuery] string path, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !_imageStorageService.IsImagePath(path))
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            var image = await _imageStorageService.DownloadAsync(path, cancellationToken);
+            Response.Headers.CacheControl = "private, max-age=604800";
+            return File(image.Bytes, image.ContentType);
+        }
+        catch (InvalidOperationException)
+        {
+            return NotFound();
+        }
+    }
+
     private Guid GetCurrentUserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);

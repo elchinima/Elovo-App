@@ -24,7 +24,7 @@ public class ChatHub : Hub
         var userId = GetCurrentUserId();
         ConnectedUsers.AddOrUpdate(userId, 1, (_, count) => count + 1);
         await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
-        var lastSeenAt = await _userService.SetOnlineStatusAsync(userId, true);
+        var lastSeenAt = await _userService.SetOnlineStatusAsync(userId, true, ClientIpAddressResolver.Resolve(Context.GetHttpContext()));
         await SendPendingMessagesAsync(userId);
         await Clients.Others.SendAsync("UserOnline", userId, lastSeenAt);
         await base.OnConnectedAsync();

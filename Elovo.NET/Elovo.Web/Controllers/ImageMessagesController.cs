@@ -81,7 +81,7 @@ public class ImageMessagesController : ControllerBase
             Response.Headers.CacheControl = "private, max-age=604800";
             return File(image.Bytes, image.ContentType);
         }
-        catch (InvalidOperationException)
+        catch (Exception)
         {
             return NotFound();
         }

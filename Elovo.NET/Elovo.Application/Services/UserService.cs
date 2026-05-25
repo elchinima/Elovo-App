@@ -311,7 +311,19 @@ public class UserService : IUserService
 
     private string? GetImageUrl(string? path)
     {
-        return string.IsNullOrWhiteSpace(path) ? null : _imageStorageService.GetPublicUrl(path);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return _imageStorageService.GetPublicUrl(path);
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private static string NormalizeEmail(string email)

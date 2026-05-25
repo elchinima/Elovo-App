@@ -73,12 +73,6 @@ finally
     scope.Dispose();
 }
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-}
-app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
-
 app.Use(async (context, next) =>
 {
     var originalRequestBody = context.Request.Body;

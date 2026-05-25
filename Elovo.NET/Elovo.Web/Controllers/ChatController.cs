@@ -5,6 +5,7 @@ namespace Elovo.Web.Controllers;
 [Route("chat")]
 public class ChatController : Controller
 {
+    private const string AuthCookieName = "ElovoAuthToken";
     private readonly IUserService _userService;
 
     public ChatController(IUserService userService)
@@ -15,19 +16,32 @@ public class ChatController : Controller
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        var profile = await _userService.GetProfileAsync(userId, cancellationToken);
+        if (!TryGetCurrentUserId(out var userId))
+        {
+            Response.Cookies.Delete(AuthCookieName);
+            return RedirectToAction("Login", "Auth");
+        }
+
+        ProfileDto profile;
+        try
+        {
+            profile = await _userService.GetProfileAsync(userId, cancellationToken);
+        }
+        catch (InvalidOperationException)
+        {
+            Response.Cookies.Delete(AuthCookieName);
+            return RedirectToAction("Login", "Auth");
+        }
+
         ViewBag.CurrentUserId = userId;
         ViewBag.CurrentUserInitial = profile.Initial;
         ViewBag.CurrentUserProfileImageUrl = profile.ProfileImageUrl;
         return View();
     }
 
-    private Guid GetCurrentUserId()
+    private bool TryGetCurrentUserId(out Guid userId)
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(value, out var userId)
-            ? userId
-            : throw new InvalidOperationException("Current user id is missing.");
+        return Guid.TryParse(value, out userId);
     }
 }

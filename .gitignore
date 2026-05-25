@@ -20,12 +20,10 @@ logs/
 .env
 .env.*
 !.env.example
-appsettings.Development.json
-**/appsettings.Development.json
-appsettings.Local.json
-**/appsettings.Local.json
-appsettings.*.local.json
-appsettings.Production.json
+appsettings.json
+**/appsettings.json
+appsettings.*.json
+**/appsettings.*.json
 secrets.json
 **/secrets.json
 

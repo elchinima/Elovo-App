@@ -129,6 +129,30 @@
             </div>
         </section>
     </div>
+
+    <div class="modal-backdrop" id="profileConfirmModal" aria-hidden="true">
+        <section class="modal-panel confirm-modal-panel profile-confirm-panel" role="dialog" aria-modal="true" aria-labelledby="profileConfirmTitle">
+            <header class="modal-header">
+                <h2 id="profileConfirmTitle">Confirm action</h2>
+                <button class="icon-button" type="button" id="profileConfirmClose" aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <div class="confirm-modal-body">
+                <p class="profile-confirm-copy" id="profileConfirmMessage">Are you sure?</p>
+                <div class="profile-confirm-actions">
+                    <button class="secondary-icon-button" id="profileConfirmCancel" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                        <span>Cancel</span>
+                    </button>
+                    <button class="primary-icon-button" id="profileConfirmAccept" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/sent-action.svg" alt="">
+                        <span>Confirm</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
 </main>
 
 <script>

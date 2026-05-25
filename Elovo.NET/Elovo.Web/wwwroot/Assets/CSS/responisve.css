@@ -104,6 +104,21 @@
         border-radius: 0;
     }
 
+    .error-shell {
+        overflow: auto;
+        padding: 50px 14px 25px;
+    }
+
+    .error-card {
+        grid-template-columns: 1fr;
+        gap: 18px;
+        padding: 18px;
+    }
+
+    .error-code {
+        min-height: 170px;
+    }
+
     .brand-logo {
         display: none;
     }
@@ -241,6 +256,10 @@
         grid-template-columns: 1fr;
     }
 
+    .profile-confirm-actions {
+        grid-template-columns: 1fr;
+    }
+
     .profile-view {
         height: 100%;
         overflow: auto;
@@ -293,6 +312,10 @@
     }
 
     .profile-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .error-actions {
         grid-template-columns: 1fr;
     }
 }

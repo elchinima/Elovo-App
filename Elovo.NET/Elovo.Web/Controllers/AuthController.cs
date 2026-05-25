@@ -39,7 +39,16 @@ public class AuthController : Controller
             return View(dto);
         }
 
-        var result = await _authService.LoginAsync(dto, cancellationToken);
+        AuthResultDto result;
+        try
+        {
+            result = await _authService.LoginAsync(dto, cancellationToken);
+        }
+        catch (Exception)
+        {
+            ViewBag.Error = "Could not send the verification code. Try again later.";
+            return View(dto);
+        }
         if (result.RequiresTwoFactor && result.TwoFactorUserId is not null)
         {
             SetTwoFactorCookie(result.TwoFactorUserId.Value);

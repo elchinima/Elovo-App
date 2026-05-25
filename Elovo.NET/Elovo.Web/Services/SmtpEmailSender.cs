@@ -26,7 +26,8 @@ public class SmtpEmailSender : IEmailSender
 
         using var client = new SmtpClient(Host, Port)
         {
-            EnableSsl = EnableSsl
+            EnableSsl = EnableSsl,
+            Timeout = TimeoutMilliseconds
         };
 
         var userName = GetOptionalConfigurationValue("Email:SmtpUsername");
@@ -36,7 +37,9 @@ public class SmtpEmailSender : IEmailSender
             client.Credentials = new NetworkCredential(userName, password);
         }
 
-        await client.SendMailAsync(message, cancellationToken);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromMilliseconds(TimeoutMilliseconds));
+        await client.SendMailAsync(message, timeout.Token);
     }
 
     private string Host => GetRequiredConfigurationValue("Email:SmtpHost");
@@ -44,6 +47,10 @@ public class SmtpEmailSender : IEmailSender
     private int Port => int.TryParse(_configuration["Email:SmtpPort"], out var port) ? port : 587;
 
     private bool EnableSsl => !bool.TryParse(_configuration["Email:EnableSsl"], out var enableSsl) || enableSsl;
+
+    private int TimeoutMilliseconds => int.TryParse(_configuration["Email:TimeoutMilliseconds"], out var timeout)
+        ? Math.Max(timeout, 1000)
+        : 15000;
 
     private string FromAddress => GetRequiredConfigurationValue("Email:From");
 

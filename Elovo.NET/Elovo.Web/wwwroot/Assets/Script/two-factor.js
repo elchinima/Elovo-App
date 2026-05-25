@@ -1,5 +1,5 @@
 (() => {
-    const { showPageLoader } = window.Elovo;
+    const { showPageLoader, hidePageLoader } = window.Elovo;
     const twoFactorForm = document.querySelector("#twoFactorForm");
 
     if (!twoFactorForm) {
@@ -13,5 +13,11 @@
         twoFactorForm.querySelectorAll("button").forEach((button) => {
             button.disabled = true;
         });
+        window.setTimeout(() => {
+            hidePageLoader();
+            twoFactorForm.querySelectorAll("button").forEach((button) => {
+                button.disabled = false;
+            });
+        }, 20000);
     });
 })();

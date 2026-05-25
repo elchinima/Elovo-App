@@ -1,5 +1,5 @@
 (() => {
-    const { showPageLoader } = window.Elovo;
+    const { showPageLoader, hidePageLoader } = window.Elovo;
     const loginForm = document.querySelector("#loginForm");
 
     if (!loginForm) {
@@ -13,5 +13,11 @@
         loginForm.querySelectorAll("button").forEach((button) => {
             button.disabled = true;
         });
+        window.setTimeout(() => {
+            hidePageLoader();
+            loginForm.querySelectorAll("button").forEach((button) => {
+                button.disabled = false;
+            });
+        }, 20000);
     });
 })();

@@ -1,12 +1,21 @@
 (() => {
     const pageLoader = document.querySelector("#pageLoader");
-    const keepAliveIntervalMs = 14 * 60 * 1000;
+    const keepAliveIntervalMs = 10 * 60 * 1000;
 
     function keepAlive() {
-        fetch("/health", { cache: "no-store" }).catch(() => { });
+        fetch(`/health?ts=${Date.now()}`, {
+            cache: "no-store",
+            credentials: "same-origin"
+        }).catch(() => { });
     }
 
     window.setInterval(keepAlive, keepAliveIntervalMs);
+    keepAlive();
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+            keepAlive();
+        }
+    });
 
     function showPageLoader() {
         if (!pageLoader) {

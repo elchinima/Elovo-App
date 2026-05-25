@@ -212,11 +212,6 @@ public class ChatHub : Hub
                 ImageFileName = isImage ? message.VoiceUrl : null
             }, Context.ConnectionAborted);
 
-            if (isImage)
-            {
-                await _imageStorageService.DeleteAsync(message.Content, Context.ConnectionAborted);
-            }
-
             if (!deliveredMessageIdsBySender.TryGetValue(message.SenderId, out var deliveredMessageIds))
             {
                 deliveredMessageIds = [];

@@ -14,6 +14,8 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddHttpClient<IImageStorageService, SupabaseImageStorageService>();
+builder.Services.AddHttpClient<RenderKeepAliveService>();
+builder.Services.AddHostedService<RenderKeepAliveService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -75,6 +77,7 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
 }
+app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
 
 app.Use(async (context, next) =>
 {

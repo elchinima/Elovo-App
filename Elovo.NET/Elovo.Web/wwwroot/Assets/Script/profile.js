@@ -25,7 +25,14 @@ const avatarCropImage = document.querySelector("#avatarCropImage");
 const avatarZoom = document.querySelector("#avatarZoom");
 const avatarCropSave = document.querySelector("#avatarCropSave");
 const avatarCropCancel = document.querySelector("#avatarCropCancel");
+const profileConfirmModal = document.querySelector("#profileConfirmModal");
+const profileConfirmTitle = document.querySelector("#profileConfirmTitle");
+const profileConfirmMessage = document.querySelector("#profileConfirmMessage");
+const profileConfirmAccept = document.querySelector("#profileConfirmAccept");
+const profileConfirmCancel = document.querySelector("#profileConfirmCancel");
+const profileConfirmClose = document.querySelector("#profileConfirmClose");
 let avatarCropState = null;
+let profileConfirmResolve = null;
 const allowedProfileImageTypes = ["image/png", "image/jpeg", "image/jpg"];
 const maxImageSize = 10 * 1024 * 1024;
 function setProfileStatus(element, message, kind = "") {
@@ -67,6 +74,36 @@ function renderProfile(profile) {
         twoFactorToggle.checked = !!profile.isTwoFactorEnabled;
         twoFactorToggle.disabled = !profile.email;
     }
+}
+
+function closeProfileConfirm(result) {
+    closeModal(profileConfirmModal);
+    if (profileConfirmResolve) {
+        profileConfirmResolve(result);
+        profileConfirmResolve = null;
+    }
+}
+
+function confirmProfileAction(title, message, confirmText = "Confirm") {
+    if (!profileConfirmModal || !profileConfirmTitle || !profileConfirmMessage || !profileConfirmAccept) {
+        return Promise.resolve(true);
+    }
+
+    if (profileConfirmResolve) {
+        closeProfileConfirm(false);
+    }
+
+    profileConfirmTitle.textContent = title;
+    profileConfirmMessage.textContent = message;
+    const text = profileConfirmAccept.querySelector("span");
+    if (text) {
+        text.textContent = confirmText;
+    }
+    openModal(profileConfirmModal);
+
+    return new Promise((resolve) => {
+        profileConfirmResolve = resolve;
+    });
 }
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -220,6 +257,15 @@ async function deleteProfileAvatar() {
         return;
     }
 
+    const confirmed = await confirmProfileAction(
+        "Delete profile image?",
+        "Your current profile image will be removed from the account.",
+        "Delete"
+    );
+    if (!confirmed) {
+        return;
+    }
+
     deleteProfileImageButton.disabled = true;
     setProfileStatus(profileImageStatus, "Deleting image...");
 
@@ -242,6 +288,15 @@ async function deleteProfileAvatar() {
 
 async function saveProfileEmail(event) {
     event.preventDefault();
+    const confirmed = await confirmProfileAction(
+        "Save email?",
+        "This email will be used for account security and two-factor authentication.",
+        "Save email"
+    );
+    if (!confirmed) {
+        return;
+    }
+
     setProfileStatus(profileEmailStatus, "Saving email...");
 
     const response = await fetch("/api/profile/email", {
@@ -265,6 +320,15 @@ async function saveProfileEmail(event) {
 
 async function saveProfilePassword(event) {
     event.preventDefault();
+    const confirmed = await confirmProfileAction(
+        "Change password?",
+        "After changing your password, use the new password on your next sign in.",
+        "Change password"
+    );
+    if (!confirmed) {
+        return;
+    }
+
     setProfileStatus(profilePasswordStatus, "Changing password...");
 
     const response = await fetch("/api/profile/password", {
@@ -296,6 +360,19 @@ async function setTwoFactorEnabled() {
         return;
     }
 
+    const nextState = twoFactorToggle.checked;
+    const confirmed = await confirmProfileAction(
+        nextState ? "Enable 2FA?" : "Disable 2FA?",
+        nextState
+            ? "A verification code will be required on every sign in."
+            : "Your account will no longer ask for a verification code on sign in.",
+        nextState ? "Enable 2FA" : "Disable 2FA"
+    );
+    if (!confirmed) {
+        twoFactorToggle.checked = !nextState;
+        return;
+    }
+
     twoFactorToggle.disabled = true;
     setProfileStatus(twoFactorStatus, "Saving setting...");
 
@@ -305,16 +382,16 @@ async function setTwoFactorEnabled() {
             "Content-Type": "application/json",
             "RequestVerificationToken": getAntiForgeryToken()
         },
-        body: JSON.stringify({ enabled: twoFactorToggle.checked })
+        body: JSON.stringify({ enabled: nextState })
     });
 
     if (response.ok) {
         renderProfile(await response.json());
-        setProfileStatus(twoFactorStatus, twoFactorToggle.checked ? "Two-factor authentication enabled." : "Two-factor authentication disabled.", "success");
+        setProfileStatus(twoFactorStatus, nextState ? "Two-factor authentication enabled." : "Two-factor authentication disabled.", "success");
         return;
     }
 
-    twoFactorToggle.checked = !twoFactorToggle.checked;
+    twoFactorToggle.checked = !nextState;
     twoFactorToggle.disabled = false;
     setProfileStatus(twoFactorStatus, await readResponseText(response), "error");
 }
@@ -371,6 +448,26 @@ if (avatarCropSave) {
 
 if (avatarCropCancel) {
     avatarCropCancel.addEventListener("click", closeAvatarCrop);
+}
+
+if (profileConfirmAccept) {
+    profileConfirmAccept.addEventListener("click", () => closeProfileConfirm(true));
+}
+
+if (profileConfirmCancel) {
+    profileConfirmCancel.addEventListener("click", () => closeProfileConfirm(false));
+}
+
+if (profileConfirmClose) {
+    profileConfirmClose.addEventListener("click", () => closeProfileConfirm(false));
+}
+
+if (profileConfirmModal) {
+    profileConfirmModal.addEventListener("click", (event) => {
+        if (event.target === profileConfirmModal) {
+            closeProfileConfirm(false);
+        }
+    });
 }
 
 if (avatarCropStage) {

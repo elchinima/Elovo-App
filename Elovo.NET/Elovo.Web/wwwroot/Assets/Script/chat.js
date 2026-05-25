@@ -50,6 +50,11 @@ let avatarCropState = null;
 let conversationSearchTerm = "";
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
+const imageCacheDbName = "elovo-image-cache";
+const imageCacheStoreName = "images";
+let imageCacheDb = null;
+let imageCacheDbPromise = null;
+const pendingUploadedImages = new Map();
 function getCurrentUserId() {
     return (window.elovoCurrentUserId || "").toLowerCase();
 }
@@ -71,6 +76,142 @@ function getConversationStorageKey(userId) {
 
 function getHiddenConversationStorageKey() {
     return `elovo:hidden-conversations:${getCurrentUserId()}`;
+}
+
+function getImageCacheKey(messageId) {
+    return `${getCurrentUserId()}:${messageId}`;
+}
+
+function getImageStorageKey(path) {
+    return (path || "").trim().toLowerCase();
+}
+
+function openImageCacheDb() {
+    if (!window.indexedDB) {
+        return Promise.reject(new Error("IndexedDB is unavailable."));
+    }
+
+    if (imageCacheDb) {
+        return Promise.resolve(imageCacheDb);
+    }
+
+    if (imageCacheDbPromise) {
+        return imageCacheDbPromise;
+    }
+
+    imageCacheDbPromise = new Promise((resolve, reject) => {
+        const request = window.indexedDB.open(imageCacheDbName, 1);
+
+        request.addEventListener("upgradeneeded", () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(imageCacheStoreName)) {
+                db.createObjectStore(imageCacheStoreName);
+            }
+        });
+
+        request.addEventListener("success", () => {
+            imageCacheDb = request.result;
+            imageCacheDb.addEventListener("close", () => {
+                imageCacheDb = null;
+                imageCacheDbPromise = null;
+            });
+            resolve(imageCacheDb);
+        });
+
+        request.addEventListener("error", () => reject(request.error || new Error("Image cache failed.")));
+    });
+
+    return imageCacheDbPromise;
+}
+
+function runImageCacheRequest(mode, action) {
+    return openImageCacheDb().then((db) => new Promise((resolve, reject) => {
+        const transaction = db.transaction(imageCacheStoreName, mode);
+        const store = transaction.objectStore(imageCacheStoreName);
+        const request = action(store);
+
+        request.addEventListener("success", () => resolve(request.result));
+        request.addEventListener("error", () => reject(request.error || new Error("Image cache request failed.")));
+    }));
+}
+
+async function readCachedImageBlob(messageId) {
+    try {
+        const item = await runImageCacheRequest("readonly", (store) => store.get(getImageCacheKey(messageId)));
+        return item && item.blob ? item.blob : null;
+    } catch {
+        return null;
+    }
+}
+
+async function writeCachedImageBlob(message, blob) {
+    if (!message || !message.id || !blob) {
+        return false;
+    }
+
+    try {
+        await runImageCacheRequest("readwrite", (store) => store.put({
+            blob,
+            fileName: message.imageFileName || "",
+            updatedAt: new Date().toISOString()
+        }, getImageCacheKey(message.id)));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+async function removeCachedImage(messageId) {
+    try {
+        await runImageCacheRequest("readwrite", (store) => store.delete(getImageCacheKey(messageId)));
+    } catch {
+        // Local image cache cleanup is best-effort.
+    }
+}
+
+async function cacheImageForMessage(message) {
+    if (!message || !message.isImage || !message.id) {
+        return false;
+    }
+
+    if (await readCachedImageBlob(message.id)) {
+        return true;
+    }
+
+    const storageKey = getImageStorageKey(message.imageStoragePath || message.content);
+    const uploadedBlob = storageKey ? pendingUploadedImages.get(storageKey) : null;
+    if (uploadedBlob) {
+        pendingUploadedImages.delete(storageKey);
+        return writeCachedImageBlob(message, uploadedBlob);
+    }
+
+    if (!message.imagePath) {
+        return false;
+    }
+
+    try {
+        const response = await fetch(message.imagePath);
+        if (!response.ok) {
+            return false;
+        }
+
+        const blob = await response.blob();
+        return writeCachedImageBlob(message, blob);
+    } catch {
+        return false;
+    }
+}
+
+async function requestPersistentStorage() {
+    if (!navigator.storage || !navigator.storage.persist) {
+        return false;
+    }
+
+    try {
+        return await navigator.storage.persist();
+    } catch {
+        return false;
+    }
 }
 
 function readHiddenConversationIds() {
@@ -699,6 +840,9 @@ async function deleteMessageForMe(message) {
     }
 
     removeStoredMessage(activeConversation.userId, message.id);
+    if (message.isImage) {
+        await removeCachedImage(message.id);
+    }
     await loadMessages(activeConversation.userId);
     await loadConversations();
 }
@@ -728,17 +872,19 @@ function createImageMessage(message) {
     const frame = document.createElement("button");
     const image = document.createElement("img");
     const loader = document.createElement("span");
+    let previewPath = message.imagePath;
 
     frame.type = "button";
     frame.className = "message-image-frame is-loading";
     frame.title = message.imageFileName || "Open image";
-    image.src = message.imagePath;
+    image.src = previewPath;
     image.alt = message.imageFileName || "Sent image";
     image.loading = "lazy";
     loader.className = "image-transfer-loader";
 
     image.addEventListener("load", () => {
         frame.classList.remove("is-loading");
+        frame.classList.remove("is-error");
     });
 
     image.addEventListener("error", () => {
@@ -746,7 +892,16 @@ function createImageMessage(message) {
         frame.classList.add("is-error");
     });
 
-    frame.addEventListener("click", () => openImagePreview(message.imagePath, message.imageFileName));
+    readCachedImageBlob(message.id).then((blob) => {
+        if (!blob) {
+            return;
+        }
+
+        previewPath = URL.createObjectURL(blob);
+        image.src = previewPath;
+    });
+
+    frame.addEventListener("click", () => openImagePreview(previewPath, message.imageFileName));
     frame.append(image, loader);
     return frame;
 }
@@ -1270,6 +1425,7 @@ async function startSignalR() {
     connection.on("ReceiveMessage", async (message) => {
         latestMessageId = message.id;
         storeMessage(message);
+        const imageCachePromise = cacheImageForMessage(message);
 
         if (messageBelongsToActiveConversation(message)) {
             await loadMessages(activeConversation.userId);
@@ -1283,6 +1439,10 @@ async function startSignalR() {
         }
 
         await loadConversations();
+
+        if (await imageCachePromise && messageBelongsToActiveConversation(message)) {
+            await loadMessages(activeConversation.userId);
+        }
     });
 
     connection.on("UserOnline", (userId, lastSeenAt) => {
@@ -1532,8 +1692,20 @@ async function sendSelectedImage() {
 
     try {
         const image = await uploadImage(file);
+        const imageStorageKey = getImageStorageKey(image.path);
+        if (imageStorageKey) {
+            pendingUploadedImages.set(imageStorageKey, file);
+        }
+
         setImageTransferState(true, 100);
-        await connection.invoke("SendImageMessage", activeConversation.userId, image.path, image.fileName || file.name);
+        try {
+            await connection.invoke("SendImageMessage", activeConversation.userId, image.path, image.fileName || file.name);
+        } catch (error) {
+            if (imageStorageKey) {
+                pendingUploadedImages.delete(imageStorageKey);
+            }
+            throw error;
+        }
     } finally {
         isSending = false;
         setImageTransferState(false);
@@ -1556,6 +1728,7 @@ async function logout() {
 }
 
 if (messengerView && chatList && messageStream) {
+    requestPersistentStorage();
     loadConversations()
         .then(() => activeConversation ? loadMessages(activeConversation.userId) : null)
         .then(startSignalR)

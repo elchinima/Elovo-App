@@ -1,4 +1,3 @@
-
 namespace Elovo.Web.Controllers;
 
 [Route("auth")]
@@ -9,15 +8,18 @@ public class AuthController : Controller
     private readonly IAuthService _authService;
     private readonly IValidator<LoginDto> _loginValidator;
     private readonly IValidator<RegisterDto> _registerValidator;
+    private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         IAuthService authService,
         IValidator<LoginDto> loginValidator,
-        IValidator<RegisterDto> registerValidator)
+        IValidator<RegisterDto> registerValidator,
+        ILogger<AuthController> logger)
     {
         _authService = authService;
         _loginValidator = loginValidator;
         _registerValidator = registerValidator;
+        _logger = logger;
     }
 
     [HttpGet("login")]
@@ -44,11 +46,13 @@ public class AuthController : Controller
         {
             result = await _authService.LoginAsync(dto, ClientIpAddressResolver.Resolve(HttpContext), cancellationToken);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex, "Login error");
             ViewBag.Error = "Could not send the verification code. Try again later.";
             return View(dto);
         }
+
         if (result.RequiresTwoFactor && result.TwoFactorUserId is not null)
         {
             SetTwoFactorCookie(result.TwoFactorUserId.Value);

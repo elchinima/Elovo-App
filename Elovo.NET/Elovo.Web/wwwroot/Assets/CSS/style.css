@@ -1336,7 +1336,60 @@ body.is-page-loading .page-loader {
 }
 
 .profile-confirm-panel {
-    width: min(420px, 100%);
+    width: min(460px, 100%);
+    border-color: rgba(139, 124, 255, 0.28);
+    background:
+        radial-gradient(circle at 20% 12%, rgba(109, 103, 255, 0.2), transparent 14rem),
+        radial-gradient(circle at 84% 88%, rgba(83, 214, 164, 0.14), transparent 12rem),
+        var(--panel-solid);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.profile-confirm-panel .modal-header {
+    border-bottom-color: rgba(125, 134, 255, 0.14);
+}
+
+.profile-confirm-panel .confirm-modal-body {
+    padding: 22px;
+}
+
+.profile-confirm-art {
+    min-height: 142px;
+    display: grid;
+    place-items: center;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(125, 134, 255, 0.16);
+    border-radius: var(--radius);
+    background: rgba(7, 9, 20, 0.36);
+}
+
+.profile-confirm-card {
+    display: block;
+    pointer-events: none;
+}
+
+.profile-confirm-card-main {
+    width: 82px;
+    height: 82px;
+    padding: 15px;
+    border: 1px solid rgba(125, 134, 255, 0.22);
+    border-radius: var(--radius);
+    background: rgba(18, 24, 50, 0.88);
+    box-shadow: 0 20px 46px rgba(3, 6, 18, 0.36);
+}
+
+.profile-confirm-card-accent {
+    position: absolute;
+    right: calc(50% - 108px);
+    bottom: 23px;
+    width: 58px;
+    height: 58px;
+    padding: 12px;
+    border: 1px solid rgba(83, 214, 164, 0.28);
+    border-radius: var(--radius);
+    background: rgba(18, 24, 50, 0.9);
+    box-shadow: 0 16px 34px rgba(3, 6, 18, 0.32);
 }
 
 .profile-confirm-copy {
@@ -1347,8 +1400,21 @@ body.is-page-loading .page-loader {
 
 .profile-confirm-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    grid-template-columns: 0.86fr 1.14fr;
+    gap: 10px;
+}
+
+.profile-confirm-actions .primary-icon-button,
+.profile-confirm-actions .secondary-icon-button {
+    min-height: 48px;
+    border-radius: var(--radius);
+    font-weight: 900;
+}
+
+.profile-confirm-actions .primary-icon-button {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
 .modal-header {
@@ -1436,6 +1502,18 @@ body.is-page-loading .page-loader {
     width: min(1040px, 100%);
     display: none;
     gap: 18px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.profile-view::-webkit-scrollbar,
+body:has(.profile-view.is-active)::-webkit-scrollbar {
+    display: none;
+}
+
+body:has(.profile-view.is-active) {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .profile-view.is-active {
@@ -1540,6 +1618,13 @@ body.is-page-loading .page-loader {
     min-height: 46px;
     border-radius: var(--radius);
     font-weight: 800;
+}
+
+.profile-form .primary-icon-button,
+.profile-actions .primary-icon-button {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
 .secondary-icon-button {

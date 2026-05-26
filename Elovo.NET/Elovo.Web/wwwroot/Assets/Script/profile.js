@@ -28,11 +28,20 @@ const avatarCropCancel = document.querySelector("#avatarCropCancel");
 const profileConfirmModal = document.querySelector("#profileConfirmModal");
 const profileConfirmTitle = document.querySelector("#profileConfirmTitle");
 const profileConfirmMessage = document.querySelector("#profileConfirmMessage");
+const profileConfirmIcon = document.querySelector("#profileConfirmIcon");
 const profileConfirmAccept = document.querySelector("#profileConfirmAccept");
 const profileConfirmCancel = document.querySelector("#profileConfirmCancel");
 const profileConfirmClose = document.querySelector("#profileConfirmClose");
 let avatarCropState = null;
 let profileConfirmResolve = null;
+
+const profileConfirmIcons = {
+    delete: "/Assets/Images/Icons/confirm-delete.svg",
+    email: "/Assets/Images/Icons/confirm-email.svg",
+    password: "/Assets/Images/Icons/confirm-password.svg",
+    security: "/Assets/Images/Icons/confirm-security.svg",
+    default: "/Assets/Images/Icons/confirm-profile.svg"
+};
 const allowedProfileImageTypes = ["image/png", "image/jpeg", "image/jpg"];
 const maxImageSize = 10 * 1024 * 1024;
 function setProfileStatus(element, message, kind = "") {
@@ -84,7 +93,7 @@ function closeProfileConfirm(result) {
     }
 }
 
-function confirmProfileAction(title, message, confirmText = "Confirm") {
+function confirmProfileAction(title, message, confirmText = "Confirm", icon = "default") {
     if (!profileConfirmModal || !profileConfirmTitle || !profileConfirmMessage || !profileConfirmAccept) {
         return Promise.resolve(true);
     }
@@ -95,6 +104,9 @@ function confirmProfileAction(title, message, confirmText = "Confirm") {
 
     profileConfirmTitle.textContent = title;
     profileConfirmMessage.textContent = message;
+    if (profileConfirmIcon) {
+        profileConfirmIcon.src = profileConfirmIcons[icon] || profileConfirmIcons.default;
+    }
     const text = profileConfirmAccept.querySelector("span");
     if (text) {
         text.textContent = confirmText;
@@ -260,7 +272,8 @@ async function deleteProfileAvatar() {
     const confirmed = await confirmProfileAction(
         "Delete profile image?",
         "Your current profile image will be removed from the account.",
-        "Delete"
+        "Delete",
+        "delete"
     );
     if (!confirmed) {
         return;
@@ -291,7 +304,8 @@ async function saveProfileEmail(event) {
     const confirmed = await confirmProfileAction(
         "Save email?",
         "This email will be used for account security and two-factor authentication.",
-        "Save email"
+        "Save email",
+        "email"
     );
     if (!confirmed) {
         return;
@@ -323,7 +337,8 @@ async function saveProfilePassword(event) {
     const confirmed = await confirmProfileAction(
         "Change password?",
         "After changing your password, use the new password on your next sign in.",
-        "Change password"
+        "Change password",
+        "password"
     );
     if (!confirmed) {
         return;
@@ -366,7 +381,8 @@ async function setTwoFactorEnabled() {
         nextState
             ? "A verification code will be required on every sign in."
             : "Your account will no longer ask for a verification code on sign in.",
-        nextState ? "Enable 2FA" : "Disable 2FA"
+        nextState ? "Enable 2FA" : "Disable 2FA",
+        "security"
     );
     if (!confirmed) {
         twoFactorToggle.checked = !nextState;

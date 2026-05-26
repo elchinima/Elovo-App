@@ -900,11 +900,20 @@ input:disabled {
 }
 
 .message-status-icon {
-    width: 18px;
-    height: 14px;
+    width: 24px;
+    height: 18px;
     display: block;
     flex: 0 0 auto;
-    opacity: 0.9;
+    opacity: 1;
+    filter: drop-shadow(0 1px 3px rgba(3, 6, 18, 0.38));
+}
+
+.message-status-icon.is-pending {
+    width: 22px;
+}
+
+.message-status-icon.is-delivered {
+    width: 22px;
 }
 
 .composer {
@@ -961,25 +970,15 @@ input:disabled {
 .composer.is-image-transfer::before {
     content: "";
     position: absolute;
-    left: 18px;
-    right: 18px;
-    top: 8px;
-    height: 3px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12);
-    overflow: hidden;
+    inset: 8px 14px;
+    border: 1px solid rgba(125, 134, 255, 0.16);
+    border-radius: calc(var(--radius) + 2px);
+    background: rgba(109, 103, 255, 0.05);
+    pointer-events: none;
 }
 
 .composer.is-image-transfer::after {
-    content: "";
-    position: absolute;
-    left: 18px;
-    top: 8px;
-    width: var(--image-progress, 0%);
-    height: 3px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, var(--success), #7aa8ff);
-    transition: width 120ms ease;
+    content: none;
 }
 
 .composer.is-image-transfer .icon-button::after {
@@ -1003,26 +1002,52 @@ input:disabled {
     left: 18px;
     right: 18px;
     bottom: calc(100% + 8px);
-    min-height: 34px;
+    min-height: 40px;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 10px;
-    border: 1px solid rgba(125, 134, 255, 0.22);
+    padding: 9px 12px 11px;
+    border: 1px solid rgba(125, 134, 255, 0.3);
     border-radius: var(--radius);
     color: var(--text);
-    background: rgba(18, 24, 50, 0.94);
+    background: rgba(12, 16, 36, 0.96);
     backdrop-filter: blur(18px);
-    box-shadow: none;
+    box-shadow: 0 10px 24px rgba(3, 6, 18, 0.22);
     font-size: 0.78rem;
     font-weight: 800;
+    overflow: hidden;
     pointer-events: none;
+}
+
+.image-upload-status::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 6px;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.11);
+}
+
+.image-upload-status::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 6px;
+    width: var(--image-progress, 0%);
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 120ms ease;
 }
 
 .image-upload-status img {
     width: 22px;
     height: 22px;
     flex: 0 0 auto;
+    position: relative;
+    z-index: 1;
 }
 
 .image-upload-status span {
@@ -1030,6 +1055,8 @@ input:disabled {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    position: relative;
+    z-index: 1;
 }
 
 .image-preview-backdrop {

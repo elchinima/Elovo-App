@@ -39,7 +39,7 @@ public class SmtpEmailSender : IEmailSender
 
         message.To.Add(new MailAddress(email));
 
-        await client.SendMailAsync(message, cancellationToken);
+        await client.SendMailAsync(message, CancellationToken.None);
     }
 
     private static string BuildTwoFactorBody(string username, string code)

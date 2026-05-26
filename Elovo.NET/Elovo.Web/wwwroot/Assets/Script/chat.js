@@ -814,9 +814,11 @@ function appendMessage(message) {
     if (isMine) {
         const status = document.createElement("img");
         const statusText = message.readAt ? "Read" : message.isPending ? "Pending" : "Delivered";
-        status.className = "message-status-icon";
+        status.className = `message-status-icon ${message.readAt ? "is-read" : message.isPending ? "is-pending" : "is-delivered"}`;
         status.src = message.readAt
             ? "/Assets/Images/Icons/message-read.svg"
+            : message.isPending
+                ? "/Assets/Images/Icons/message-pending.svg"
             : "/Assets/Images/Icons/sent-action.svg";
         status.alt = statusText;
         status.title = statusText;

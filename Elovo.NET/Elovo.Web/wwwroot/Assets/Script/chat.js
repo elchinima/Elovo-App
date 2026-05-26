@@ -481,6 +481,41 @@ function applyConversationSearch() {
     renderChatList(getFilteredConversations());
 }
 
+function validateSearchInput(input, message) {
+    if (!input) {
+        return false;
+    }
+
+    if (input.value.trim()) {
+        input.setCustomValidity("");
+        input.removeAttribute("aria-invalid");
+        return true;
+    }
+
+    input.setCustomValidity(message);
+    input.setAttribute("aria-invalid", "true");
+    input.reportValidity();
+    input.focus();
+    return false;
+}
+
+function clearSearchValidation(input) {
+    if (!input) {
+        return;
+    }
+
+    input.setCustomValidity("");
+    input.removeAttribute("aria-invalid");
+}
+
+function submitConversationSearch() {
+    if (!validateSearchInput(searchInput, "Enter a chat name to search.")) {
+        return;
+    }
+
+    applyConversationSearch();
+}
+
 function createChatSwipeShell(chat, button) {
     const shell = document.createElement("div");
     const action = document.createElement("button");
@@ -1295,13 +1330,17 @@ function formatCandidateAction(status) {
     return "Add";
 }
 
-async function searchUsers() {
+async function searchUsers(validateEmpty = false) {
     if (!userSearchInput || !userSearchResults) {
         return;
     }
 
     const term = userSearchInput.value.trim();
     if (!term) {
+        if (validateEmpty) {
+            validateSearchInput(userSearchInput, "Enter a username to search.");
+        }
+
         userSearchResults.innerHTML = "";
         const empty = document.createElement("span");
         empty.className = "modal-empty";
@@ -1790,6 +1829,8 @@ if (settingsButton) {
 
 if (searchInput) {
     searchInput.addEventListener("input", () => {
+        clearSearchValidation(searchInput);
+
         if (!searchInput.value.trim()) {
             applyConversationSearch();
         }
@@ -1798,13 +1839,13 @@ if (searchInput) {
     searchInput.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            applyConversationSearch();
+            submitConversationSearch();
         }
     });
 }
 
 if (chatSearchButton) {
-    chatSearchButton.addEventListener("click", applyConversationSearch);
+    chatSearchButton.addEventListener("click", submitConversationSearch);
 }
 
 if (restoreHiddenButton) {
@@ -1876,6 +1917,8 @@ if (friendRequestsButton) {
 
 if (userSearchInput) {
     userSearchInput.addEventListener("input", () => {
+        clearSearchValidation(userSearchInput);
+
         if (!userSearchInput.value.trim() && userSearchResults) {
             userSearchResults.innerHTML = "";
         }
@@ -1884,13 +1927,13 @@ if (userSearchInput) {
     userSearchInput.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            searchUsers();
+            searchUsers(true);
         }
     });
 }
 
 if (userSearchButton) {
-    userSearchButton.addEventListener("click", searchUsers);
+    userSearchButton.addEventListener("click", () => searchUsers(true));
 }
 })();
 

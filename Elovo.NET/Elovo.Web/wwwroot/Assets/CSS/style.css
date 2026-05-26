@@ -218,6 +218,10 @@ input:focus {
     background: rgba(7, 11, 30, 0.88);
 }
 
+input[aria-invalid="true"] {
+    border-color: #ff8f9c;
+}
+
 input:disabled {
     opacity: 0.72;
     cursor: wait;

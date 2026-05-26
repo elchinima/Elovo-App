@@ -1,80 +1,32 @@
 using System.Net;
-using System.Net.Mail;
+using Resend;
 
 namespace Elovo.Web.Services;
 
-public class SmtpEmailSender : IEmailSender
+public class ResendEmailSender : IEmailSender
 {
-    private readonly IConfiguration _configuration;
+    private const string FromAddress = "onboarding@resend.dev";
+    private readonly IResend _resend;
 
-    public SmtpEmailSender(IConfiguration configuration)
+    public ResendEmailSender(IResend resend)
     {
-        _configuration = configuration;
+        _resend = resend;
     }
 
     public async Task SendTwoFactorCodeAsync(string email, string username, string code, CancellationToken cancellationToken = default)
     {
-        using var message = new MailMessage
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var message = new EmailMessage
         {
-            From = new MailAddress(FromAddress, FromName),
+            From = FromAddress,
             Subject = "Your Elovo verification code",
-            Body = BuildTwoFactorBody(username, code),
-            IsBodyHtml = true
+            HtmlBody = BuildTwoFactorBody(username, code)
         };
 
         message.To.Add(email);
 
-        using var client = new SmtpClient(Host, Port)
-        {
-            EnableSsl = EnableSsl,
-            Timeout = TimeoutMilliseconds
-        };
-
-        var userName = GetOptionalConfigurationValue("Email:SmtpUsername");
-        var password = GetOptionalConfigurationValue("Email:SmtpPassword");
-        if (!string.IsNullOrWhiteSpace(userName) && !string.IsNullOrWhiteSpace(password))
-        {
-            client.Credentials = new NetworkCredential(userName, password);
-        }
-
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(TimeSpan.FromMilliseconds(TimeoutMilliseconds));
-        await client.SendMailAsync(message, timeout.Token);
-    }
-
-    private string Host => GetRequiredConfigurationValue("Email:SmtpHost");
-
-    private int Port => int.TryParse(_configuration["Email:SmtpPort"], out var port) ? port : 587;
-
-    private bool EnableSsl => !bool.TryParse(_configuration["Email:EnableSsl"], out var enableSsl) || enableSsl;
-
-    private int TimeoutMilliseconds => int.TryParse(_configuration["Email:TimeoutMilliseconds"], out var timeout)
-        ? Math.Max(timeout, 1000)
-        : 15000;
-
-    private string FromAddress => GetRequiredConfigurationValue("Email:From");
-
-    private string FromName => string.IsNullOrWhiteSpace(_configuration["Email:FromName"])
-        ? "Elovo Messages"
-        : _configuration["Email:FromName"]!;
-
-    private string GetRequiredConfigurationValue(string key)
-    {
-        var value = _configuration[key];
-        return string.IsNullOrWhiteSpace(value) || IsPlaceholder(value)
-            ? throw new InvalidOperationException($"{key} is not configured.")
-            : value;
-    }
-
-    private string? GetOptionalConfigurationValue(string key)
-    {
-        var value = _configuration[key];
-        return string.IsNullOrWhiteSpace(value) || IsPlaceholder(value) ? null : value;
-    }
-
-    private static bool IsPlaceholder(string value)
-    {
-        return value.StartsWith("Set via ", StringComparison.OrdinalIgnoreCase);
+        await _resend.EmailSendAsync(message);
     }
 
     private static string BuildTwoFactorBody(string username, string code)

@@ -13,13 +13,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddOptions();
-builder.Services.AddHttpClient<ResendClient>();
-builder.Services.Configure<ResendClientOptions>(options =>
-{
-    options.ApiToken = GetRequiredConfigurationValue(config, "Email:ResendApiKey");
-});
-builder.Services.AddTransient<IResend, ResendClient>();
-builder.Services.AddScoped<IEmailSender, ResendEmailSender>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddHttpClient<IImageStorageService, SupabaseImageStorageService>();
 builder.Services.AddHttpClient<RenderKeepAliveService>();
 builder.Services.AddHostedService<RenderKeepAliveService>();

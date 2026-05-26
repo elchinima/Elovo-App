@@ -1,32 +1,45 @@
 using System.Net;
-using Resend;
+using System.Net.Mail;
 
 namespace Elovo.Web.Services;
 
-public class ResendEmailSender : IEmailSender
+public class SmtpEmailSender : IEmailSender
 {
-    private const string FromAddress = "onboarding@resend.dev";
-    private readonly IResend _resend;
+    private readonly IConfiguration _config;
 
-    public ResendEmailSender(IResend resend)
+    public SmtpEmailSender(IConfiguration config)
     {
-        _resend = resend;
+        _config = config;
     }
 
     public async Task SendTwoFactorCodeAsync(string email, string username, string code, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var message = new EmailMessage
+        var host = GetRequiredConfigurationValue("Email:SmtpHost");
+        var port = int.Parse(GetRequiredConfigurationValue("Email:SmtpPort"));
+        var smtpUsername = GetRequiredConfigurationValue("Email:SmtpUsername");
+        var smtpPassword = GetRequiredConfigurationValue("Email:SmtpPassword");
+        var from = GetRequiredConfigurationValue("Email:From");
+        var enableSsl = bool.Parse(GetRequiredConfigurationValue("Email:EnableSsl"));
+
+        using var client = new SmtpClient(host, port)
         {
-            From = FromAddress,
-            Subject = "Your Elovo verification code",
-            HtmlBody = BuildTwoFactorBody(username, code)
+            Credentials = new NetworkCredential(smtpUsername, smtpPassword),
+            EnableSsl = enableSsl
         };
 
-        message.To.Add(email);
+        using var message = new MailMessage
+        {
+            From = new MailAddress(from),
+            Subject = "Your Elovo verification code",
+            Body = BuildTwoFactorBody(username, code),
+            IsBodyHtml = true
+        };
 
-        await _resend.EmailSendAsync(message);
+        message.To.Add(new MailAddress(email));
+
+        await client.SendMailAsync(message, cancellationToken);
     }
 
     private static string BuildTwoFactorBody(string username, string code)
@@ -64,5 +77,13 @@ public class ResendEmailSender : IEmailSender
         </body>
         </html>
         """;
+    }
+
+    private string GetRequiredConfigurationValue(string key)
+    {
+        var value = _config[key];
+        return string.IsNullOrWhiteSpace(value) || value.StartsWith("Set via ", StringComparison.OrdinalIgnoreCase)
+            ? throw new InvalidOperationException($"{key} is not configured.")
+            : value;
     }
 }

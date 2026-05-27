@@ -86,10 +86,6 @@ try
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ElovoDbContext>();
     dbContext.Database.Migrate();
-    dbContext.Database.ExecuteSqlRaw("""
-        ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "LastLoginIp" character varying(45);
-        ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "RegistrationIp" character varying(45);
-        """);
 }
 finally
 {

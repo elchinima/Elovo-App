@@ -2,7 +2,8 @@ namespace Elovo.Web.Services;
 
 public sealed class PendingMessageNotificationJob : BackgroundService
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Interval = TimeSpan.FromSeconds(10);
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<PendingMessageNotificationJob> _logger;
 
@@ -66,7 +67,7 @@ public sealed class PendingMessageNotificationJob : BackgroundService
         {
             var body = notification.Message.IsVoice
                 ? "Voice message"
-                : notification.Message.Content;
+                : GetMessageNotificationBody(notification.Message.Content);
 
             await pushNotificationService.SendPushAsync(
                 notification.ReceiverFcmToken!,
@@ -80,5 +81,31 @@ public sealed class PendingMessageNotificationJob : BackgroundService
         {
             await dbContext.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private static string GetMessageNotificationBody(string content)
+    {
+        return IsFileContent(content)
+            ? "Sent a file"
+            : content;
+    }
+
+    private static bool IsFileContent(string content)
+    {
+        var trimmedContent = content.Trim();
+        if (trimmedContent.StartsWith("messages/", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var fileReference = Uri.TryCreate(trimmedContent, UriKind.Absolute, out var uri)
+            ? uri.AbsolutePath
+            : trimmedContent;
+        var fileName = Path.GetFileName(fileReference);
+        var extension = Path.GetExtension(fileName);
+
+        return extension.Length > 1
+            && fileName.Length > extension.Length
+            && extension[1..].All(char.IsLetterOrDigit);
     }
 }

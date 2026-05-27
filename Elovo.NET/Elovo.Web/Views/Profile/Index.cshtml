@@ -94,14 +94,14 @@
                 <div class="profile-toggle-row">
                     <div>
                         <strong>Email code on every sign in</strong>
-                        <span>Available after adding an email address.</span>
+                        <span>Temporarily unavailable.</span>
                     </div>
                     <label class="switch">
-                        <input type="checkbox" id="twoFactorToggle" @(Model.IsTwoFactorEnabled ? "checked" : "") @(string.IsNullOrWhiteSpace(Model.Email) ? "disabled" : "")>
+                        <input type="checkbox" id="twoFactorToggle" disabled>
                         <span></span>
                     </label>
                 </div>
-                <p class="profile-status" id="twoFactorStatus"></p>
+                <p class="profile-status" id="twoFactorStatus">Temporarily unavailable.</p>
             </section>
         </div>
     </section>

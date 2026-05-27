@@ -51,6 +51,9 @@ public class AuthService : IAuthService
             return AuthResultDto.Failure("Invalid username or password.");
         }
 
+        // Two-factor authentication is temporarily disabled.
+        // Keep this block for re-enabling the email code flow later.
+        /*
         if (user.IsTwoFactorEnabled && !string.IsNullOrWhiteSpace(user.Email))
         {
             var code = GenerateTwoFactorCode();
@@ -61,6 +64,7 @@ public class AuthService : IAuthService
             await _emailSender.SendTwoFactorCodeAsync(user.Email, user.Username, code, cancellationToken);
             return AuthResultDto.TwoFactorRequired(user);
         }
+        */
 
         user.TwoFactorCodeHash = null;
         user.TwoFactorCodeExpiresAt = null;
@@ -75,6 +79,10 @@ public class AuthService : IAuthService
 
     public async Task<AuthResultDto> VerifyTwoFactorAsync(Guid userId, string code, string? clientIp, CancellationToken cancellationToken = default)
     {
+        // Two-factor authentication is temporarily disabled.
+        return AuthResultDto.Failure("Two-factor authentication is temporarily unavailable.");
+
+        /*
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null || string.IsNullOrWhiteSpace(user.TwoFactorCodeHash) || user.TwoFactorCodeExpiresAt is null)
         {
@@ -103,6 +111,7 @@ public class AuthService : IAuthService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return AuthResultDto.Success(_mapper.Map<UserDto>(user), CreateToken(user));
+        */
     }
 
     private string CreateToken(User user)

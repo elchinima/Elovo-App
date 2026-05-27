@@ -67,6 +67,10 @@ public class ProfileController : Controller
     [HttpPost("/api/profile/two-factor")]
     public async Task<IActionResult> SetTwoFactor([FromBody] TwoFactorSettingsDto dto, CancellationToken cancellationToken)
     {
+        // Two-factor authentication is temporarily disabled.
+        return StatusCode(StatusCodes.Status503ServiceUnavailable, "Two-factor authentication is temporarily unavailable.");
+
+        /*
         try
         {
             return Ok(await _userService.SetTwoFactorEnabledAsync(GetCurrentUserId(), dto.Enabled, cancellationToken));
@@ -75,6 +79,7 @@ public class ProfileController : Controller
         {
             return BadRequest(ex.Message);
         }
+        */
     }
 
     [HttpPost("/api/profile/image")]

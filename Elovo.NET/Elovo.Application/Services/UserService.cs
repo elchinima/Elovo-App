@@ -159,6 +159,18 @@ public class UserService : IUserService
     public async Task<ProfileDto> SetTwoFactorEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default)
     {
         var user = await GetRequiredUserAsync(userId, cancellationToken);
+
+        // Two-factor authentication is temporarily disabled.
+        user.IsTwoFactorEnabled = false;
+        user.TwoFactorCodeHash = null;
+        user.TwoFactorCodeExpiresAt = null;
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+
+        /*
         if (enabled && string.IsNullOrWhiteSpace(user.Email))
         {
             throw new InvalidOperationException("Add an email before enabling two-factor authentication.");
@@ -175,6 +187,7 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return ToProfileDto(user);
+        */
     }
 
     public async Task<ProfileDto> SetProfileImagePathAsync(Guid userId, string path, CancellationToken cancellationToken = default)
@@ -305,7 +318,7 @@ public class UserService : IUserService
             Email = user.Email,
             ProfileImagePath = user.ProfileImagePath,
             ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
-            IsTwoFactorEnabled = user.IsTwoFactorEnabled
+            IsTwoFactorEnabled = false
         };
     }
 

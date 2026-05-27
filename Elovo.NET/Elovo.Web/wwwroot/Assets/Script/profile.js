@@ -80,8 +80,9 @@ function renderProfile(profile) {
     }
 
     if (twoFactorToggle) {
-        twoFactorToggle.checked = !!profile.isTwoFactorEnabled;
-        twoFactorToggle.disabled = !profile.email;
+        twoFactorToggle.checked = false;
+        twoFactorToggle.disabled = true;
+        setProfileStatus(twoFactorStatus, "Temporarily unavailable.");
     }
 }
 
@@ -375,6 +376,12 @@ async function setTwoFactorEnabled() {
         return;
     }
 
+    twoFactorToggle.checked = false;
+    twoFactorToggle.disabled = true;
+    setProfileStatus(twoFactorStatus, "Temporarily unavailable.", "error");
+    return;
+
+    /*
     const nextState = twoFactorToggle.checked;
     const confirmed = await confirmProfileAction(
         nextState ? "Enable 2FA?" : "Disable 2FA?",
@@ -410,6 +417,7 @@ async function setTwoFactorEnabled() {
     twoFactorToggle.checked = !nextState;
     twoFactorToggle.disabled = false;
     setProfileStatus(twoFactorStatus, await readResponseText(response), "error");
+    */
 }
 
 if (profileImageButton && profileImageInput) {
@@ -444,6 +452,9 @@ if (profilePasswordForm) {
 }
 
 if (twoFactorToggle) {
+    twoFactorToggle.checked = false;
+    twoFactorToggle.disabled = true;
+    setProfileStatus(twoFactorStatus, "Temporarily unavailable.");
     twoFactorToggle.addEventListener("change", setTwoFactorEnabled);
 }
 

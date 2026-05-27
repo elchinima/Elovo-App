@@ -14,9 +14,11 @@ builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddOptions();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddSingleton<PushNotificationService>();
 builder.Services.AddHttpClient<IImageStorageService, SupabaseImageStorageService>();
 builder.Services.AddHttpClient<RenderKeepAliveService>();
 builder.Services.AddHostedService<RenderKeepAliveService>();
+builder.Services.AddHostedService<PendingMessageNotificationJob>();
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>

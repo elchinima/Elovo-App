@@ -3,6 +3,7 @@ using System;
 using Elovo.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Elovo.Infrastructure.Migrations
 {
     [DbContext(typeof(ElovoDbContext))]
-    partial class ElovoDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260527213938_AddFcmTokenAndPendingMessageNotificationFlag")]
+    partial class AddFcmTokenAndPendingMessageNotificationFlag
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -129,10 +132,6 @@ namespace Elovo.Infrastructure.Migrations
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
-
-                    b.Property<string>("FcmToken")
-                        .HasMaxLength(4096)
-                        .HasColumnType("character varying(4096)");
 
                     b.Property<bool>("IsOnline")
                         .HasColumnType("boolean");

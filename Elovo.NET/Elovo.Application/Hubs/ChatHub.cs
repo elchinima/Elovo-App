@@ -127,10 +127,7 @@ public class ChatHub : Hub
             return false;
         }
 
-        if (_imageStorageService.IsImagePath(message.Content))
-        {
-            await _imageStorageService.DeleteAsync(message.Content, Context.ConnectionAborted);
-        }
+        await DeletePendingMessageImageAsync(message);
 
         await _unitOfWork.PendingMessages.DeleteAsync(message, Context.ConnectionAborted);
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
@@ -221,6 +218,11 @@ public class ChatHub : Hub
             deliveredMessageIds.Add(message.Id);
         }
 
+        foreach (var message in messages)
+        {
+            await DeletePendingMessageImageAsync(message);
+        }
+
         await _unitOfWork.PendingMessages.DeleteRangeAsync(messages, Context.ConnectionAborted);
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
 
@@ -255,5 +257,13 @@ public class ChatHub : Hub
             IsPending = message.IsPending,
             ImageFileName = message.ImageFileName
         };
+    }
+
+    private async Task DeletePendingMessageImageAsync(PendingMessage message)
+    {
+        if (_imageStorageService.IsImagePath(message.Content))
+        {
+            await _imageStorageService.DeleteAsync(message.Content, Context.ConnectionAborted);
+        }
     }
 }

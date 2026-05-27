@@ -26,6 +26,7 @@ appsettings.*.json
 **/appsettings.*.json
 secrets.json
 **/secrets.json
+Elovo.NET/Elovo.Web/Secret/
 
 # OS files
 Thumbs.db

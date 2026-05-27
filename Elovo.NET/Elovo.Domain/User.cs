@@ -7,6 +7,7 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? ProfileImagePath { get; set; }
+    public string? FcmToken { get; set; }
     public bool IsTwoFactorEnabled { get; set; }
     public string? TwoFactorCodeHash { get; set; }
     public DateTime? TwoFactorCodeExpiresAt { get; set; }

@@ -161,6 +161,9 @@
 
 <script>
     window.elovoCurrentUserId = "@ViewBag.CurrentUserId";
+    if (window.AndroidBridge) {
+        window.AndroidBridge.onUserLoggedIn(window.elovoCurrentUserId);
+    }
     window.elovoCurrentUserProfileImageUrl = "@ViewBag.CurrentUserProfileImageUrl";
 </script>
 

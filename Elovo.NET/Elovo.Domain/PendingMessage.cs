@@ -9,4 +9,5 @@ public class PendingMessage
     public DateTime SentAt { get; set; }
     public bool IsVoice { get; set; }
     public string? VoiceUrl { get; set; }
+    public bool IsNotificationSent { get; set; }
 }

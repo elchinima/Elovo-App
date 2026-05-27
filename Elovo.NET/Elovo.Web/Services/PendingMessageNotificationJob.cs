@@ -42,10 +42,10 @@ public sealed class PendingMessageNotificationJob : BackgroundService
         var pendingNotifications = await dbContext.PendingMessages
             .Where(message => !message.IsNotificationSent)
             .Join(
-                dbContext.Users,
+                dbContext.UserSessions,
                 message => message.ReceiverId,
-                receiver => receiver.Id,
-                (message, receiver) => new { Message = message, ReceiverFcmToken = receiver.FcmToken })
+                session => session.UserId,
+                (message, session) => new { Message = message, ReceiverFcmToken = session.FcmToken })
             .Join(
                 dbContext.Users,
                 notification => notification.Message.SenderId,

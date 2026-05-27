@@ -12,22 +12,22 @@ public class UserRepository : IUserRepository
 
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return _context.Users.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        return UsersWithDetails().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
     public Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
-        return _context.Users.FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
+        return UsersWithDetails().FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
     }
 
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        return _context.Users.FirstOrDefaultAsync(x => x.Email == email, cancellationToken);
+        return UsersWithDetails().FirstOrDefaultAsync(x => x.Email == email, cancellationToken);
     }
 
     public async Task<IReadOnlyList<User>> GetAllExceptAsync(Guid currentUserId, CancellationToken cancellationToken = default)
     {
-        return await _context.Users
+        return await UsersWithDetails()
             .Where(x => x.Id != currentUserId)
             .OrderBy(x => x.Username)
             .ToListAsync(cancellationToken);
@@ -41,5 +41,12 @@ public class UserRepository : IUserRepository
     public void Update(User user)
     {
         _context.Users.Update(user);
+    }
+
+    private IQueryable<User> UsersWithDetails()
+    {
+        return _context.Users
+            .Include(x => x.Session)
+            .Include(x => x.TwoFactor);
     }
 }

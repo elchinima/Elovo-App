@@ -9,6 +9,8 @@ public class ElovoDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<UserTwoFactor> UserTwoFactor => Set<UserTwoFactor>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
     public DbSet<PendingMessage> PendingMessages => Set<PendingMessage>();
@@ -24,13 +26,36 @@ public class ElovoDbContext : DbContext
             entity.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
             entity.Property(x => x.Email).HasMaxLength(256);
             entity.Property(x => x.ProfileImagePath).HasMaxLength(512);
-            entity.Property(x => x.FcmToken).HasMaxLength(4096);
-            entity.Property(x => x.TwoFactorCodeHash).HasMaxLength(256);
-            entity.Property(x => x.RegistrationIp).HasMaxLength(45);
-            entity.Property(x => x.LastLoginIp).HasMaxLength(45);
             entity.HasIndex(x => x.Username).IsUnique();
             entity.HasIndex(x => x.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");
+        });
+
+        modelBuilder.Entity<UserSession>(entity =>
+        {
+            entity.HasKey(x => x.UserId);
+            entity.Property(x => x.IsOnline).HasDefaultValue(false);
+            entity.Property(x => x.LastLoginIp).HasMaxLength(45);
+            entity.Property(x => x.RegistrationIp).HasMaxLength(45);
+            entity.Property(x => x.FcmToken).HasMaxLength(4096);
             entity.HasIndex(x => x.IsOnline);
+
+            entity.HasOne(x => x.User)
+                .WithOne(x => x.Session)
+                .HasForeignKey<UserSession>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserTwoFactor>(entity =>
+        {
+            entity.ToTable("UserTwoFactor");
+            entity.HasKey(x => x.UserId);
+            entity.Property(x => x.IsTwoFactorEnabled).HasDefaultValue(false);
+            entity.Property(x => x.TwoFactorCodeHash).HasMaxLength(256);
+
+            entity.HasOne(x => x.User)
+                .WithOne(x => x.TwoFactor)
+                .HasForeignKey<UserTwoFactor>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Conversation>(entity =>

@@ -14,7 +14,13 @@ public class ConversationRepository : IConversationRepository
     {
         return _context.Conversations
             .Include(x => x.FirstUser)
+                .ThenInclude(x => x.Session)
             .Include(x => x.SecondUser)
+                .ThenInclude(x => x.Session)
+            .Include(x => x.FirstUser)
+                .ThenInclude(x => x.TwoFactor)
+            .Include(x => x.SecondUser)
+                .ThenInclude(x => x.TwoFactor)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
@@ -31,7 +37,13 @@ public class ConversationRepository : IConversationRepository
     {
         return await _context.Conversations
             .Include(x => x.FirstUser)
+                .ThenInclude(x => x.Session)
             .Include(x => x.SecondUser)
+                .ThenInclude(x => x.Session)
+            .Include(x => x.FirstUser)
+                .ThenInclude(x => x.TwoFactor)
+            .Include(x => x.SecondUser)
+                .ThenInclude(x => x.TwoFactor)
             .Where(x => x.FirstUserId == userId || x.SecondUserId == userId)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);

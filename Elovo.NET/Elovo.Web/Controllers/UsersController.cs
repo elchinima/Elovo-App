@@ -19,13 +19,20 @@ public class UsersController : ControllerBase
             return BadRequest();
         }
 
-        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
-        if (user is null)
+        var userSession = await _context.UserSessions.FirstOrDefaultAsync(x => x.UserId == request.UserId, cancellationToken);
+        if (userSession is null)
         {
-            return NotFound();
+            var userExists = await _context.Users.AnyAsync(x => x.Id == request.UserId, cancellationToken);
+            if (!userExists)
+            {
+                return NotFound();
+            }
+
+            userSession = new UserSession { UserId = request.UserId };
+            await _context.UserSessions.AddAsync(userSession, cancellationToken);
         }
 
-        user.FcmToken = request.FcmToken.Trim();
+        userSession.FcmToken = request.FcmToken.Trim();
         await _context.SaveChangesAsync(cancellationToken);
 
         return NoContent();

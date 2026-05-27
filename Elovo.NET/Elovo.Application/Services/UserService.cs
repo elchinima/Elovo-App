@@ -43,8 +43,8 @@ public class UserService : IUserService
                 Id = conversation.Id,
                 UserId = user.Id,
                 Username = user.Username,
-                IsOnline = user.IsOnline,
-                LastSeenAt = user.LastSeenAt,
+                IsOnline = user.Session?.IsOnline ?? false,
+                LastSeenAt = user.Session?.LastSeenAt,
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 LastMessage = "Start a conversation.",
@@ -83,8 +83,8 @@ public class UserService : IUserService
             {
                 Id = user.Id,
                 Username = user.Username,
-                IsOnline = user.IsOnline,
-                LastSeenAt = user.LastSeenAt,
+                IsOnline = user.Session?.IsOnline ?? false,
+                LastSeenAt = user.Session?.LastSeenAt,
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 Status = friendIds.Contains(user.Id)
@@ -159,11 +159,12 @@ public class UserService : IUserService
     public async Task<ProfileDto> SetTwoFactorEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default)
     {
         var user = await GetRequiredUserAsync(userId, cancellationToken);
+        var twoFactor = EnsureTwoFactor(user);
 
         // Two-factor authentication is temporarily disabled.
-        user.IsTwoFactorEnabled = false;
-        user.TwoFactorCodeHash = null;
-        user.TwoFactorCodeExpiresAt = null;
+        twoFactor.IsTwoFactorEnabled = false;
+        twoFactor.TwoFactorCodeHash = null;
+        twoFactor.TwoFactorCodeExpiredAt = null;
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -176,11 +177,11 @@ public class UserService : IUserService
             throw new InvalidOperationException("Add an email before enabling two-factor authentication.");
         }
 
-        user.IsTwoFactorEnabled = enabled;
+        twoFactor.IsTwoFactorEnabled = enabled;
         if (!enabled)
         {
-            user.TwoFactorCodeHash = null;
-            user.TwoFactorCodeExpiresAt = null;
+            twoFactor.TwoFactorCodeHash = null;
+            twoFactor.TwoFactorCodeExpiredAt = null;
         }
 
         _unitOfWork.Users.Update(user);
@@ -277,16 +278,17 @@ public class UserService : IUserService
             return null;
         }
 
-        user.IsOnline = isOnline;
-        user.LastSeenAt = isOnline ? null : DateTime.UtcNow;
+        var session = EnsureSession(user);
+        session.IsOnline = isOnline;
+        session.LastSeenAt = isOnline ? null : DateTime.UtcNow;
         if (isOnline)
         {
-            ApplyLoginIp(user, clientIp);
+            ApplyLoginIp(session, clientIp);
         }
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return user.LastSeenAt;
+        return session.LastSeenAt;
     }
 
     private static (Guid FirstUserId, Guid SecondUserId) SortUserIds(Guid firstUserId, Guid secondUserId)
@@ -357,16 +359,26 @@ public class UserService : IUserService
         }
     }
 
-    private static void ApplyLoginIp(User user, string? clientIp)
+    private static void ApplyLoginIp(UserSession session, string? clientIp)
     {
         if (!string.IsNullOrWhiteSpace(clientIp))
         {
-            user.LastLoginIp = clientIp;
+            session.LastLoginIp = clientIp;
         }
 
-        if (string.IsNullOrWhiteSpace(user.RegistrationIp))
+        if (string.IsNullOrWhiteSpace(session.RegistrationIp))
         {
-            user.RegistrationIp = user.LastLoginIp;
+            session.RegistrationIp = session.LastLoginIp;
         }
+    }
+
+    private static UserSession EnsureSession(User user)
+    {
+        return user.Session ??= new UserSession { UserId = user.Id };
+    }
+
+    private static UserTwoFactor EnsureTwoFactor(User user)
+    {
+        return user.TwoFactor ??= new UserTwoFactor { UserId = user.Id };
     }
 }

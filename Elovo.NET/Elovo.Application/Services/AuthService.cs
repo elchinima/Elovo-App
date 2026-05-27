@@ -33,8 +33,12 @@ public class AuthService : IAuthService
             Username = username,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             CreatedAt = DateTime.UtcNow,
-            RegistrationIp = clientIp,
-            LastLoginIp = clientIp
+            Session = new UserSession
+            {
+                RegistrationIp = clientIp,
+                LastLoginIp = clientIp
+            },
+            TwoFactor = new UserTwoFactor()
         };
 
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
@@ -54,11 +58,12 @@ public class AuthService : IAuthService
         // Two-factor authentication is temporarily disabled.
         // Keep this block for re-enabling the email code flow later.
         /*
-        if (user.IsTwoFactorEnabled && !string.IsNullOrWhiteSpace(user.Email))
+        var twoFactor = EnsureTwoFactor(user);
+        if (twoFactor.IsTwoFactorEnabled && !string.IsNullOrWhiteSpace(user.Email))
         {
             var code = GenerateTwoFactorCode();
-            user.TwoFactorCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
-            user.TwoFactorCodeExpiresAt = DateTime.UtcNow.Add(TwoFactorCodeLifetime);
+            twoFactor.TwoFactorCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
+            twoFactor.TwoFactorCodeExpiredAt = DateTime.UtcNow.Add(TwoFactorCodeLifetime);
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _emailSender.SendTwoFactorCodeAsync(user.Email, user.Username, code, cancellationToken);
@@ -66,11 +71,13 @@ public class AuthService : IAuthService
         }
         */
 
-        user.TwoFactorCodeHash = null;
-        user.TwoFactorCodeExpiresAt = null;
-        user.IsOnline = true;
-        user.LastSeenAt = null;
-        ApplyLoginIp(user, clientIp);
+        var twoFactor = EnsureTwoFactor(user);
+        var session = EnsureSession(user);
+        twoFactor.TwoFactorCodeHash = null;
+        twoFactor.TwoFactorCodeExpiredAt = null;
+        session.IsOnline = true;
+        session.LastSeenAt = null;
+        ApplyLoginIp(session, clientIp);
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -84,29 +91,31 @@ public class AuthService : IAuthService
 
         /*
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
-        if (user is null || string.IsNullOrWhiteSpace(user.TwoFactorCodeHash) || user.TwoFactorCodeExpiresAt is null)
+        var twoFactor = user?.TwoFactor;
+        if (user is null || twoFactor is null || string.IsNullOrWhiteSpace(twoFactor.TwoFactorCodeHash) || twoFactor.TwoFactorCodeExpiredAt is null)
         {
             return AuthResultDto.Failure("Verification code is invalid.");
         }
 
-        if (user.TwoFactorCodeExpiresAt <= DateTime.UtcNow)
+        if (twoFactor.TwoFactorCodeExpiredAt <= DateTime.UtcNow)
         {
-            ClearTwoFactorCode(user);
+            ClearTwoFactorCode(twoFactor);
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return AuthResultDto.Failure("Verification code expired.");
         }
 
         var normalizedCode = NormalizeTwoFactorCode(code);
-        if (normalizedCode.Length != 7 || !BCrypt.Net.BCrypt.Verify(normalizedCode, user.TwoFactorCodeHash))
+        if (normalizedCode.Length != 7 || !BCrypt.Net.BCrypt.Verify(normalizedCode, twoFactor.TwoFactorCodeHash))
         {
             return AuthResultDto.Failure("Verification code is invalid.");
         }
 
-        ClearTwoFactorCode(user);
-        user.IsOnline = true;
-        user.LastSeenAt = null;
-        ApplyLoginIp(user, clientIp);
+        var session = EnsureSession(user);
+        ClearTwoFactorCode(twoFactor);
+        session.IsOnline = true;
+        session.LastSeenAt = null;
+        ApplyLoginIp(session, clientIp);
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -159,22 +168,32 @@ public class AuthService : IAuthService
         return new string((code ?? string.Empty).Where(char.IsDigit).ToArray());
     }
 
-    private static void ClearTwoFactorCode(User user)
+    private static void ClearTwoFactorCode(UserTwoFactor twoFactor)
     {
-        user.TwoFactorCodeHash = null;
-        user.TwoFactorCodeExpiresAt = null;
+        twoFactor.TwoFactorCodeHash = null;
+        twoFactor.TwoFactorCodeExpiredAt = null;
     }
 
-    private static void ApplyLoginIp(User user, string? clientIp)
+    private static void ApplyLoginIp(UserSession session, string? clientIp)
     {
         if (!string.IsNullOrWhiteSpace(clientIp))
         {
-            user.LastLoginIp = clientIp;
+            session.LastLoginIp = clientIp;
         }
 
-        if (string.IsNullOrWhiteSpace(user.RegistrationIp))
+        if (string.IsNullOrWhiteSpace(session.RegistrationIp))
         {
-            user.RegistrationIp = user.LastLoginIp;
+            session.RegistrationIp = session.LastLoginIp;
         }
+    }
+
+    private static UserSession EnsureSession(User user)
+    {
+        return user.Session ??= new UserSession { UserId = user.Id };
+    }
+
+    private static UserTwoFactor EnsureTwoFactor(User user)
+    {
+        return user.TwoFactor ??= new UserTwoFactor { UserId = user.Id };
     }
 }

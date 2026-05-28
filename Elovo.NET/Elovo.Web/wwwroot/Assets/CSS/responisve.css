@@ -278,13 +278,14 @@
 
     .profile-topbar {
         top: 0;
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
     }
 
     .settings-nav {
-        width: 100%;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        width: auto;
+        margin-left: auto;
+        display: flex;
     }
 
     .settings-nav-button {
@@ -339,6 +340,16 @@
         grid-template-columns: 1fr;
     }
 
+    .settings-title-row > div {
+        min-width: 0;
+    }
+
+    .profile-topbar h1 {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .settings-nav-button {
         width: 46px;
         height: 46px;
@@ -347,9 +358,7 @@
     }
 
     .settings-nav {
-        width: auto;
-        margin-left: auto;
-        display: flex;
+        flex: 0 0 auto;
     }
 
     .settings-nav-button span {

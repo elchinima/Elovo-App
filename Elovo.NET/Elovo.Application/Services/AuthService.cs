@@ -75,8 +75,6 @@ public class AuthService : IAuthService
         var session = EnsureSession(user);
         twoFactor.TwoFactorCodeHash = null;
         twoFactor.TwoFactorCodeExpiredAt = null;
-        session.IsOnline = true;
-        session.LastSeenAt = null;
         ApplyLoginIp(session, clientIp);
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

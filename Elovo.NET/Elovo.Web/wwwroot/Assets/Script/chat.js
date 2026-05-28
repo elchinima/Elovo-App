@@ -247,7 +247,12 @@ function readStoredMessages(userId) {
 }
 
 function writeStoredMessages(userId, messages) {
-    window.localStorage.setItem(getConversationStorageKey(userId), JSON.stringify(messages));
+    try {
+        window.localStorage.setItem(getConversationStorageKey(userId), JSON.stringify(messages));
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 function updateStoredMessage(otherUserId, messageId, update) {
@@ -263,10 +268,10 @@ function updateStoredMessage(otherUserId, messageId, update) {
     });
 
     if (changed) {
-        writeStoredMessages(otherUserId, updatedMessages);
+        return writeStoredMessages(otherUserId, updatedMessages);
     }
 
-    return changed;
+    return false;
 }
 
 function removeStoredMessage(otherUserId, messageId) {
@@ -276,8 +281,7 @@ function removeStoredMessage(otherUserId, messageId) {
         return false;
     }
 
-    writeStoredMessages(otherUserId, updatedMessages);
-    return true;
+    return writeStoredMessages(otherUserId, updatedMessages);
 }
 
 function getMessageParticipantId(message) {
@@ -290,17 +294,28 @@ function getMessageParticipantId(message) {
 function storeMessage(message) {
     const otherUserId = getMessageParticipantId(message);
     if (!otherUserId) {
-        return;
+        return false;
     }
 
     const messages = readStoredMessages(otherUserId);
     if (messages.some((storedMessage) => storedMessage.id === message.id)) {
-        return;
+        return true;
     }
 
     messages.push(message);
     messages.sort((first, second) => new Date(first.sentAt) - new Date(second.sentAt));
-    writeStoredMessages(otherUserId, messages);
+    return writeStoredMessages(otherUserId, messages);
+}
+
+function acknowledgePendingMessage(message) {
+    if (!connection ||
+        !message ||
+        !message.isPending ||
+        !sameId(message.receiverId, getCurrentUserId())) {
+        return;
+    }
+
+    connection.invoke("AcknowledgePendingMessages", [message.id]).catch(() => { });
 }
 
 function markOutgoingMessagesRead(userId, readAt) {
@@ -817,8 +832,6 @@ function appendMessage(message) {
         status.className = `message-status-icon ${message.readAt ? "is-read" : message.isPending ? "is-pending" : "is-delivered"}`;
         status.src = message.readAt
             ? "/Assets/Images/Icons/message-read.svg"
-            : message.isPending
-                ? "/Assets/Images/Icons/message-pending.svg"
             : "/Assets/Images/Icons/sent-action.svg";
         status.alt = statusText;
         status.title = statusText;
@@ -1504,11 +1517,16 @@ async function startSignalR() {
     connection = new signalR.HubConnectionBuilder()
         .withUrl("/chatHub")
         .withAutomaticReconnect()
+        .withServerTimeout(25000)
+        .withKeepAliveInterval(10000)
         .build();
 
     connection.on("ReceiveMessage", async (message) => {
         latestMessageId = message.id;
-        storeMessage(message);
+        const messageStored = storeMessage(message);
+        if (messageStored) {
+            acknowledgePendingMessage(message);
+        }
         const imageCachePromise = cacheImageForMessage(message);
 
         if (messageBelongsToActiveConversation(message)) {

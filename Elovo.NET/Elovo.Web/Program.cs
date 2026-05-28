@@ -4,7 +4,11 @@ var config = builder.Configuration;
 var jwtSecret = GetRequiredConfigurationValue(config, "Jwt:Secret");
 
 builder.Services.AddControllersWithViews();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(20);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddAutoMapper(_ => { }, typeof(ElovoMappingProfile).Assembly);
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 builder.Services.AddInfrastructure(config);
@@ -12,6 +16,7 @@ builder.Services.AddInfrastructure(config);
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSingleton<IUserPresenceTracker, UserPresenceTracker>();
 builder.Services.AddOptions();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<PushNotificationService>();

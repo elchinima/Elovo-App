@@ -8,12 +8,18 @@ public class UserService : IUserService
     private readonly IImageStorageService _imageStorageService;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserPresenceTracker _presenceTracker;
 
-    public UserService(IUnitOfWork unitOfWork, IMapper mapper, IImageStorageService imageStorageService)
+    public UserService(
+        IUnitOfWork unitOfWork,
+        IMapper mapper,
+        IImageStorageService imageStorageService,
+        IUserPresenceTracker presenceTracker)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _imageStorageService = imageStorageService;
+        _presenceTracker = presenceTracker;
     }
 
     public async Task<ProfileDto> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -43,7 +49,7 @@ public class UserService : IUserService
                 Id = conversation.Id,
                 UserId = user.Id,
                 Username = user.Username,
-                IsOnline = user.Session?.IsOnline ?? false,
+                IsOnline = _presenceTracker.IsOnline(user.Id),
                 LastSeenAt = user.Session?.LastSeenAt,
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
@@ -83,7 +89,7 @@ public class UserService : IUserService
             {
                 Id = user.Id,
                 Username = user.Username,
-                IsOnline = user.Session?.IsOnline ?? false,
+                IsOnline = _presenceTracker.IsOnline(user.Id),
                 LastSeenAt = user.Session?.LastSeenAt,
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
@@ -307,6 +313,7 @@ public class UserService : IUserService
     private UserDto ToUserDto(User user)
     {
         var dto = _mapper.Map<UserDto>(user);
+        dto.IsOnline = _presenceTracker.IsOnline(user.Id);
         dto.ProfileImageUrl = GetImageUrl(user.ProfileImagePath);
         return dto;
     }

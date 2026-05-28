@@ -235,12 +235,14 @@
         border-radius: 0;
     }
 
-    .restore-hidden-backdrop {
+    .restore-hidden-backdrop,
+    #profileConfirmModal {
         align-items: end;
         padding: 50px 12px calc(37px + env(safe-area-inset-bottom));
     }
 
-    .restore-hidden-panel {
+    .restore-hidden-panel,
+    .profile-confirm-panel {
         width: 100%;
         height: auto;
         max-height: calc(100dvh - 99px);
@@ -248,7 +250,8 @@
         border-radius: var(--radius);
     }
 
-    .restore-hidden-panel .confirm-modal-body {
+    .restore-hidden-panel .confirm-modal-body,
+    .profile-confirm-panel .confirm-modal-body {
         padding: 18px;
     }
 

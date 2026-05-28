@@ -4,39 +4,49 @@ namespace Elovo.Application.Hubs;
 [Authorize]
 public class ChatHub : Hub
 {
-    private static readonly ConcurrentDictionary<Guid, int> ConnectedUsers = new();
-
     private readonly IMessageService _messageService;
     private readonly IUserService _userService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IImageStorageService _imageStorageService;
+    private readonly IUserPresenceTracker _presenceTracker;
 
-    public ChatHub(IMessageService messageService, IUserService userService, IUnitOfWork unitOfWork, IImageStorageService imageStorageService)
+    public ChatHub(
+        IMessageService messageService,
+        IUserService userService,
+        IUnitOfWork unitOfWork,
+        IImageStorageService imageStorageService,
+        IUserPresenceTracker presenceTracker)
     {
         _messageService = messageService;
         _userService = userService;
         _unitOfWork = unitOfWork;
         _imageStorageService = imageStorageService;
+        _presenceTracker = presenceTracker;
     }
 
     public override async Task OnConnectedAsync()
     {
         var userId = GetCurrentUserId();
-        ConnectedUsers.AddOrUpdate(userId, 1, (_, count) => count + 1);
+        var becameOnline = _presenceTracker.Connect(userId, Context.ConnectionId);
         await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
-        var lastSeenAt = await _userService.SetOnlineStatusAsync(userId, true, ClientIpAddressResolver.Resolve(Context.GetHttpContext()));
+        var lastSeenAt = becameOnline
+            ? await _userService.SetOnlineStatusAsync(userId, true, ClientIpAddressResolver.Resolve(Context.GetHttpContext()))
+            : null;
         await SendPendingMessagesAsync(userId);
-        await Clients.Others.SendAsync("UserOnline", userId, lastSeenAt);
+        if (becameOnline)
+        {
+            await Clients.Others.SendAsync("UserOnline", userId, lastSeenAt);
+        }
+
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         var userId = GetCurrentUserId();
-        var isOffline = ConnectedUsers.AddOrUpdate(userId, 0, (_, count) => Math.Max(0, count - 1)) == 0;
+        var isOffline = _presenceTracker.Disconnect(userId, Context.ConnectionId);
         if (isOffline)
         {
-            ConnectedUsers.TryRemove(userId, out _);
             var lastSeenAt = await _userService.SetOnlineStatusAsync(userId, false);
             await Clients.Others.SendAsync("UserOffline", userId, lastSeenAt);
         }
@@ -58,12 +68,6 @@ public class ChatHub : Hub
             Content = content
         });
 
-        if (IsConnected(receiverId))
-        {
-            await Clients.Groups(UserGroup(senderId), UserGroup(receiverId)).SendAsync("ReceiveMessage", ToClientMessage(message));
-            return;
-        }
-
         await _unitOfWork.PendingMessages.AddAsync(new PendingMessage
         {
             Id = message.Id,
@@ -77,7 +81,7 @@ public class ChatHub : Hub
 
         await _unitOfWork.SaveChangesAsync();
         message.IsPending = true;
-        await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", ToClientMessage(message));
+        await Clients.Groups(UserGroup(senderId), UserGroup(receiverId)).SendAsync("ReceiveMessage", ToClientMessage(message));
     }
 
     public async Task SendImageMessage(Guid receiverId, string imagePath, string? fileName)
@@ -96,18 +100,12 @@ public class ChatHub : Hub
             ImageFileName = fileName
         });
 
-        if (IsConnected(receiverId))
-        {
-            await Clients.Groups(UserGroup(senderId), UserGroup(receiverId)).SendAsync("ReceiveMessage", ToClientMessage(message));
-            return;
-        }
-
         await _unitOfWork.PendingMessages.AddAsync(new PendingMessage
         {
             Id = message.Id,
             SenderId = message.SenderId,
             ReceiverId = message.ReceiverId,
-            Content = message.Content,
+            Content = message.ImageStoragePath ?? message.ImagePath ?? message.Content,
             SentAt = message.SentAt,
             IsVoice = message.IsVoice,
             VoiceUrl = message.ImageFileName
@@ -116,6 +114,7 @@ public class ChatHub : Hub
         await _unitOfWork.SaveChangesAsync();
         message.IsPending = true;
         await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", ToClientMessage(message));
+        await Clients.Group(UserGroup(receiverId)).SendAsync("ReceiveMessage", ToClientMessage(message));
     }
 
     public async Task<bool> DeletePendingMessage(Guid messageId)
@@ -171,6 +170,43 @@ public class ChatHub : Hub
         await Clients.Group(UserGroup(senderId)).SendAsync("MessagesRead", readerId, DateTime.UtcNow);
     }
 
+    public async Task AcknowledgePendingMessages(Guid[] messageIds)
+    {
+        if (messageIds.Length == 0)
+        {
+            return;
+        }
+
+        var receiverId = GetCurrentUserId();
+        var messages = new List<PendingMessage>();
+        foreach (var messageId in messageIds.Distinct().Take(100))
+        {
+            var message = await _unitOfWork.PendingMessages.GetByIdAsync(messageId, Context.ConnectionAborted);
+            if (message is not null && message.ReceiverId == receiverId)
+            {
+                messages.Add(message);
+            }
+        }
+
+        if (messages.Count == 0)
+        {
+            return;
+        }
+
+        var deliveredMessageIdsBySender = messages
+            .GroupBy(message => message.SenderId)
+            .ToDictionary(group => group.Key, group => group.Select(message => message.Id).ToList());
+
+        await _unitOfWork.PendingMessages.DeleteRangeAsync(messages, Context.ConnectionAborted);
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+
+        var deliveredAt = DateTime.UtcNow;
+        foreach (var item in deliveredMessageIdsBySender)
+        {
+            await Clients.Group(UserGroup(item.Key)).SendAsync("MessagesDelivered", receiverId, item.Value, deliveredAt, Context.ConnectionAborted);
+        }
+    }
+
     private Guid GetCurrentUserId()
     {
         var value = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -181,20 +217,14 @@ public class ChatHub : Hub
 
     private static string UserGroup(Guid userId) => $"user:{userId}";
 
-    private static bool IsConnected(Guid userId)
-    {
-        return ConnectedUsers.TryGetValue(userId, out var count) && count > 0;
-    }
-
     private async Task SendPendingMessagesAsync(Guid userId)
     {
         var messages = await _unitOfWork.PendingMessages.GetByReceiverIdAsync(userId, Context.ConnectionAborted);
-        var deliveredMessageIdsBySender = new Dictionary<Guid, List<Guid>>();
 
         foreach (var message in messages)
         {
             var isImage = _imageStorageService.IsImagePath(message.Content);
-            await Clients.Group(UserGroup(userId)).SendAsync("ReceiveMessage", new MessageDto
+            await Clients.Caller.SendAsync("ReceiveMessage", new MessageDto
             {
                 Id = message.Id,
                 SenderId = message.SenderId,
@@ -206,30 +236,9 @@ public class ChatHub : Hub
                 IsImage = isImage,
                 ImagePath = isImage ? _imageStorageService.GetPublicUrl(message.Content) : null,
                 ImageStoragePath = isImage ? message.Content : null,
-                ImageFileName = isImage ? message.VoiceUrl : null
+                ImageFileName = isImage ? message.VoiceUrl : null,
+                IsPending = true
             }, Context.ConnectionAborted);
-
-            if (!deliveredMessageIdsBySender.TryGetValue(message.SenderId, out var deliveredMessageIds))
-            {
-                deliveredMessageIds = [];
-                deliveredMessageIdsBySender[message.SenderId] = deliveredMessageIds;
-            }
-
-            deliveredMessageIds.Add(message.Id);
-        }
-
-        foreach (var message in messages)
-        {
-            await DeletePendingMessageImageAsync(message);
-        }
-
-        await _unitOfWork.PendingMessages.DeleteRangeAsync(messages, Context.ConnectionAborted);
-        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
-
-        var deliveredAt = DateTime.UtcNow;
-        foreach (var item in deliveredMessageIdsBySender)
-        {
-            await Clients.Group(UserGroup(item.Key)).SendAsync("MessagesDelivered", userId, item.Value, deliveredAt, Context.ConnectionAborted);
         }
     }
 

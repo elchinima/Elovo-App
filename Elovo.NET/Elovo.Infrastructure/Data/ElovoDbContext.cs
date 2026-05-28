@@ -61,6 +61,8 @@ public class ElovoDbContext : DbContext
         modelBuilder.Entity<Conversation>(entity =>
         {
             entity.HasKey(x => x.Id);
+            entity.Property(x => x.FirstUserReadAt);
+            entity.Property(x => x.SecondUserReadAt);
             entity.HasIndex(x => new { x.FirstUserId, x.SecondUserId }).IsUnique();
             entity.HasIndex(x => x.UpdatedAt);
 

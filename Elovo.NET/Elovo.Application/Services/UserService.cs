@@ -55,6 +55,9 @@ public class UserService : IUserService
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 LastMessage = "Start a conversation.",
                 LastMessageAt = null,
+                OtherUserReadAt = conversation.FirstUserId == user.Id
+                    ? conversation.FirstUserReadAt
+                    : conversation.SecondUserReadAt,
                 UnreadCount = 0
             };
         });

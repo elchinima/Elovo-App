@@ -1071,7 +1071,7 @@ input:disabled {
     overflow: hidden;
 }
 
-.image-preview-backdrop img {
+.image-preview-backdrop > img {
     max-width: min(980px, 96vw);
     max-height: min(88vh, calc(100dvh - 96px));
     object-fit: contain;
@@ -1082,7 +1082,7 @@ input:disabled {
     touch-action: none;
 }
 
-.image-preview-backdrop img.is-zoomed {
+.image-preview-backdrop > img.is-zoomed {
     cursor: zoom-out;
 }
 
@@ -1105,6 +1105,11 @@ input:disabled {
     width: 24px;
     height: 24px;
     display: block;
+    background: transparent;
+    border-radius: 0;
+    cursor: default;
+    transition: none;
+    touch-action: auto;
 }
 
 .message-actions-popover {
@@ -1560,20 +1565,31 @@ body:has(.profile-view.is-active) {
 }
 
 .profile-topbar {
-    display: flex;
+    position: sticky;
+    top: 24px;
+    z-index: 35;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 16px;
     padding: 18px;
+}
+
+.settings-title-row {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 
 .settings-nav {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-left: auto;
 }
 
 .settings-nav-button {
+    min-width: 158px;
     min-height: 46px;
     display: inline-flex;
     align-items: center;
@@ -1588,13 +1604,18 @@ body:has(.profile-view.is-active) {
     font-weight: 850;
     text-decoration: none;
     white-space: nowrap;
+    transition: transform 50ms ease, opacity 50ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.settings-nav-button:active {
+    transform: scale(0.95);
+    opacity: 0.85;
 }
 
 .settings-nav-button.is-active {
     border-color: transparent;
     color: #fff;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
-    box-shadow: 0 16px 34px rgba(109, 103, 255, 0.22);
 }
 
 .profile-topbar h1,
@@ -1743,7 +1764,7 @@ body:has(.profile-view.is-active) {
 }
 
 .chat-retention-panel {
-    width: min(720px, 100%);
+    width: 100%;
 }
 
 .chat-settings-copy {

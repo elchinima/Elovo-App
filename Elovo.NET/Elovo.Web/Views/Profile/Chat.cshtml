@@ -5,12 +5,14 @@
 <main class="app-shell">
     <section class="profile-view is-active" id="chatSettingsView" aria-label="Chat settings">
         <header class="profile-topbar">
-            <a class="icon-button" asp-controller="Chat" asp-action="Index" aria-label="Back to chat" title="Back to chat">
-                <img class="button-icon" src="~/Assets/Images/Icons/back.svg" alt="">
-            </a>
-            <div>
-                <p class="eyebrow">Settings</p>
-                <h1>Chats</h1>
+            <div class="settings-title-row">
+                <a class="icon-button" asp-controller="Chat" asp-action="Index" aria-label="Back to chat" title="Back to chat">
+                    <img class="button-icon" src="~/Assets/Images/Icons/back.svg" alt="">
+                </a>
+                <div>
+                    <p class="eyebrow">Settings</p>
+                    <h1>Chats</h1>
+                </div>
             </div>
             <nav class="settings-nav" aria-label="Settings navigation">
                 <a class="settings-nav-button" asp-controller="Profile" asp-action="Index">

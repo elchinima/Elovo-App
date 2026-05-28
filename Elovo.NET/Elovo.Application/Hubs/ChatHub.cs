@@ -167,7 +167,24 @@ public class ChatHub : Hub
     public async Task MarkMessagesRead(Guid senderId)
     {
         var readerId = GetCurrentUserId();
-        await Clients.Group(UserGroup(senderId)).SendAsync("MessagesRead", readerId, DateTime.UtcNow);
+        var conversation = await _unitOfWork.Conversations.GetBetweenUsersAsync(readerId, senderId, Context.ConnectionAborted);
+        if (conversation is null)
+        {
+            return;
+        }
+
+        var readAt = DateTime.UtcNow;
+        if (conversation.FirstUserId == readerId)
+        {
+            conversation.FirstUserReadAt = readAt;
+        }
+        else
+        {
+            conversation.SecondUserReadAt = readAt;
+        }
+
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+        await Clients.Group(UserGroup(senderId)).SendAsync("MessagesRead", readerId, readAt);
     }
 
     public async Task AcknowledgePendingMessages(Guid[] messageIds)

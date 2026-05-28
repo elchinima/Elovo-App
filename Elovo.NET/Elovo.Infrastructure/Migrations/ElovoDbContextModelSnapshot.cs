@@ -34,8 +34,14 @@ namespace Elovo.Infrastructure.Migrations
                     b.Property<Guid>("FirstUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("FirstUserReadAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("SecondUserId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("SecondUserReadAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

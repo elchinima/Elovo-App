@@ -49,6 +49,7 @@ let activeMessageActions = null;
 let imageTransferStatus = null;
 let avatarCropState = null;
 let conversationSearchTerm = "";
+let isLeavingChatPage = false;
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
 const imageCacheDbName = "elovo-image-cache";
@@ -332,9 +333,45 @@ function markOutgoingMessagesRead(userId, readAt) {
     const updatedMessages = messages.map((message) => {
         if (sameId(message.senderId, currentUserId) &&
             sameId(message.receiverId, otherUserId) &&
-            !message.readAt) {
+            (!message.readAt || message.isPending)) {
             changed = true;
-            return { ...message, readAt };
+            return { ...message, isPending: false, deliveredAt: message.deliveredAt || readAt, readAt: message.readAt || readAt };
+        }
+
+        return message;
+    });
+
+    if (changed) {
+        writeStoredMessages(otherUserId, updatedMessages);
+    }
+
+    return changed;
+}
+
+function markOutgoingMessagesReadBefore(userId, readAt) {
+    const otherUserId = normalizeId(userId);
+    if (!otherUserId || !readAt) {
+        return false;
+    }
+
+    const readTime = new Date(readAt).getTime();
+    if (Number.isNaN(readTime)) {
+        return false;
+    }
+
+    const currentUserId = getCurrentUserId();
+    const messages = readStoredMessages(otherUserId);
+    let changed = false;
+
+    const updatedMessages = messages.map((message) => {
+        const sentTime = new Date(message.sentAt).getTime();
+        if (sameId(message.senderId, currentUserId) &&
+            sameId(message.receiverId, otherUserId) &&
+            (!message.readAt || message.isPending) &&
+            !Number.isNaN(sentTime) &&
+            sentTime <= readTime) {
+            changed = true;
+            return { ...message, isPending: false, deliveredAt: message.deliveredAt || readAt, readAt: message.readAt || readAt };
         }
 
         return message;
@@ -408,6 +445,7 @@ function getMessagePreview(message) {
 function applyLocalConversationHistory(items) {
     return items
         .map((chat) => {
+            markOutgoingMessagesReadBefore(chat.userId, chat.otherUserReadAt);
             const summary = getStoredConversationSummary(chat.userId);
             return {
                 ...chat,
@@ -1609,6 +1647,16 @@ async function startSignalR() {
     notifyActiveConversationRead();
 }
 
+async function stopSignalRForExit() {
+    isLeavingChatPage = true;
+
+    if (!connection || connection.state === signalR.HubConnectionState.Disconnected) {
+        return;
+    }
+
+    await connection.stop().catch(() => { });
+}
+
 function messageBelongsToActiveConversation(message) {
     return activeConversation &&
         (sameId(message.senderId, activeConversation.userId) ||
@@ -1824,6 +1872,7 @@ async function sendSelectedImage() {
 }
 async function logout() {
     showPageLoader();
+    await stopSignalRForExit();
 
     await fetch("/auth/logout", {
         method: "POST",
@@ -1834,6 +1883,14 @@ async function logout() {
 
     navigateWithLoader("/auth/login");
 }
+
+window.addEventListener("pagehide", () => {
+    if (!connection || isLeavingChatPage) {
+        return;
+    }
+
+    stopSignalRForExit();
+});
 
 if (messengerView && chatList && messageStream) {
     requestPersistentStorage();

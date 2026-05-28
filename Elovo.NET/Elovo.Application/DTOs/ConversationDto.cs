@@ -9,6 +9,7 @@ public class ConversationDto
     public DateTime? LastSeenAt { get; set; }
     public string LastMessage { get; set; } = string.Empty;
     public DateTime? LastMessageAt { get; set; }
+    public DateTime? OtherUserReadAt { get; set; }
     public int UnreadCount { get; set; }
     public string? ProfileImagePath { get; set; }
     public string? ProfileImageUrl { get; set; }

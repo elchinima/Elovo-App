@@ -7,6 +7,8 @@ public class Conversation
     public Guid SecondUserId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? FirstUserReadAt { get; set; }
+    public DateTime? SecondUserReadAt { get; set; }
 
     public User FirstUser { get; set; } = null!;
     public User SecondUser { get; set; } = null!;

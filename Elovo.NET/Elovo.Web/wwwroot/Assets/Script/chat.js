@@ -4,7 +4,8 @@
         getAntiForgeryToken,
         setAvatarElement,
         readResponseText,
-        showPageLoader
+        showPageLoader,
+        purgeExpiredChatMessages
     } = window.Elovo;
 const logoutButton = document.querySelector("#logoutButton");
 const settingsButton = document.querySelector("#settingsButton");
@@ -1524,7 +1525,7 @@ async function startSignalR() {
     connection.on("ReceiveMessage", async (message) => {
         latestMessageId = message.id;
         const messageStored = storeMessage(message);
-        if (messageStored) {
+        if (messageStored && !message.isImage) {
             acknowledgePendingMessage(message);
         }
         const imageCachePromise = cacheImageForMessage(message);
@@ -1542,7 +1543,12 @@ async function startSignalR() {
 
         await loadConversations();
 
-        if (await imageCachePromise && messageBelongsToActiveConversation(message)) {
+        const imageCached = await imageCachePromise;
+        if (messageStored && message.isImage && imageCached) {
+            acknowledgePendingMessage(message);
+        }
+
+        if (imageCached && messageBelongsToActiveConversation(message)) {
             await loadMessages(activeConversation.userId);
         }
     });
@@ -1831,7 +1837,8 @@ async function logout() {
 
 if (messengerView && chatList && messageStream) {
     requestPersistentStorage();
-    loadConversations()
+    purgeExpiredChatMessages()
+        .then(loadConversations)
         .then(() => activeConversation ? loadMessages(activeConversation.userId) : null)
         .then(startSignalR)
         .catch(() => {
@@ -1844,7 +1851,7 @@ if (logoutButton) {
 }
 
 if (settingsButton) {
-    settingsButton.addEventListener("click", () => navigateWithLoader("/profile"));
+    settingsButton.addEventListener("click", () => navigateWithLoader("/settings/profile"));
 }
 
 if (searchInput) {

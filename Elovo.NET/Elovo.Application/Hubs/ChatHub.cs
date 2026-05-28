@@ -197,6 +197,11 @@ public class ChatHub : Hub
             .GroupBy(message => message.SenderId)
             .ToDictionary(group => group.Key, group => group.Select(message => message.Id).ToList());
 
+        foreach (var message in messages)
+        {
+            await DeletePendingMessageImageAsync(message);
+        }
+
         await _unitOfWork.PendingMessages.DeleteRangeAsync(messages, Context.ConnectionAborted);
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
 

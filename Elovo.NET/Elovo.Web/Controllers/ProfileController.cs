@@ -5,7 +5,7 @@ using SixLabors.ImageSharp.Processing;
 namespace Elovo.Web.Controllers;
 
 [Authorize]
-[Route("profile")]
+[Route("settings")]
 public class ProfileController : Controller
 {
     private const long MaxImageBytes = 10 * 1024 * 1024;
@@ -25,10 +25,23 @@ public class ProfileController : Controller
         _imageStorageService = imageStorageService;
     }
 
-    [HttpGet("")]
+    [HttpGet("profile")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
         return View(await _userService.GetProfileAsync(GetCurrentUserId(), cancellationToken));
+    }
+
+    [HttpGet("chat")]
+    public IActionResult Chat()
+    {
+        ViewBag.CurrentUserId = GetCurrentUserId();
+        return View();
+    }
+
+    [HttpGet("/profile")]
+    public IActionResult LegacyProfile()
+    {
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet("/api/profile")]

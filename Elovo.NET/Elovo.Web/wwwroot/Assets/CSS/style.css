@@ -727,6 +727,16 @@ input:disabled {
     color: var(--text);
     background: rgba(255, 255, 255, 0.04);
     border-radius: var(--radius);
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, opacity 180ms ease;
+}
+
+.ghost-button:active,
+.icon-button:active {
+    transform: scale(0.95);
+    opacity: 0.85;
+    transition: transform 50ms ease, opacity 50ms ease;
 }
 
 .ghost-button {
@@ -1536,6 +1546,7 @@ body.is-page-loading .page-loader {
 
 .profile-view {
     width: min(1040px, 100%);
+    align-self: start;
     display: none;
     gap: 18px;
     scrollbar-width: none;

@@ -11,7 +11,8 @@
 }
 
 @media (hover: hover) {
-    button:hover .button-icon {
+    button:hover .button-icon,
+    .icon-button:hover .button-icon {
         transform: translateY(-1px) scale(1.06);
     }
 
@@ -336,6 +337,15 @@
 
     .profile-actions {
         grid-template-columns: 1fr;
+    }
+
+    .profile-topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+    }
+
+    .settings-title-row {
+        gap: 10px;
     }
 
     .settings-nav {

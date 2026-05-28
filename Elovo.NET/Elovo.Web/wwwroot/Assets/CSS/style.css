@@ -1546,8 +1546,10 @@ body.is-page-loading .page-loader {
 
 .profile-view {
     width: min(1040px, 100%);
+    align-content: start;
     display: none;
     gap: 18px;
+    grid-template-rows: auto auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }

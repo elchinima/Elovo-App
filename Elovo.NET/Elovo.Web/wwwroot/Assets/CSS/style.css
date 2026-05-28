@@ -1546,11 +1546,14 @@ body.is-page-loading .page-loader {
 
 .profile-view {
     width: min(1040px, 100%);
-    align-self: start;
     display: none;
     gap: 18px;
     scrollbar-width: none;
     -ms-overflow-style: none;
+}
+
+#chatSettingsView {
+    align-self: start;
 }
 
 .profile-view::-webkit-scrollbar,
@@ -1584,7 +1587,6 @@ body:has(.profile-view.is-active) {
     align-items: center;
     gap: 16px;
     padding: 18px;
-    min-height: 90px;
 }
 
 .settings-title-row {
@@ -1592,10 +1594,6 @@ body:has(.profile-view.is-active) {
     display: flex;
     align-items: center;
     gap: 16px;
-}
-
-.settings-title-row > div {
-    min-width: 0;
 }
 
 .settings-nav {
@@ -1642,9 +1640,6 @@ body:has(.profile-view.is-active) {
 .profile-topbar h1 {
     font-size: clamp(1.55rem, 4vw, 2.4rem);
     line-height: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .profile-grid {

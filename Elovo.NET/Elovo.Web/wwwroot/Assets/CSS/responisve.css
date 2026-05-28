@@ -278,17 +278,29 @@
 
     .profile-topbar {
         top: 0;
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px;
+        min-height: 68px;
+        padding: 12px 14px;
     }
 
     .settings-nav {
-        width: 100%;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        width: auto;
+        margin-left: auto;
+        display: flex;
+        gap: 8px;
     }
 
     .settings-nav-button {
         min-width: 0;
+        width: 42px;
+        height: 42px;
+        min-height: 42px;
+        padding: 0;
+    }
+
+    .settings-nav-button span {
+        display: none;
     }
 
     .chat-retention-options {
@@ -339,31 +351,14 @@
         grid-template-columns: 1fr;
     }
 
-    .profile-topbar {
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: center;
-    }
-
     .settings-title-row {
         gap: 10px;
     }
 
-    .settings-nav {
-        width: auto;
-        margin-left: auto;
-        display: flex;
-    }
-
     .settings-nav-button {
-        min-width: 0;
-        width: 46px;
-        height: 46px;
-        min-height: 46px;
-        padding: 0;
-    }
-
-    .settings-nav-button span {
-        display: none;
+        width: 42px;
+        height: 42px;
+        min-height: 42px;
     }
 
     .chat-retention-options {

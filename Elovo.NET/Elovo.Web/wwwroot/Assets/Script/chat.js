@@ -2360,11 +2360,13 @@ function setVoiceSendingState(active, progress = 0) {
     }
 
     messageForm.classList.toggle("is-voice-sending", active);
+    messageForm.classList.toggle("is-image-transfer", active);
     messageForm.style.setProperty("--voice-progress", `${Math.max(0, Math.min(100, progress))}%`);
+    messageForm.style.setProperty("--image-progress", `${Math.max(0, Math.min(100, progress))}%`);
 
     if (!voiceTransferStatus && active) {
         voiceTransferStatus = document.createElement("span");
-        voiceTransferStatus.className = "voice-recording-status is-sending";
+        voiceTransferStatus.className = "image-upload-status voice-upload-status";
         messageForm.appendChild(voiceTransferStatus);
     }
 
@@ -2376,10 +2378,7 @@ function setVoiceSendingState(active, progress = 0) {
         return;
     }
 
-    voiceTransferStatus.innerHTML = `
-        <span class="voice-recording-dot"></span>
-        <span class="voice-recording-copy">Sending voice ${Math.round(progress)}%</span>
-        <span class="voice-recording-meter">${createRecordingMeterMarkup()}</span>`;
+    voiceTransferStatus.innerHTML = `<img src="/Assets/Images/Icons/image-upload-loader.svg" alt=""> <span>${Math.round(progress)}%</span>`;
 }
 
 async function sendVoiceBlob(blob, durationSeconds) {

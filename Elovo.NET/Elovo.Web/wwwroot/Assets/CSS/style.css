@@ -892,9 +892,12 @@ input:disabled {
 }
 
 .voice-wave {
+    width: min(100%, 105px);
     min-width: 0;
     height: 34px;
     display: flex;
+    justify-self: center;
+    justify-content: center;
     align-items: center;
     gap: 3px;
     position: relative;
@@ -1092,13 +1095,11 @@ input:disabled {
     opacity: 0;
 }
 
-.composer.is-voice-recording,
-.composer.is-voice-sending {
+.composer.is-voice-recording {
     background: rgba(83, 214, 164, 0.08);
 }
 
-.composer.is-voice-recording::before,
-.composer.is-voice-sending::before {
+.composer.is-voice-recording::before {
     content: "";
     position: absolute;
     left: 18px;
@@ -1110,8 +1111,7 @@ input:disabled {
     pointer-events: none;
 }
 
-.composer.is-voice-recording::after,
-.composer.is-voice-sending::after {
+.composer.is-voice-recording::after {
     content: "";
     position: absolute;
     left: 18px;

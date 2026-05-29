@@ -7,4 +7,5 @@ public interface IImageStorageService
     Task DeleteAsync(string path, CancellationToken cancellationToken = default);
     string GetPublicUrl(string path);
     bool IsImagePath(string path);
+    bool IsVoicePath(string path);
 }

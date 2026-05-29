@@ -11,6 +11,7 @@ public class MessageDto
     public DateTime? ReadAt { get; set; }
     public bool IsVoice { get; set; }
     public string? VoiceUrl { get; set; }
+    public double? VoiceDurationSeconds { get; set; }
     public bool IsImage { get; set; }
     public string? ImagePath { get; set; }
     public string? ImageStoragePath { get; set; }

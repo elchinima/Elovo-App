@@ -6,4 +6,6 @@ public class SendMessageDto
     public string Content { get; set; } = string.Empty;
     public string? ImagePath { get; set; }
     public string? ImageFileName { get; set; }
+    public string? VoicePath { get; set; }
+    public double? VoiceDurationSeconds { get; set; }
 }

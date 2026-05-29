@@ -117,6 +117,42 @@ public class ChatHub : Hub
         await Clients.Group(UserGroup(receiverId)).SendAsync("ReceiveMessage", ToClientMessage(message));
     }
 
+    public async Task SendVoiceMessage(Guid receiverId, string voicePath, double durationSeconds)
+    {
+        if (string.IsNullOrWhiteSpace(voicePath) ||
+            !_imageStorageService.IsVoicePath(voicePath) ||
+            durationSeconds <= 0 ||
+            durationSeconds > 60.5)
+        {
+            return;
+        }
+
+        var senderId = GetCurrentUserId();
+        var message = await _messageService.SendVoiceMessageAsync(senderId, new SendMessageDto
+        {
+            ReceiverId = receiverId,
+            Content = "Voice message",
+            VoicePath = voicePath,
+            VoiceDurationSeconds = durationSeconds
+        });
+
+        await _unitOfWork.PendingMessages.AddAsync(new PendingMessage
+        {
+            Id = message.Id,
+            SenderId = message.SenderId,
+            ReceiverId = message.ReceiverId,
+            Content = message.Content,
+            SentAt = message.SentAt,
+            IsVoice = true,
+            VoiceUrl = message.VoiceUrl
+        });
+
+        await _unitOfWork.SaveChangesAsync();
+        message.IsPending = true;
+        await Clients.Group(UserGroup(senderId)).SendAsync("ReceiveMessage", ToClientMessage(message));
+        await Clients.Group(UserGroup(receiverId)).SendAsync("ReceiveMessage", ToClientMessage(message));
+    }
+
     public async Task<bool> DeletePendingMessage(Guid messageId)
     {
         var senderId = GetCurrentUserId();
@@ -126,7 +162,7 @@ public class ChatHub : Hub
             return false;
         }
 
-        await DeletePendingMessageImageAsync(message);
+        await DeletePendingMessageMediaAsync(message);
 
         await _unitOfWork.PendingMessages.DeleteAsync(message, Context.ConnectionAborted);
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
@@ -143,7 +179,10 @@ public class ChatHub : Hub
 
         var senderId = GetCurrentUserId();
         var message = await _unitOfWork.PendingMessages.GetByIdAsync(messageId, Context.ConnectionAborted);
-        if (message is null || message.SenderId != senderId || _imageStorageService.IsImagePath(message.Content))
+        if (message is null ||
+            message.SenderId != senderId ||
+            _imageStorageService.IsImagePath(message.Content) ||
+            message.IsVoice)
         {
             return false;
         }
@@ -216,7 +255,7 @@ public class ChatHub : Hub
 
         foreach (var message in messages)
         {
-            await DeletePendingMessageImageAsync(message);
+            await DeletePendingMessageMediaAsync(message);
         }
 
         await _unitOfWork.PendingMessages.DeleteRangeAsync(messages, Context.ConnectionAborted);
@@ -246,15 +285,16 @@ public class ChatHub : Hub
         foreach (var message in messages)
         {
             var isImage = _imageStorageService.IsImagePath(message.Content);
+            var isVoice = message.IsVoice && !string.IsNullOrWhiteSpace(message.VoiceUrl) && _imageStorageService.IsVoicePath(message.VoiceUrl);
             await Clients.Caller.SendAsync("ReceiveMessage", new MessageDto
             {
                 Id = message.Id,
                 SenderId = message.SenderId,
                 ReceiverId = message.ReceiverId,
-                Content = isImage ? "Image" : message.Content,
+                Content = isVoice ? "Voice message" : isImage ? "Image" : message.Content,
                 SentAt = message.SentAt,
-                IsVoice = message.IsVoice,
-                VoiceUrl = message.VoiceUrl,
+                IsVoice = isVoice,
+                VoiceUrl = isVoice ? _imageStorageService.GetPublicUrl(message.VoiceUrl!) : message.VoiceUrl,
                 IsImage = isImage,
                 ImagePath = isImage ? _imageStorageService.GetPublicUrl(message.Content) : null,
                 ImageStoragePath = isImage ? message.Content : null,
@@ -266,6 +306,25 @@ public class ChatHub : Hub
 
     private MessageDto ToClientMessage(MessageDto message)
     {
+        if (message.IsVoice && !string.IsNullOrWhiteSpace(message.VoiceUrl))
+        {
+            return new MessageDto
+            {
+                Id = message.Id,
+                ConversationId = message.ConversationId,
+                SenderId = message.SenderId,
+                ReceiverId = message.ReceiverId,
+                Content = "Voice message",
+                SentAt = message.SentAt,
+                ReadAt = message.ReadAt,
+                IsVoice = true,
+                VoiceUrl = _imageStorageService.GetPublicUrl(message.VoiceUrl),
+                VoiceDurationSeconds = message.VoiceDurationSeconds,
+                IsImage = false,
+                IsPending = message.IsPending
+            };
+        }
+
         if (!message.IsImage || string.IsNullOrWhiteSpace(message.ImagePath))
         {
             return message;
@@ -282,6 +341,7 @@ public class ChatHub : Hub
             ReadAt = message.ReadAt,
             IsVoice = message.IsVoice,
             VoiceUrl = message.VoiceUrl,
+            VoiceDurationSeconds = message.VoiceDurationSeconds,
             IsImage = true,
             ImagePath = _imageStorageService.GetPublicUrl(message.ImagePath),
             ImageStoragePath = message.ImageStoragePath ?? message.ImagePath,
@@ -290,11 +350,16 @@ public class ChatHub : Hub
         };
     }
 
-    private async Task DeletePendingMessageImageAsync(PendingMessage message)
+    private async Task DeletePendingMessageMediaAsync(PendingMessage message)
     {
         if (_imageStorageService.IsImagePath(message.Content))
         {
             await _imageStorageService.DeleteAsync(message.Content, Context.ConnectionAborted);
+        }
+
+        if (!string.IsNullOrWhiteSpace(message.VoiceUrl) && _imageStorageService.IsVoicePath(message.VoiceUrl))
+        {
+            await _imageStorageService.DeleteAsync(message.VoiceUrl, Context.ConnectionAborted);
         }
     }
 }

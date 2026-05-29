@@ -44,6 +44,22 @@
     animation: shimmerBackground 1.2s ease-in-out infinite;
 }
 
+.message-voice.is-playing .voice-wave span {
+    animation: voiceBarPulse 680ms ease-in-out infinite;
+}
+
+.composer.is-voice-recording .send-button {
+    animation: recordButtonPulse 920ms ease-in-out infinite;
+}
+
+.voice-recording-dot {
+    animation: recordDotPulse 920ms ease-in-out infinite;
+}
+
+.voice-recording-meter i {
+    animation: recordingMeter 760ms ease-in-out infinite;
+}
+
 .image-preview-backdrop {
     animation: previewFade 180ms ease both;
 }
@@ -165,6 +181,60 @@
 @keyframes spin {
     to {
         transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes voiceBarPulse {
+
+    0%,
+    100% {
+        transform: scaleY(0.72);
+        opacity: 0.62;
+    }
+
+    50% {
+        transform: scaleY(1.16);
+        opacity: 1;
+    }
+}
+
+@keyframes recordButtonPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(83, 214, 164, 0.34);
+    }
+
+    50% {
+        box-shadow: 0 0 0 9px rgba(83, 214, 164, 0);
+    }
+}
+
+@keyframes recordDotPulse {
+
+    0%,
+    100% {
+        transform: scale(0.86);
+        box-shadow: 0 0 0 0 rgba(83, 214, 164, 0.44);
+    }
+
+    50% {
+        transform: scale(1);
+        box-shadow: 0 0 0 7px rgba(83, 214, 164, 0);
+    }
+}
+
+@keyframes recordingMeter {
+
+    0%,
+    100% {
+        height: 8px;
+        opacity: 0.58;
+    }
+
+    50% {
+        height: 22px;
+        opacity: 1;
     }
 }
 

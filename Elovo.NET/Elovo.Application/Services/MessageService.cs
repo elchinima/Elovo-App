@@ -25,7 +25,22 @@ public class MessageService : IMessageService
         return await CreateMessageAsync(senderId, dto, true, cancellationToken);
     }
 
+    public async Task<MessageDto> SendVoiceMessageAsync(Guid senderId, SendMessageDto dto, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(dto.VoicePath))
+        {
+            throw new InvalidOperationException("Voice path is invalid.");
+        }
+
+        return await CreateMessageAsync(senderId, dto, isImage: false, isVoice: true, cancellationToken);
+    }
+
     private async Task<MessageDto> CreateMessageAsync(Guid senderId, SendMessageDto dto, bool isImage, CancellationToken cancellationToken)
+    {
+        return await CreateMessageAsync(senderId, dto, isImage, isVoice: false, cancellationToken);
+    }
+
+    private async Task<MessageDto> CreateMessageAsync(Guid senderId, SendMessageDto dto, bool isImage, bool isVoice, CancellationToken cancellationToken)
     {
         var receiver = await _unitOfWork.Users.GetByIdAsync(dto.ReceiverId, cancellationToken)
             ?? throw new InvalidOperationException("Receiver was not found.");
@@ -46,8 +61,11 @@ public class MessageService : IMessageService
             ConversationId = conversation.Id,
             SenderId = senderId,
             ReceiverId = receiver.Id,
-            Content = isImage ? dto.ImagePath! : dto.Content.Trim(),
+            Content = isVoice ? "Voice message" : isImage ? dto.ImagePath! : dto.Content.Trim(),
             SentAt = sentAt,
+            IsVoice = isVoice,
+            VoiceUrl = isVoice ? dto.VoicePath : null,
+            VoiceDurationSeconds = isVoice ? dto.VoiceDurationSeconds : null,
             IsImage = isImage,
             ImagePath = isImage ? dto.ImagePath : null,
             ImageStoragePath = isImage ? dto.ImagePath : null,

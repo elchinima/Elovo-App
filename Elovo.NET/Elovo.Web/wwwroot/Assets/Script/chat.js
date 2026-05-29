@@ -47,16 +47,36 @@ let isSending = false;
 let messageActionTimer = null;
 let activeMessageActions = null;
 let imageTransferStatus = null;
+let voiceTransferStatus = null;
 let avatarCropState = null;
 let conversationSearchTerm = "";
 let isLeavingChatPage = false;
+let voiceRecorder = null;
+let voiceStream = null;
+let voiceChunks = [];
+let voiceRecordStartedAt = 0;
+let voiceRecordTimer = null;
+let voiceAutoStopTimer = null;
+let isPreparingVoice = false;
+let isRecordingVoice = false;
+let shouldStopVoiceWhenReady = false;
+let activeVoiceAudio = null;
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
+const maxVoiceDurationMs = 60 * 1000;
+const voiceAudioBitRate = 64000;
+const minVoiceDurationMs = 450;
+const allowedVoiceTypes = ["audio/webm", "audio/ogg", "audio/mp4"];
 const imageCacheDbName = "elovo-image-cache";
 const imageCacheStoreName = "images";
+const voiceCacheDbName = "elovo-voice-cache";
+const voiceCacheStoreName = "voices";
 let imageCacheDb = null;
 let imageCacheDbPromise = null;
+let voiceCacheDb = null;
+let voiceCacheDbPromise = null;
 const pendingUploadedImages = new Map();
+const pendingUploadedVoices = new Map();
 function getCurrentUserId() {
     return (window.elovoCurrentUserId || "").toLowerCase();
 }
@@ -85,6 +105,14 @@ function getImageCacheKey(messageId) {
 }
 
 function getImageStorageKey(path) {
+    return (path || "").trim().toLowerCase();
+}
+
+function getVoiceCacheKey(messageId) {
+    return `${getCurrentUserId()}:voice:${messageId}`;
+}
+
+function getVoiceStorageKey(path) {
     return (path || "").trim().toLowerCase();
 }
 
@@ -126,6 +154,44 @@ function openImageCacheDb() {
     return imageCacheDbPromise;
 }
 
+function openVoiceCacheDb() {
+    if (!window.indexedDB) {
+        return Promise.reject(new Error("IndexedDB is unavailable."));
+    }
+
+    if (voiceCacheDb) {
+        return Promise.resolve(voiceCacheDb);
+    }
+
+    if (voiceCacheDbPromise) {
+        return voiceCacheDbPromise;
+    }
+
+    voiceCacheDbPromise = new Promise((resolve, reject) => {
+        const request = window.indexedDB.open(voiceCacheDbName, 1);
+
+        request.addEventListener("upgradeneeded", () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(voiceCacheStoreName)) {
+                db.createObjectStore(voiceCacheStoreName);
+            }
+        });
+
+        request.addEventListener("success", () => {
+            voiceCacheDb = request.result;
+            voiceCacheDb.addEventListener("close", () => {
+                voiceCacheDb = null;
+                voiceCacheDbPromise = null;
+            });
+            resolve(voiceCacheDb);
+        });
+
+        request.addEventListener("error", () => reject(request.error || new Error("Voice cache failed.")));
+    });
+
+    return voiceCacheDbPromise;
+}
+
 function runImageCacheRequest(mode, action) {
     return openImageCacheDb().then((db) => new Promise((resolve, reject) => {
         const transaction = db.transaction(imageCacheStoreName, mode);
@@ -137,9 +203,29 @@ function runImageCacheRequest(mode, action) {
     }));
 }
 
+function runVoiceCacheRequest(mode, action) {
+    return openVoiceCacheDb().then((db) => new Promise((resolve, reject) => {
+        const transaction = db.transaction(voiceCacheStoreName, mode);
+        const store = transaction.objectStore(voiceCacheStoreName);
+        const request = action(store);
+
+        request.addEventListener("success", () => resolve(request.result));
+        request.addEventListener("error", () => reject(request.error || new Error("Voice cache request failed.")));
+    }));
+}
+
 async function readCachedImageBlob(messageId) {
     try {
         const item = await runImageCacheRequest("readonly", (store) => store.get(getImageCacheKey(messageId)));
+        return item && item.blob ? item.blob : null;
+    } catch {
+        return null;
+    }
+}
+
+async function readCachedVoiceBlob(messageId) {
+    try {
+        const item = await runVoiceCacheRequest("readonly", (store) => store.get(getVoiceCacheKey(messageId)));
         return item && item.blob ? item.blob : null;
     } catch {
         return null;
@@ -163,11 +249,36 @@ async function writeCachedImageBlob(message, blob) {
     }
 }
 
+async function writeCachedVoiceBlob(message, blob) {
+    if (!message || !message.id || !blob) {
+        return false;
+    }
+
+    try {
+        await runVoiceCacheRequest("readwrite", (store) => store.put({
+            blob,
+            durationSeconds: message.voiceDurationSeconds || null,
+            updatedAt: new Date().toISOString()
+        }, getVoiceCacheKey(message.id)));
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 async function removeCachedImage(messageId) {
     try {
         await runImageCacheRequest("readwrite", (store) => store.delete(getImageCacheKey(messageId)));
     } catch {
         // Local image cache cleanup is best-effort.
+    }
+}
+
+async function removeCachedVoice(messageId) {
+    try {
+        await runVoiceCacheRequest("readwrite", (store) => store.delete(getVoiceCacheKey(messageId)));
+    } catch {
+        // Local voice cache cleanup is best-effort.
     }
 }
 
@@ -199,6 +310,39 @@ async function cacheImageForMessage(message) {
 
         const blob = await response.blob();
         return writeCachedImageBlob(message, blob);
+    } catch {
+        return false;
+    }
+}
+
+async function cacheVoiceForMessage(message) {
+    if (!message || !message.isVoice || !message.id) {
+        return false;
+    }
+
+    if (await readCachedVoiceBlob(message.id)) {
+        return true;
+    }
+
+    const storageKey = getVoiceStorageKey(message.voiceUrl);
+    const uploadedBlob = storageKey ? pendingUploadedVoices.get(storageKey) : null;
+    if (uploadedBlob) {
+        pendingUploadedVoices.delete(storageKey);
+        return writeCachedVoiceBlob(message, uploadedBlob);
+    }
+
+    if (!message.voiceUrl) {
+        return false;
+    }
+
+    try {
+        const response = await fetch(message.voiceUrl);
+        if (!response.ok) {
+            return false;
+        }
+
+        const blob = await response.blob();
+        return writeCachedVoiceBlob(message, blob);
     } catch {
         return false;
     }
@@ -439,6 +583,10 @@ function getStoredConversationSummary(userId) {
 }
 
 function getMessagePreview(message) {
+    if (message.isVoice) {
+        return "Voice message";
+    }
+
     return message.isImage ? "Image" : message.content;
 }
 
@@ -853,13 +1001,15 @@ function appendMessage(message) {
     const currentUserId = getCurrentUserId();
     const isMine = (message.senderId || "").toLowerCase() === currentUserId;
 
-    bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}${message.isImage ? " has-image" : ""}`;
+    bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}${message.isImage ? " has-image" : ""}${message.isVoice ? " has-voice" : ""}`;
     bubble.dataset.messageId = message.id;
     meta.className = "message-meta";
     time.textContent = formatTime(message.sentAt);
     meta.appendChild(time);
 
-    if (message.isImage && message.imagePath) {
+    if (message.isVoice && message.voiceUrl) {
+        bubble.appendChild(createVoiceMessage(message));
+    } else if (message.isImage && message.imagePath) {
         bubble.appendChild(createImageMessage(message));
     } else {
         bubble.appendChild(document.createTextNode(message.content));
@@ -950,7 +1100,7 @@ function showMessageActions(message, bubble) {
             await deleteMessageForEveryone(message);
         }));
 
-        if (!message.isImage) {
+        if (!message.isImage && !message.isVoice) {
             menu.appendChild(createActionButton("/Assets/Images/Icons/edit-message.svg", "Edit", () => {
                 closeMessageActions();
                 startPendingMessageEdit(message);
@@ -975,6 +1125,9 @@ async function deleteMessageForMe(message) {
     if (message.isImage) {
         await removeCachedImage(message.id);
     }
+    if (message.isVoice) {
+        await removeCachedVoice(message.id);
+    }
     await loadMessages(activeConversation.userId);
     await loadConversations();
 }
@@ -991,7 +1144,7 @@ async function deleteMessageForEveryone(message) {
 }
 
 function startPendingMessageEdit(message) {
-    if (!messageInput || !messageForm || !activeConversation || message.isImage) {
+    if (!messageInput || !messageForm || !activeConversation || message.isImage || message.isVoice) {
         return;
     }
 
@@ -1036,6 +1189,122 @@ function createImageMessage(message) {
     frame.addEventListener("click", () => openImagePreview(previewPath, message.imageFileName));
     frame.append(image, loader);
     return frame;
+}
+
+function createVoiceMessage(message) {
+    const player = document.createElement("div");
+    const playButton = document.createElement("button");
+    const icon = document.createElement("img");
+    const wave = document.createElement("span");
+    const duration = document.createElement("span");
+    const audio = document.createElement("audio");
+    let objectUrl = null;
+
+    player.className = "message-voice";
+    player.style.setProperty("--voice-progress", "0%");
+    playButton.type = "button";
+    playButton.className = "voice-play-button";
+    playButton.setAttribute("aria-label", "Play voice message");
+    playButton.setAttribute("title", "Play voice message");
+    icon.src = "/Assets/Images/Icons/play-voice.svg";
+    icon.alt = "";
+    wave.className = "voice-wave";
+    duration.className = "voice-duration";
+    duration.textContent = formatVoiceDuration(message.voiceDurationSeconds || 0);
+    audio.preload = "metadata";
+    audio.src = message.voiceUrl;
+
+    createVoiceBars(message.id).forEach((bar) => wave.appendChild(bar));
+
+    readCachedVoiceBlob(message.id).then((blob) => {
+        if (!blob) {
+            return;
+        }
+
+        objectUrl = URL.createObjectURL(blob);
+        audio.src = objectUrl;
+    });
+
+    audio.addEventListener("loadedmetadata", () => {
+        if (!message.voiceDurationSeconds && Number.isFinite(audio.duration)) {
+            duration.textContent = formatVoiceDuration(audio.duration);
+        }
+    });
+
+    audio.addEventListener("play", () => {
+        if (activeVoiceAudio && activeVoiceAudio !== audio) {
+            activeVoiceAudio.pause();
+        }
+
+        activeVoiceAudio = audio;
+        player.classList.add("is-playing");
+        icon.src = "/Assets/Images/Icons/pause-voice.svg";
+        playButton.setAttribute("aria-label", "Pause voice message");
+        playButton.setAttribute("title", "Pause voice message");
+    });
+
+    const resetPlayState = () => {
+        player.classList.remove("is-playing");
+        icon.src = "/Assets/Images/Icons/play-voice.svg";
+        playButton.setAttribute("aria-label", "Play voice message");
+        playButton.setAttribute("title", "Play voice message");
+        if (activeVoiceAudio === audio) {
+            activeVoiceAudio = null;
+        }
+    };
+
+    audio.addEventListener("pause", resetPlayState);
+    audio.addEventListener("ended", () => {
+        audio.currentTime = 0;
+        player.style.setProperty("--voice-progress", "0%");
+        resetPlayState();
+    });
+
+    audio.addEventListener("timeupdate", () => {
+        if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
+            return;
+        }
+
+        player.style.setProperty("--voice-progress", `${Math.min(100, (audio.currentTime / audio.duration) * 100)}%`);
+        duration.textContent = formatVoiceDuration(Math.max(0, audio.duration - audio.currentTime));
+    });
+
+    player.addEventListener("DOMNodeRemoved", () => {
+        if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+        }
+    }, { once: true });
+
+    playButton.appendChild(icon);
+    playButton.addEventListener("click", () => {
+        if (audio.paused) {
+            audio.play().catch(() => { });
+        } else {
+            audio.pause();
+        }
+    });
+
+    player.append(playButton, wave, duration, audio);
+    return player;
+}
+
+function createVoiceBars(seed) {
+    const value = `${seed || ""}`;
+    return Array.from({ length: 18 }, (_, index) => {
+        const bar = document.createElement("span");
+        const code = value.charCodeAt(index % Math.max(1, value.length)) || 42;
+        const height = 8 + ((code + index * 11) % 20);
+        bar.style.setProperty("--bar-height", `${height}px`);
+        bar.style.animationDelay = `${index * 42}ms`;
+        return bar;
+    });
+}
+
+function formatVoiceDuration(seconds) {
+    const value = Math.max(0, Math.round(Number(seconds) || 0));
+    const minutes = Math.floor(value / 60);
+    const remainder = `${value % 60}`.padStart(2, "0");
+    return `${minutes}:${remainder}`;
 }
 
 function openImagePreview(path, fileName) {
@@ -1563,10 +1832,12 @@ async function startSignalR() {
     connection.on("ReceiveMessage", async (message) => {
         latestMessageId = message.id;
         const messageStored = storeMessage(message);
-        if (messageStored && !message.isImage) {
+        if (messageStored && !message.isImage && !message.isVoice) {
             acknowledgePendingMessage(message);
         }
-        const imageCachePromise = cacheImageForMessage(message);
+        const mediaCachePromise = message.isVoice
+            ? cacheVoiceForMessage(message)
+            : cacheImageForMessage(message);
 
         if (messageBelongsToActiveConversation(message)) {
             await loadMessages(activeConversation.userId);
@@ -1581,12 +1852,12 @@ async function startSignalR() {
 
         await loadConversations();
 
-        const imageCached = await imageCachePromise;
-        if (messageStored && message.isImage && imageCached) {
+        const mediaCached = await mediaCachePromise;
+        if (messageStored && (message.isImage || message.isVoice) && mediaCached) {
             acknowledgePendingMessage(message);
         }
 
-        if (imageCached && messageBelongsToActiveConversation(message)) {
+        if (mediaCached && messageBelongsToActiveConversation(message)) {
             await loadMessages(activeConversation.userId);
         }
     });
@@ -1870,6 +2141,283 @@ async function sendSelectedImage() {
         }
     }
 }
+
+function getSupportedVoiceMimeType() {
+    const candidates = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4"
+    ];
+
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) {
+        return "";
+    }
+
+    return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+function setVoiceRecordingState(active) {
+    if (!messageForm) {
+        return;
+    }
+
+    messageForm.classList.toggle("is-voice-recording", active);
+    if (messageInput) {
+        messageInput.disabled = active || isSending;
+        messageInput.placeholder = active ? "Recording voice message" : "Write a message";
+    }
+
+    if (!active) {
+        window.clearInterval(voiceRecordTimer);
+        window.clearTimeout(voiceAutoStopTimer);
+        if (voiceTransferStatus) {
+            voiceTransferStatus.remove();
+            voiceTransferStatus = null;
+        }
+        return;
+    }
+
+    if (!voiceTransferStatus) {
+        voiceTransferStatus = document.createElement("span");
+        voiceTransferStatus.className = "voice-recording-status";
+        voiceTransferStatus.innerHTML = `
+            <span class="voice-recording-dot"></span>
+            <span class="voice-recording-copy">0:00</span>
+            <span class="voice-recording-meter">${createRecordingMeterMarkup()}</span>`;
+        messageForm.appendChild(voiceTransferStatus);
+    }
+
+    updateVoiceRecordingTimer();
+    voiceRecordTimer = window.setInterval(updateVoiceRecordingTimer, 200);
+}
+
+function createRecordingMeterMarkup() {
+    return Array.from({ length: 12 }, (_, index) => `<i style="--meter-delay:${index * 54}ms"></i>`).join("");
+}
+
+function updateVoiceRecordingTimer() {
+    if (!voiceTransferStatus || !voiceRecordStartedAt) {
+        return;
+    }
+
+    const elapsed = Math.min(maxVoiceDurationMs, Date.now() - voiceRecordStartedAt);
+    const timer = voiceTransferStatus.querySelector(".voice-recording-copy");
+    if (timer) {
+        timer.textContent = `${formatVoiceDuration(elapsed / 1000)} / 1:00`;
+    }
+
+    messageForm.style.setProperty("--voice-record-progress", `${(elapsed / maxVoiceDurationMs) * 100}%`);
+}
+
+function canStartVoiceRecording() {
+    return activeConversation &&
+        connection &&
+        !isSending &&
+        !isRecordingVoice &&
+        !isPreparingVoice &&
+        messageInput &&
+        messageInput.value.trim().length === 0 &&
+        navigator.mediaDevices &&
+        navigator.mediaDevices.getUserMedia &&
+        window.MediaRecorder;
+}
+
+async function startVoiceRecording(event) {
+    if (!canStartVoiceRecording()) {
+        return;
+    }
+
+    event.preventDefault();
+    shouldStopVoiceWhenReady = false;
+    isPreparingVoice = true;
+
+    try {
+        const mimeType = getSupportedVoiceMimeType();
+        voiceStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true
+            }
+        });
+
+        const options = {
+            audioBitsPerSecond: voiceAudioBitRate
+        };
+        if (mimeType) {
+            options.mimeType = mimeType;
+        }
+
+        voiceChunks = [];
+        voiceRecorder = new MediaRecorder(voiceStream, options);
+        voiceRecorder.addEventListener("dataavailable", (dataEvent) => {
+            if (dataEvent.data && dataEvent.data.size > 0) {
+                voiceChunks.push(dataEvent.data);
+            }
+        });
+        voiceRecorder.addEventListener("stop", sendRecordedVoice);
+        voiceRecordStartedAt = Date.now();
+        voiceRecorder.start();
+        isRecordingVoice = true;
+        setVoiceRecordingState(true);
+        voiceAutoStopTimer = window.setTimeout(() => stopVoiceRecording(true), maxVoiceDurationMs);
+
+        if (shouldStopVoiceWhenReady) {
+            stopVoiceRecording(true);
+        }
+    } catch {
+        resetVoiceRecording();
+    } finally {
+        isPreparingVoice = false;
+    }
+}
+
+function stopVoiceRecording(shouldSend) {
+    shouldStopVoiceWhenReady = isPreparingVoice && shouldSend;
+    if (!voiceRecorder || voiceRecorder.state === "inactive") {
+        return;
+    }
+
+    voiceRecorder.datasetShouldSend = shouldSend ? "true" : "false";
+    voiceRecorder.stop();
+}
+
+function resetVoiceRecording() {
+    setVoiceRecordingState(false);
+    if (voiceStream) {
+        voiceStream.getTracks().forEach((track) => track.stop());
+    }
+
+    voiceRecorder = null;
+    voiceStream = null;
+    voiceChunks = [];
+    voiceRecordStartedAt = 0;
+    isRecordingVoice = false;
+    isPreparingVoice = false;
+    shouldStopVoiceWhenReady = false;
+    if (messageInput) {
+        messageInput.disabled = isSending;
+        messageInput.placeholder = "Write a message";
+    }
+    if (messageForm) {
+        messageForm.style.removeProperty("--voice-record-progress");
+    }
+}
+
+async function sendRecordedVoice() {
+    const recorder = voiceRecorder;
+    const shouldSend = recorder && recorder.datasetShouldSend !== "false";
+    const durationMs = voiceRecordStartedAt ? Date.now() - voiceRecordStartedAt : 0;
+    const type = recorder && recorder.mimeType ? recorder.mimeType : getSupportedVoiceMimeType() || "audio/webm";
+    const chunks = voiceChunks.slice();
+
+    resetVoiceRecording();
+
+    if (!shouldSend || durationMs < minVoiceDurationMs || chunks.length === 0) {
+        return;
+    }
+
+    const blob = new Blob(chunks, { type });
+    await sendVoiceBlob(blob, Math.min(durationMs / 1000, 60));
+}
+
+function uploadVoice(blob) {
+    return new Promise((resolve, reject) => {
+        const data = new FormData();
+        const request = new XMLHttpRequest();
+
+        data.append("voice", blob, "voice-message");
+        request.open("POST", "/api/messages/voice");
+        request.setRequestHeader("RequestVerificationToken", getAntiForgeryToken());
+        request.responseType = "json";
+
+        request.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+                const progress = Math.round((event.loaded / event.total) * 100);
+                setVoiceSendingState(true, progress);
+            }
+        });
+
+        request.addEventListener("load", () => {
+            if (request.status >= 200 && request.status < 300) {
+                resolve(request.response);
+                return;
+            }
+
+            reject(new Error("Voice upload failed."));
+        });
+
+        request.addEventListener("error", () => reject(new Error("Voice upload failed.")));
+        request.addEventListener("abort", () => reject(new Error("Voice upload was cancelled.")));
+        request.send(data);
+    });
+}
+
+function setVoiceSendingState(active, progress = 0) {
+    if (!messageForm) {
+        return;
+    }
+
+    messageForm.classList.toggle("is-voice-sending", active);
+    messageForm.style.setProperty("--voice-progress", `${Math.max(0, Math.min(100, progress))}%`);
+
+    if (!voiceTransferStatus && active) {
+        voiceTransferStatus = document.createElement("span");
+        voiceTransferStatus.className = "voice-recording-status is-sending";
+        messageForm.appendChild(voiceTransferStatus);
+    }
+
+    if (!active) {
+        if (voiceTransferStatus) {
+            voiceTransferStatus.remove();
+            voiceTransferStatus = null;
+        }
+        return;
+    }
+
+    voiceTransferStatus.innerHTML = `
+        <span class="voice-recording-dot"></span>
+        <span class="voice-recording-copy">Sending voice ${Math.round(progress)}%</span>
+        <span class="voice-recording-meter">${createRecordingMeterMarkup()}</span>`;
+}
+
+async function sendVoiceBlob(blob, durationSeconds) {
+    if (!activeConversation || !connection || isSending) {
+        return;
+    }
+
+    if (!allowedVoiceTypes.some((type) => blob.type.startsWith(type))) {
+        return;
+    }
+
+    isSending = true;
+    setVoiceSendingState(true, 0);
+
+    try {
+        const voice = await uploadVoice(blob);
+        const voiceStorageKey = getVoiceStorageKey(voice.url || voice.path);
+        if (voiceStorageKey) {
+            pendingUploadedVoices.set(voiceStorageKey, blob);
+        }
+
+        setVoiceSendingState(true, 100);
+        try {
+            await connection.invoke("SendVoiceMessage", activeConversation.userId, voice.path, durationSeconds);
+        } catch (error) {
+            if (voiceStorageKey) {
+                pendingUploadedVoices.delete(voiceStorageKey);
+            }
+            throw error;
+        }
+    } finally {
+        isSending = false;
+        setVoiceSendingState(false);
+        if (messageInput) {
+            messageInput.focus();
+        }
+    }
+}
 async function logout() {
     showPageLoader();
     await stopSignalRForExit();
@@ -1942,6 +2490,34 @@ if (confirmRestoreHiddenButton) {
 
 if (messageForm) {
     messageForm.addEventListener("submit", sendCurrentMessage);
+
+    const submitButton = messageForm.querySelector(".send-button");
+    if (submitButton) {
+        submitButton.addEventListener("pointerdown", (event) => {
+            if (!messageInput || messageInput.value.trim()) {
+                return;
+            }
+
+            submitButton.setPointerCapture(event.pointerId);
+            startVoiceRecording(event);
+        });
+
+        submitButton.addEventListener("pointerup", (event) => {
+            if (!isRecordingVoice && !isPreparingVoice) {
+                return;
+            }
+
+            event.preventDefault();
+            stopVoiceRecording(true);
+        });
+
+        submitButton.addEventListener("pointercancel", () => stopVoiceRecording(false));
+        submitButton.addEventListener("lostpointercapture", () => {
+            if (isRecordingVoice || isPreparingVoice) {
+                stopVoiceRecording(true);
+            }
+        });
+    }
 }
 
 if (attachImageButton && imageInput) {

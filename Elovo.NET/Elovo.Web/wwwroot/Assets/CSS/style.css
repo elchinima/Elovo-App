@@ -855,6 +855,91 @@ input:disabled {
     white-space: normal;
 }
 
+.message.has-voice {
+    width: min(68%, 320px);
+    padding: 9px 10px;
+    white-space: normal;
+}
+
+.message-voice {
+    min-width: 210px;
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    --voice-progress: 0%;
+}
+
+.message-voice audio {
+    display: none;
+}
+
+.voice-play-button {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.13);
+    padding: 0;
+}
+
+.voice-play-button img {
+    width: 22px;
+    height: 22px;
+    display: block;
+}
+
+.voice-wave {
+    min-width: 0;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    position: relative;
+    overflow: hidden;
+}
+
+.voice-wave::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: var(--voice-progress);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.18);
+    transition: width 120ms linear;
+}
+
+.voice-wave span {
+    width: 3px;
+    height: var(--bar-height);
+    min-height: 8px;
+    display: block;
+    position: relative;
+    z-index: 1;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    transform-origin: center;
+}
+
+.message.them .voice-wave span {
+    background: rgba(245, 247, 255, 0.7);
+}
+
+.message-voice.is-playing .voice-wave span {
+    animation: voiceBarPulse 680ms ease-in-out infinite;
+    animation-delay: var(--meter-delay, 0ms);
+}
+
+.voice-duration {
+    min-width: 36px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-align: right;
+}
+
 .message-image-frame {
     width: 100%;
     aspect-ratio: 4 / 3;
@@ -1005,6 +1090,104 @@ input:disabled {
 
 .composer.is-image-transfer .icon-button .button-icon {
     opacity: 0;
+}
+
+.composer.is-voice-recording,
+.composer.is-voice-sending {
+    background: rgba(83, 214, 164, 0.08);
+}
+
+.composer.is-voice-recording::before,
+.composer.is-voice-sending::before {
+    content: "";
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    top: 8px;
+    height: 3px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+}
+
+.composer.is-voice-recording::after,
+.composer.is-voice-sending::after {
+    content: "";
+    position: absolute;
+    left: 18px;
+    top: 8px;
+    width: var(--voice-record-progress, var(--voice-progress, 0%));
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--success), var(--accent-2));
+    transition: width 120ms linear;
+    pointer-events: none;
+}
+
+.composer.is-voice-recording .send-button {
+    box-shadow: 0 0 0 0 rgba(83, 214, 164, 0.38);
+    animation: recordButtonPulse 920ms ease-in-out infinite;
+}
+
+.composer.is-voice-recording .send-button .button-icon {
+    transform: scale(0.86);
+    filter: drop-shadow(0 0 10px rgba(83, 214, 164, 0.6));
+}
+
+.voice-recording-status {
+    position: absolute;
+    left: 18px;
+    right: 18px;
+    bottom: calc(100% + 8px);
+    min-height: 42px;
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border: 1px solid rgba(83, 214, 164, 0.32);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(12, 16, 36, 0.96);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 10px 24px rgba(3, 6, 18, 0.22);
+    font-size: 0.78rem;
+    font-weight: 850;
+    pointer-events: none;
+}
+
+.voice-recording-dot {
+    width: 10px;
+    height: 10px;
+    display: block;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 0 0 rgba(83, 214, 164, 0.45);
+    animation: recordDotPulse 920ms ease-in-out infinite;
+}
+
+.voice-recording-copy {
+    white-space: nowrap;
+}
+
+.voice-recording-meter {
+    min-width: 0;
+    height: 24px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 3px;
+    overflow: hidden;
+}
+
+.voice-recording-meter i {
+    width: 3px;
+    height: 8px;
+    display: block;
+    border-radius: 999px;
+    background: rgba(245, 247, 255, 0.72);
+    animation: recordingMeter 760ms ease-in-out infinite;
+    animation-delay: var(--meter-delay);
 }
 
 .image-upload-status {

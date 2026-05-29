@@ -271,7 +271,8 @@
 
     .call-actions {
         grid-template-columns: repeat(3, 64px);
-        gap: 14px;
+        gap: 28px;
+        transform: translateY(-10px);
     }
 
     .call-control-button {

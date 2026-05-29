@@ -268,12 +268,76 @@ public class ChatHub : Hub
         }
     }
 
+    public async Task CallUser(string targetUserId)
+    {
+        var callerId = GetCurrentUserId();
+        var targetId = ParseUserId(targetUserId);
+        var caller = await _userService.GetProfileAsync(callerId, Context.ConnectionAborted);
+
+        await Clients.Group(UserGroup(targetId)).SendAsync(
+            "IncomingCall",
+            callerId,
+            caller.Username,
+            caller.ProfileImageUrl,
+            Context.ConnectionAborted);
+    }
+
+    public async Task CallOffer(string targetUserId, string sdpOffer)
+    {
+        if (string.IsNullOrWhiteSpace(sdpOffer))
+        {
+            return;
+        }
+
+        var callerId = GetCurrentUserId();
+        var targetId = ParseUserId(targetUserId);
+
+        await Clients.Group(UserGroup(targetId)).SendAsync("CallOffer", sdpOffer, callerId, Context.ConnectionAborted);
+    }
+
+    public async Task CallAnswer(string callerId, string sdpAnswer)
+    {
+        if (string.IsNullOrWhiteSpace(sdpAnswer))
+        {
+            return;
+        }
+
+        await Clients.Group(UserGroup(ParseUserId(callerId))).SendAsync("CallAnswered", sdpAnswer, Context.ConnectionAborted);
+    }
+
+    public async Task IceCandidate(string targetUserId, string candidate)
+    {
+        if (string.IsNullOrWhiteSpace(candidate))
+        {
+            return;
+        }
+
+        await Clients.Group(UserGroup(ParseUserId(targetUserId))).SendAsync("IceCandidate", candidate, Context.ConnectionAborted);
+    }
+
+    public async Task CallReject(string callerId)
+    {
+        await Clients.Group(UserGroup(ParseUserId(callerId))).SendAsync("CallRejected", Context.ConnectionAborted);
+    }
+
+    public async Task CallEnd(string targetUserId)
+    {
+        await Clients.Group(UserGroup(ParseUserId(targetUserId))).SendAsync("CallEnded", Context.ConnectionAborted);
+    }
+
     private Guid GetCurrentUserId()
     {
         var value = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
         return Guid.TryParse(value, out var userId)
             ? userId
             : throw new HubException("User identifier is missing.");
+    }
+
+    private static Guid ParseUserId(string userId)
+    {
+        return Guid.TryParse(userId, out var parsedUserId)
+            ? parsedUserId
+            : throw new HubException("Target user identifier is invalid.");
     }
 
     private static string UserGroup(Guid userId) => $"user:{userId}";

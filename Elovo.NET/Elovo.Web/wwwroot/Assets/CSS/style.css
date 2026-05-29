@@ -1752,7 +1752,7 @@ body.is-page-loading .page-loader {
     display: grid;
     grid-template-columns: repeat(3, 62px);
     justify-content: center;
-    gap: 14px;
+    gap: 28px;
     align-self: end;
 }
 

@@ -739,6 +739,12 @@ input:disabled {
     transition: transform 50ms ease, opacity 50ms ease;
 }
 
+.ghost-button.is-active,
+.icon-button.is-active {
+    border-color: rgba(109, 103, 255, 0.62);
+    background: rgba(109, 103, 255, 0.18);
+}
+
 .ghost-button {
     width: 42px;
     height: 42px;
@@ -746,6 +752,13 @@ input:disabled {
     place-items: center;
     padding: 0;
     font-weight: 800;
+}
+
+.ghost-button:disabled,
+.icon-button:disabled {
+    cursor: default;
+    opacity: 0.48;
+    transform: none;
 }
 
 #logoutButton {
@@ -1644,6 +1657,152 @@ body.is-page-loading .page-loader {
     border: 0;
     color: #fff;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.call-modal-backdrop {
+    z-index: 70;
+}
+
+.call-modal-panel {
+    width: min(430px, 100%);
+    grid-template-rows: minmax(0, 1fr);
+    border-color: rgba(139, 124, 255, 0.32);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(109, 103, 255, 0.24), transparent 17rem),
+        radial-gradient(circle at 50% 100%, rgba(83, 214, 164, 0.12), transparent 13rem),
+        var(--panel-solid);
+}
+
+.call-modal-body {
+    min-height: 430px;
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    justify-items: center;
+    align-items: center;
+    gap: 24px;
+    padding: 34px 24px 24px;
+}
+
+.call-avatar-ring {
+    width: 132px;
+    height: 132px;
+    display: grid;
+    place-items: center;
+    align-self: end;
+    border: 1px solid rgba(125, 134, 255, 0.2);
+    border-radius: var(--radius);
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.026)),
+        rgba(7, 10, 24, 0.76);
+    position: relative;
+}
+
+.call-avatar-ring::before,
+.call-avatar-ring::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    border: 1px solid rgba(109, 103, 255, 0.24);
+    border-radius: calc(var(--radius) + 6px);
+    opacity: 0.72;
+    animation: callRingPulse 1700ms ease-out infinite;
+}
+
+.call-avatar-ring::after {
+    inset: -22px;
+    animation-delay: 420ms;
+    opacity: 0.42;
+}
+
+.call-avatar {
+    width: 104px;
+    height: 104px;
+    font-size: 2rem;
+    position: relative;
+    z-index: 1;
+    transform: none;
+}
+
+.call-copy {
+    width: 100%;
+    display: grid;
+    justify-items: center;
+    gap: 7px;
+    text-align: center;
+}
+
+.call-copy h2,
+.call-copy p {
+    margin: 0;
+}
+
+.call-copy h2 {
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--text);
+    font-size: 1.42rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.call-copy p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.call-copy strong {
+    color: var(--text);
+    font-size: 1.08rem;
+    letter-spacing: 0.04em;
+}
+
+.call-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    align-self: end;
+}
+
+.call-control-button {
+    min-width: 0;
+    min-height: 58px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid rgba(125, 134, 255, 0.2);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.055);
+    padding: 0 10px;
+    font-weight: 900;
+    position: relative;
+}
+
+.call-control-button:hover,
+.call-control-button:focus-visible,
+.call-control-button.is-active {
+    border-color: rgba(109, 103, 255, 0.6);
+    background: rgba(109, 103, 255, 0.18);
+}
+
+.call-control-button.is-active .button-icon {
+    filter: drop-shadow(0 0 10px rgba(139, 124, 255, 0.64));
+}
+
+.call-end-button {
+    border-color: rgba(255, 96, 126, 0.38);
+    color: #fff;
+    background: rgba(255, 96, 126, 0.18);
+}
+
+.call-end-button:hover,
+.call-end-button:focus-visible {
+    border-color: rgba(255, 96, 126, 0.72);
+    background: rgba(255, 96, 126, 0.28);
 }
 
 .modal-header {

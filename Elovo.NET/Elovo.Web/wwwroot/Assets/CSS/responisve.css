@@ -253,6 +253,39 @@
         border-radius: 0;
     }
 
+    .call-modal-backdrop {
+        padding: 50px 12px calc(25px + env(safe-area-inset-bottom));
+    }
+
+    .call-modal-panel {
+        width: 100%;
+        height: calc(100vh - 75px);
+        height: calc(100dvh - 75px);
+        border-radius: var(--radius);
+    }
+
+    .call-modal-body {
+        min-height: 0;
+        padding: 28px 16px 16px;
+    }
+
+    .call-actions {
+        gap: 8px;
+    }
+
+    .call-control-button {
+        min-height: 58px;
+        padding: 0;
+    }
+
+    .call-control-button span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
     .restore-hidden-backdrop,
     #profileConfirmModal,
     #chatRetentionConfirmModal {

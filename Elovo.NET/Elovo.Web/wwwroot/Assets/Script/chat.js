@@ -24,6 +24,16 @@ const activeName = document.querySelector("#activeName");
 const activeStatus = document.querySelector("#activeStatus");
 const activeAvatar = document.querySelector("#activeAvatar");
 const backButton = document.querySelector("#backButton");
+const callButton = document.querySelector("#callButton");
+const callModal = document.querySelector("#callModal");
+const callAvatar = document.querySelector("#callAvatar");
+const callUserName = document.querySelector("#callUserName");
+const callDuration = document.querySelector("#callDuration");
+const endCallButton = document.querySelector("#endCallButton");
+const muteCallButton = document.querySelector("#muteCallButton");
+const muteCallLabel = document.querySelector("#muteCallLabel");
+const speakerCallButton = document.querySelector("#speakerCallButton");
+const callSpeakerLabel = document.querySelector("#callSpeakerLabel");
 const allFriendsButton = document.querySelector("#allFriendsButton");
 const addFriendButton = document.querySelector("#addFriendButton");
 const friendRequestsButton = document.querySelector("#friendRequestsButton");
@@ -61,6 +71,9 @@ let isPreparingVoice = false;
 let isRecordingVoice = false;
 let shouldStopVoiceWhenReady = false;
 let activeVoiceAudio = null;
+let simulatedCall = null;
+let simulatedCallTimer = null;
+const simulatedSpeakerModes = ["Speaker", "Earpiece", "Headphones"];
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
 const maxVoiceDurationMs = 60 * 1000;
@@ -665,6 +678,140 @@ function closeModal(modal) {
     modal.setAttribute("aria-hidden", "true");
 }
 
+function formatCallDuration(totalSeconds) {
+    const safeSeconds = Math.max(0, Math.floor(totalSeconds));
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const seconds = safeSeconds % 60;
+    const pad = (value) => value.toString().padStart(2, "0");
+
+    if (hours > 0) {
+        return `${hours}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    return `${pad(minutes)}:${pad(seconds)}`;
+}
+
+function updateCallDuration() {
+    if (!simulatedCall || !callDuration) {
+        return;
+    }
+
+    callDuration.textContent = formatCallDuration((Date.now() - simulatedCall.startedAt) / 1000);
+}
+
+function updateCallControls() {
+    if (!simulatedCall) {
+        return;
+    }
+
+    const speakerMode = simulatedSpeakerModes[simulatedCall.speakerIndex] || simulatedSpeakerModes[0];
+
+    if (muteCallButton) {
+        muteCallButton.classList.toggle("is-active", simulatedCall.isMuted);
+        muteCallButton.setAttribute("aria-pressed", simulatedCall.isMuted ? "true" : "false");
+        muteCallButton.setAttribute("aria-label", simulatedCall.isMuted ? "Unmute microphone" : "Mute microphone");
+        muteCallButton.title = simulatedCall.isMuted ? "Unmute microphone" : "Mute microphone";
+        const muteIcon = muteCallButton.querySelector("img");
+        if (muteIcon) {
+            muteIcon.src = simulatedCall.isMuted
+                ? "/Assets/Images/Icons/microphone-off.svg"
+                : "/Assets/Images/Icons/microphone.svg";
+        }
+    }
+
+    if (muteCallLabel) {
+        muteCallLabel.textContent = simulatedCall.isMuted ? "Muted" : "Mute";
+    }
+
+    if (speakerCallButton) {
+        speakerCallButton.classList.toggle("is-active", simulatedCall.speakerIndex > 0);
+        speakerCallButton.setAttribute("aria-label", `Change speaker. Current: ${speakerMode}`);
+        speakerCallButton.title = `Change speaker: ${speakerMode}`;
+    }
+
+    if (callSpeakerLabel) {
+        callSpeakerLabel.textContent = speakerMode;
+    }
+}
+
+function stopSimulatedCall() {
+    if (simulatedCallTimer) {
+        window.clearInterval(simulatedCallTimer);
+        simulatedCallTimer = null;
+    }
+
+    simulatedCall = null;
+    closeModal(callModal);
+
+    if (callButton) {
+        callButton.classList.remove("is-active");
+        callButton.setAttribute("aria-pressed", "false");
+    }
+
+    if (muteCallButton) {
+        muteCallButton.classList.remove("is-active");
+        muteCallButton.setAttribute("aria-pressed", "false");
+    }
+
+    if (speakerCallButton) {
+        speakerCallButton.classList.remove("is-active");
+    }
+}
+
+function startSimulatedCall() {
+    if (!activeConversation || !callModal) {
+        return;
+    }
+
+    if (simulatedCall) {
+        openModal(callModal);
+        return;
+    }
+
+    simulatedCall = {
+        startedAt: Date.now(),
+        isMuted: false,
+        speakerIndex: 0
+    };
+
+    if (callUserName) {
+        callUserName.textContent = activeConversation.username;
+    }
+
+    if (callAvatar) {
+        setAvatarElement(callAvatar, activeConversation, activeConversation.initial);
+    }
+
+    if (callButton) {
+        callButton.classList.add("is-active");
+        callButton.setAttribute("aria-pressed", "true");
+    }
+
+    updateCallDuration();
+    updateCallControls();
+    openModal(callModal);
+    simulatedCallTimer = window.setInterval(updateCallDuration, 1000);
+}
+
+function toggleSimulatedMute() {
+    if (!simulatedCall) {
+        return;
+    }
+
+    simulatedCall.isMuted = !simulatedCall.isMuted;
+    updateCallControls();
+}
+
+function cycleSimulatedSpeaker() {
+    if (!simulatedCall) {
+        return;
+    }
+
+    simulatedCall.speakerIndex = (simulatedCall.speakerIndex + 1) % simulatedSpeakerModes.length;
+    updateCallControls();
+}
+
 function getFilteredConversations() {
     const term = conversationSearchTerm.toLowerCase();
     const visible = conversations.filter((chat) => !hiddenConversationIds.has(normalizeId(chat.userId)));
@@ -956,6 +1103,11 @@ function renderConversationHeader(chat) {
     activeName.textContent = chat.username;
     activeStatus.textContent = formatStatus(chat);
     setAvatarElement(activeAvatar, chat, chat.initial);
+
+    if (callButton) {
+        callButton.disabled = false;
+        callButton.removeAttribute("aria-disabled");
+    }
 }
 
 function renderEmptyConversationHeader() {
@@ -974,6 +1126,13 @@ function renderEmptyConversationHeader() {
 
     if (messageStream) {
         messageStream.innerHTML = "";
+    }
+
+    if (callButton) {
+        callButton.disabled = true;
+        callButton.setAttribute("aria-disabled", "true");
+        callButton.classList.remove("is-active");
+        callButton.setAttribute("aria-pressed", "false");
     }
 }
 
@@ -2439,6 +2598,12 @@ window.addEventListener("pagehide", () => {
     stopSignalRForExit();
 });
 
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && simulatedCall) {
+        stopSimulatedCall();
+    }
+});
+
 if (messengerView && chatList && messageStream) {
     requestPersistentStorage();
     purgeExpiredChatMessages()
@@ -2456,6 +2621,30 @@ if (logoutButton) {
 
 if (settingsButton) {
     settingsButton.addEventListener("click", () => navigateWithLoader("/settings/profile"));
+}
+
+if (callButton) {
+    callButton.addEventListener("click", startSimulatedCall);
+}
+
+if (endCallButton) {
+    endCallButton.addEventListener("click", stopSimulatedCall);
+}
+
+if (muteCallButton) {
+    muteCallButton.addEventListener("click", toggleSimulatedMute);
+}
+
+if (speakerCallButton) {
+    speakerCallButton.addEventListener("click", cycleSimulatedSpeaker);
+}
+
+if (callModal) {
+    callModal.addEventListener("click", (event) => {
+        if (event.target === callModal) {
+            stopSimulatedCall();
+        }
+    });
 }
 
 if (searchInput) {

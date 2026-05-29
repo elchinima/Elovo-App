@@ -224,6 +224,18 @@
     }
 }
 
+@keyframes callRingPulse {
+    from {
+        opacity: 0.72;
+        transform: scale(0.94);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(1.2);
+    }
+}
+
 @keyframes recordingMeter {
 
     0%,

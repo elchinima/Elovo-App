@@ -63,7 +63,7 @@
                     <h2 id="activeName">Elovo</h2>
                     <p id="activeStatus">Choose a conversation</p>
                 </div>
-                <button class="ghost-button" id="callButton" type="button" aria-label="Start audio call" title="Audio call">
+                <button class="ghost-button" id="callButton" type="button" aria-label="Start audio call" title="Audio call" aria-pressed="false" disabled>
                     <img class="button-icon" src="~/Assets/Images/Icons/call.svg" alt="">
                 </button>
                 <button class="ghost-button" id="logoutButton" type="button" aria-label="Log out" title="Log out">
@@ -155,6 +155,35 @@
                 </button>
             </header>
             <div class="modal-list" id="friendRequestsList"></div>
+        </section>
+    </div>
+
+    <div class="modal-backdrop call-modal-backdrop" id="callModal" aria-hidden="true">
+        <section class="modal-panel confirm-modal-panel call-modal-panel" role="dialog" aria-modal="true" aria-labelledby="callUserName">
+            <div class="call-modal-body">
+                <div class="call-avatar-ring" aria-hidden="true">
+                    <span class="avatar call-avatar" id="callAvatar">E</span>
+                </div>
+                <div class="call-copy">
+                    <h2 id="callUserName">Audio call</h2>
+                    <p>Simulated call</p>
+                    <strong id="callDuration">00:00</strong>
+                </div>
+                <div class="call-actions" aria-label="Call controls">
+                    <button class="call-control-button call-end-button" id="endCallButton" type="button" aria-label="End call" title="End call">
+                        <img class="button-icon" src="~/Assets/Images/Icons/call-end.svg" alt="">
+                        <span>End</span>
+                    </button>
+                    <button class="call-control-button" id="muteCallButton" type="button" aria-label="Mute microphone" title="Mute microphone" aria-pressed="false">
+                        <img class="button-icon" src="~/Assets/Images/Icons/microphone.svg" alt="">
+                        <span id="muteCallLabel">Mute</span>
+                    </button>
+                    <button class="call-control-button" id="speakerCallButton" type="button" aria-label="Change speaker" title="Change speaker">
+                        <img class="button-icon" src="~/Assets/Images/Icons/speaker.svg" alt="">
+                        <span id="callSpeakerLabel">Speaker</span>
+                    </button>
+                </div>
+            </div>
         </section>
     </div>
 </main>

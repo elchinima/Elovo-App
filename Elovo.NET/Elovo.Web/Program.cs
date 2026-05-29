@@ -20,6 +20,7 @@ builder.Services.AddSingleton<IUserPresenceTracker, UserPresenceTracker>();
 builder.Services.AddOptions();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<PushNotificationService>();
+builder.Services.AddSingleton<IPushNotificationService>(serviceProvider => serviceProvider.GetRequiredService<PushNotificationService>());
 builder.Services.AddHttpClient<IImageStorageService, SupabaseImageStorageService>();
 builder.Services.AddHttpClient<RenderKeepAliveService>();
 builder.Services.AddHostedService<RenderKeepAliveService>();

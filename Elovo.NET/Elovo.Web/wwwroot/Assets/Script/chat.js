@@ -34,6 +34,9 @@ const muteCallButton = document.querySelector("#muteCallButton");
 const muteCallLabel = document.querySelector("#muteCallLabel");
 const speakerCallButton = document.querySelector("#speakerCallButton");
 const callSpeakerLabel = document.querySelector("#callSpeakerLabel");
+if (callDuration) {
+    callDuration.style.color = "var(--muted)";
+}
 const allFriendsButton = document.querySelector("#allFriendsButton");
 const addFriendButton = document.querySelector("#addFriendButton");
 const friendRequestsButton = document.querySelector("#friendRequestsButton");
@@ -1071,6 +1074,21 @@ function dismissIncomingCallBanner() {
     incomingCall = null;
 }
 
+function positionIncomingCallBanner() {
+    if (!incomingCallBanner) {
+        return;
+    }
+
+    if (window.matchMedia("(max-width: 640px)").matches) {
+        incomingCallBanner.style.inset = "18px auto auto 50%";
+        incomingCallBanner.style.transform = "translateX(-50%)";
+        return;
+    }
+
+    incomingCallBanner.style.inset = "18px 18px auto auto";
+    incomingCallBanner.style.transform = "";
+}
+
 function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     const existingCall = incomingCall && sameId(incomingCall.callerId, callerId) ? incomingCall : null;
     dismissIncomingCallBanner();
@@ -1087,7 +1105,6 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     banner.setAttribute("role", "dialog");
     banner.setAttribute("aria-label", `Incoming call from ${callerName}`);
     banner.style.position = "fixed";
-    banner.style.inset = "18px 18px auto auto";
     banner.style.zIndex = "90";
     banner.style.width = "min(360px, calc(100vw - 36px))";
     banner.style.display = "grid";
@@ -1131,7 +1148,10 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
 
     const acceptButton = document.createElement("button");
     acceptButton.type = "button";
-    acceptButton.textContent = "Accept";
+    acceptButton.style.display = "inline-flex";
+    acceptButton.style.alignItems = "center";
+    acceptButton.style.justifyContent = "center";
+    acceptButton.style.gap = "8px";
     acceptButton.style.flex = "1";
     acceptButton.style.border = "0";
     acceptButton.style.borderRadius = "8px";
@@ -1139,18 +1159,39 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     acceptButton.style.background = "#22c55e";
     acceptButton.style.color = "#04120a";
     acceptButton.style.fontWeight = "700";
+    const acceptIcon = document.createElement("img");
+    acceptIcon.src = "/Assets/Images/Icons/call.svg";
+    acceptIcon.alt = "";
+    acceptIcon.style.width = "18px";
+    acceptIcon.style.height = "18px";
+    acceptIcon.style.filter = "brightness(0)";
+    const acceptLabel = document.createElement("span");
+    acceptLabel.textContent = "Accept";
+    acceptButton.append(acceptIcon, acceptLabel);
     acceptButton.addEventListener("click", acceptIncomingCall);
 
     const rejectButton = document.createElement("button");
     rejectButton.type = "button";
-    rejectButton.textContent = "Reject";
+    rejectButton.style.display = "inline-flex";
+    rejectButton.style.alignItems = "center";
+    rejectButton.style.justifyContent = "center";
+    rejectButton.style.gap = "8px";
     rejectButton.style.flex = "1";
     rejectButton.style.border = "0";
     rejectButton.style.borderRadius = "8px";
     rejectButton.style.padding = "10px 12px";
     rejectButton.style.background = "#ef4444";
-    rejectButton.style.color = "#fff";
+    rejectButton.style.color = "#111";
     rejectButton.style.fontWeight = "700";
+    const rejectIcon = document.createElement("img");
+    rejectIcon.src = "/Assets/Images/Icons/call-end.svg";
+    rejectIcon.alt = "";
+    rejectIcon.style.width = "18px";
+    rejectIcon.style.height = "18px";
+    rejectIcon.style.filter = "brightness(0)";
+    const rejectLabel = document.createElement("span");
+    rejectLabel.textContent = "Reject";
+    rejectButton.append(rejectIcon, rejectLabel);
     rejectButton.addEventListener("click", rejectIncomingCall);
 
     actions.append(acceptButton, rejectButton);
@@ -1158,6 +1199,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     banner.append(avatar, content);
     document.body.appendChild(banner);
     incomingCallBanner = banner;
+    positionIncomingCallBanner();
 }
 
 async function handleCallOffer(sdpOffer, callerId) {
@@ -3033,6 +3075,8 @@ window.addEventListener("pagehide", () => {
 
     stopSignalRForExit();
 });
+
+window.addEventListener("resize", positionIncomingCallBanner);
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && activeCall) {

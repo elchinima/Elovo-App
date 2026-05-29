@@ -9,19 +9,22 @@ public class ChatHub : Hub
     private readonly IUnitOfWork _unitOfWork;
     private readonly IImageStorageService _imageStorageService;
     private readonly IUserPresenceTracker _presenceTracker;
+    private readonly IPushNotificationService _pushNotificationService;
 
     public ChatHub(
         IMessageService messageService,
         IUserService userService,
         IUnitOfWork unitOfWork,
         IImageStorageService imageStorageService,
-        IUserPresenceTracker presenceTracker)
+        IUserPresenceTracker presenceTracker,
+        IPushNotificationService pushNotificationService)
     {
         _messageService = messageService;
         _userService = userService;
         _unitOfWork = unitOfWork;
         _imageStorageService = imageStorageService;
         _presenceTracker = presenceTracker;
+        _pushNotificationService = pushNotificationService;
     }
 
     public override async Task OnConnectedAsync()
@@ -280,6 +283,20 @@ public class ChatHub : Hub
             caller.Username,
             caller.ProfileImageUrl,
             Context.ConnectionAborted);
+
+        if (!_presenceTracker.IsOnline(targetId))
+        {
+            var targetUser = await _unitOfWork.Users.GetByIdAsync(targetId, Context.ConnectionAborted);
+            var fcmToken = targetUser?.Session?.FcmToken;
+            if (!string.IsNullOrWhiteSpace(fcmToken))
+            {
+                await _pushNotificationService.SendCallPushAsync(
+                    fcmToken,
+                    caller.Username,
+                    caller.ProfileImageUrl ?? string.Empty,
+                    callerId.ToString());
+            }
+        }
     }
 
     public async Task CallOffer(string targetUserId, string sdpOffer)

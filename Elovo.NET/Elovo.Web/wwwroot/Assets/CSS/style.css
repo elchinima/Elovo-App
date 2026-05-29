@@ -1668,56 +1668,45 @@ body.is-page-loading .page-loader {
     grid-template-rows: minmax(0, 1fr);
     border-color: rgba(139, 124, 255, 0.32);
     background:
-        radial-gradient(circle at 50% 0%, rgba(109, 103, 255, 0.24), transparent 17rem),
-        radial-gradient(circle at 50% 100%, rgba(83, 214, 164, 0.12), transparent 13rem),
+        linear-gradient(180deg, rgba(18, 24, 50, 0.98), rgba(10, 14, 32, 0.98)),
+        radial-gradient(circle at 50% 0%, rgba(109, 103, 255, 0.2), transparent 16rem),
         var(--panel-solid);
 }
 
 .call-modal-body {
     min-height: 430px;
     display: grid;
-    grid-template-rows: 1fr auto auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
     justify-items: center;
-    align-items: center;
-    gap: 24px;
-    padding: 34px 24px 24px;
+    align-items: start;
+    gap: 18px;
+    padding: 28px 24px 24px;
 }
 
 .call-avatar-ring {
-    width: 132px;
-    height: 132px;
+    width: 116px;
+    height: 116px;
     display: grid;
     place-items: center;
-    align-self: end;
+    align-self: start;
     border: 1px solid rgba(125, 134, 255, 0.2);
     border-radius: var(--radius);
     background:
         linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.026)),
         rgba(7, 10, 24, 0.76);
     position: relative;
+    margin-top: 6px;
 }
 
 .call-avatar-ring::before,
 .call-avatar-ring::after {
-    content: "";
-    position: absolute;
-    inset: -12px;
-    border: 1px solid rgba(109, 103, 255, 0.24);
-    border-radius: calc(var(--radius) + 6px);
-    opacity: 0.72;
-    animation: callRingPulse 1700ms ease-out infinite;
-}
-
-.call-avatar-ring::after {
-    inset: -22px;
-    animation-delay: 420ms;
-    opacity: 0.42;
+    content: none;
 }
 
 .call-avatar {
-    width: 104px;
-    height: 104px;
-    font-size: 2rem;
+    width: 92px;
+    height: 92px;
+    font-size: 1.86rem;
     position: relative;
     z-index: 1;
     transform: none;
@@ -1727,7 +1716,7 @@ body.is-page-loading .page-loader {
     width: 100%;
     display: grid;
     justify-items: center;
-    gap: 7px;
+    gap: 8px;
     text-align: center;
 }
 
@@ -1761,25 +1750,40 @@ body.is-page-loading .page-loader {
 .call-actions {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(3, 62px);
+    justify-content: center;
+    gap: 14px;
     align-self: end;
 }
 
 .call-control-button {
-    min-width: 0;
-    min-height: 58px;
+    width: 62px;
+    height: 62px;
+    min-width: 62px;
+    min-height: 62px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
     border: 1px solid rgba(125, 134, 255, 0.2);
     border-radius: var(--radius);
     color: var(--text);
     background: rgba(255, 255, 255, 0.055);
-    padding: 0 10px;
+    padding: 0;
     font-weight: 900;
     position: relative;
+}
+
+.call-control-button .button-icon {
+    width: 39px;
+    height: 39px;
+}
+
+.call-control-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
 }
 
 .call-control-button:hover,

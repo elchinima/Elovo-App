@@ -266,24 +266,34 @@
 
     .call-modal-body {
         min-height: 0;
-        padding: 28px 16px 16px;
+        padding: 28px 16px 18px;
     }
 
     .call-actions {
-        gap: 8px;
+        grid-template-columns: repeat(3, 64px);
+        gap: 14px;
     }
 
     .call-control-button {
-        min-height: 58px;
-        padding: 0;
+        width: 64px;
+        height: 64px;
+        min-width: 64px;
+        min-height: 64px;
     }
 
-    .call-control-button span {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
+    .call-control-button:hover {
+        border-color: rgba(125, 134, 255, 0.2);
+        background: rgba(255, 255, 255, 0.055);
+    }
+
+    .call-control-button.is-active:hover {
+        border-color: rgba(109, 103, 255, 0.6);
+        background: rgba(109, 103, 255, 0.18);
+    }
+
+    .call-end-button:hover {
+        border-color: rgba(255, 96, 126, 0.38);
+        background: rgba(255, 96, 126, 0.18);
     }
 
     .restore-hidden-backdrop,

@@ -279,6 +279,43 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RemoveFriendAsync(Guid currentUserId, Guid friendId, CancellationToken cancellationToken = default)
+    {
+        if (currentUserId == friendId)
+        {
+            throw new InvalidOperationException("Friend identifier is invalid.");
+        }
+
+        var conversation = await _unitOfWork.Conversations.GetBetweenUsersAsync(currentUserId, friendId, cancellationToken)
+            ?? throw new InvalidOperationException("Friend was not found.");
+        var requests = await _unitOfWork.FriendRequests.GetAllBetweenUsersAsync(currentUserId, friendId, cancellationToken);
+        var pendingMessages = await _unitOfWork.PendingMessages.GetBetweenUsersAsync(currentUserId, friendId, cancellationToken);
+        var activeCalls = await _unitOfWork.ActiveCalls.GetBetweenUsersAsync(currentUserId, friendId, cancellationToken);
+
+        foreach (var message in pendingMessages)
+        {
+            await DeletePendingMessageMediaAsync(message, cancellationToken);
+        }
+
+        if (pendingMessages.Count > 0)
+        {
+            await _unitOfWork.PendingMessages.DeleteRangeAsync(pendingMessages, cancellationToken);
+        }
+
+        if (activeCalls.Count > 0)
+        {
+            await _unitOfWork.ActiveCalls.DeleteRangeAsync(activeCalls, cancellationToken);
+        }
+
+        if (requests.Count > 0)
+        {
+            _unitOfWork.FriendRequests.RemoveRange(requests);
+        }
+
+        _unitOfWork.Conversations.Remove(conversation);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<DateTime?> SetOnlineStatusAsync(Guid userId, bool isOnline, string? clientIp = null, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
@@ -379,6 +416,19 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(session.RegistrationIp))
         {
             session.RegistrationIp = session.LastLoginIp;
+        }
+    }
+
+    private async Task DeletePendingMessageMediaAsync(PendingMessage message, CancellationToken cancellationToken)
+    {
+        if (_imageStorageService.IsImagePath(message.Content))
+        {
+            await _imageStorageService.DeleteAsync(message.Content, cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(message.VoiceUrl) && _imageStorageService.IsVoicePath(message.VoiceUrl))
+        {
+            await _imageStorageService.DeleteAsync(message.VoiceUrl, cancellationToken);
         }
     }
 

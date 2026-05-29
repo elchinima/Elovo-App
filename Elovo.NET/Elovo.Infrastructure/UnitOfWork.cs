@@ -10,19 +10,22 @@ public class UnitOfWork : IUnitOfWork
         IUserRepository users,
         IConversationRepository conversations,
         IFriendRequestRepository friendRequests,
-        IPendingMessageRepository pendingMessages)
+        IPendingMessageRepository pendingMessages,
+        IActiveCallRepository activeCalls)
     {
         _context = context;
         Users = users;
         Conversations = conversations;
         FriendRequests = friendRequests;
         PendingMessages = pendingMessages;
+        ActiveCalls = activeCalls;
     }
 
     public IUserRepository Users { get; }
     public IConversationRepository Conversations { get; }
     public IFriendRequestRepository FriendRequests { get; }
     public IPendingMessageRepository PendingMessages { get; }
+    public IActiveCallRepository ActiveCalls { get; }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

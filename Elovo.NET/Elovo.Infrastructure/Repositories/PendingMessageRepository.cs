@@ -28,6 +28,15 @@ public class PendingMessageRepository : IPendingMessageRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<PendingMessage>> GetBetweenUsersAsync(Guid firstUserId, Guid secondUserId, CancellationToken cancellationToken = default)
+    {
+        return await _context.PendingMessages
+            .Where(x =>
+                (x.SenderId == firstUserId && x.ReceiverId == secondUserId) ||
+                (x.SenderId == secondUserId && x.ReceiverId == firstUserId))
+            .ToListAsync(cancellationToken);
+    }
+
     public Task DeleteRangeAsync(IEnumerable<PendingMessage> messages, CancellationToken cancellationToken = default)
     {
         _context.PendingMessages.RemoveRange(messages);

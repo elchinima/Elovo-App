@@ -7,4 +7,5 @@ public interface IConversationRepository
     Task<IReadOnlyList<Conversation>> GetForUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task AddAsync(Conversation conversation, CancellationToken cancellationToken = default);
     void Update(Conversation conversation);
+    void Remove(Conversation conversation);
 }

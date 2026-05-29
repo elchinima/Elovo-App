@@ -58,4 +58,9 @@ public class ConversationRepository : IConversationRepository
     {
         _context.Conversations.Update(conversation);
     }
+
+    public void Remove(Conversation conversation)
+    {
+        _context.Conversations.Remove(conversation);
+    }
 }

@@ -36,6 +36,7 @@ public class ChatHub : Hub
             ? await _userService.SetOnlineStatusAsync(userId, true, ClientIpAddressResolver.Resolve(Context.GetHttpContext()))
             : null;
         await SendPendingMessagesAsync(userId);
+        await SendActiveCallAsync(userId);
         if (becameOnline)
         {
             await Clients.Others.SendAsync("UserOnline", userId, lastSeenAt);
@@ -276,6 +277,24 @@ public class ChatHub : Hub
         var callerId = GetCurrentUserId();
         var targetId = ParseUserId(targetUserId);
         var caller = await _userService.GetProfileAsync(callerId, Context.ConnectionAborted);
+        var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(callerId, targetId, Context.ConnectionAborted);
+
+        if (activeCall is null)
+        {
+            activeCall = new ActiveCall
+            {
+                Id = Guid.NewGuid(),
+                CallerId = callerId,
+                ReceiverId = targetId
+            };
+            await _unitOfWork.ActiveCalls.AddAsync(activeCall, Context.ConnectionAborted);
+        }
+
+        activeCall.CallerName = caller.Username;
+        activeCall.CallerAvatar = caller.ProfileImageUrl ?? string.Empty;
+        activeCall.OfferSdp = null;
+        activeCall.StartedAt = DateTime.UtcNow;
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
 
         await Clients.Group(UserGroup(targetId)).SendAsync(
             "IncomingCall",
@@ -308,6 +327,24 @@ public class ChatHub : Hub
 
         var callerId = GetCurrentUserId();
         var targetId = ParseUserId(targetUserId);
+        var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(callerId, targetId, Context.ConnectionAborted);
+        if (activeCall is null)
+        {
+            var caller = await _userService.GetProfileAsync(callerId, Context.ConnectionAborted);
+            activeCall = new ActiveCall
+            {
+                Id = Guid.NewGuid(),
+                CallerId = callerId,
+                ReceiverId = targetId,
+                CallerName = caller.Username,
+                CallerAvatar = caller.ProfileImageUrl ?? string.Empty,
+                StartedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.ActiveCalls.AddAsync(activeCall, Context.ConnectionAborted);
+        }
+
+        activeCall.OfferSdp = sdpOffer;
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
 
         await Clients.Group(UserGroup(targetId)).SendAsync("CallOffer", sdpOffer, callerId, Context.ConnectionAborted);
     }
@@ -334,12 +371,16 @@ public class ChatHub : Hub
 
     public async Task CallReject(string callerId)
     {
-        await Clients.Group(UserGroup(ParseUserId(callerId))).SendAsync("CallRejected", Context.ConnectionAborted);
+        var parsedCallerId = ParseUserId(callerId);
+        await DeleteActiveCallsBetweenAsync(parsedCallerId, GetCurrentUserId());
+        await Clients.Group(UserGroup(parsedCallerId)).SendAsync("CallRejected", Context.ConnectionAborted);
     }
 
     public async Task CallEnd(string targetUserId)
     {
-        await Clients.Group(UserGroup(ParseUserId(targetUserId))).SendAsync("CallEnded", Context.ConnectionAborted);
+        var targetId = ParseUserId(targetUserId);
+        await DeleteActiveCallsBetweenAsync(GetCurrentUserId(), targetId);
+        await Clients.Group(UserGroup(targetId)).SendAsync("CallEnded", Context.ConnectionAborted);
     }
 
     private Guid GetCurrentUserId()
@@ -383,6 +424,43 @@ public class ChatHub : Hub
                 IsPending = true
             }, Context.ConnectionAborted);
         }
+    }
+
+    private async Task SendActiveCallAsync(Guid userId)
+    {
+        var activeCall = await _unitOfWork.ActiveCalls.GetByReceiverIdAsync(userId, Context.ConnectionAborted);
+        if (activeCall is null)
+        {
+            return;
+        }
+
+        await Clients.Caller.SendAsync(
+            "IncomingCall",
+            activeCall.CallerId,
+            activeCall.CallerName,
+            activeCall.CallerAvatar,
+            Context.ConnectionAborted);
+
+        if (!string.IsNullOrWhiteSpace(activeCall.OfferSdp))
+        {
+            await Clients.Caller.SendAsync(
+                "CallOffer",
+                activeCall.OfferSdp,
+                activeCall.CallerId,
+                Context.ConnectionAborted);
+        }
+    }
+
+    private async Task DeleteActiveCallsBetweenAsync(Guid firstUserId, Guid secondUserId)
+    {
+        var activeCalls = await _unitOfWork.ActiveCalls.GetBetweenUsersAsync(firstUserId, secondUserId, Context.ConnectionAborted);
+        if (activeCalls.Count == 0)
+        {
+            return;
+        }
+
+        await _unitOfWork.ActiveCalls.DeleteRangeAsync(activeCalls, Context.ConnectionAborted);
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
     }
 
     private MessageDto ToClientMessage(MessageDto message)

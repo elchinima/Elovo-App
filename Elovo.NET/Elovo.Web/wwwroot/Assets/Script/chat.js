@@ -44,7 +44,10 @@ const allFriendsModal = document.querySelector("#allFriendsModal");
 const addFriendModal = document.querySelector("#addFriendModal");
 const friendRequestsModal = document.querySelector("#friendRequestsModal");
 const restoreHiddenModal = document.querySelector("#restoreHiddenModal");
+const deleteFriendModal = document.querySelector("#deleteFriendModal");
 const confirmRestoreHiddenButton = document.querySelector("#confirmRestoreHiddenButton");
+const confirmDeleteFriendButton = document.querySelector("#confirmDeleteFriendButton");
+const deleteFriendCopy = document.querySelector("#deleteFriendCopy");
 const allFriendsList = document.querySelector("#allFriendsList");
 const userSearchInput = document.querySelector("#userSearchInput");
 const userSearchButton = document.querySelector("#userSearchButton");
@@ -63,6 +66,7 @@ let imageTransferStatus = null;
 let voiceTransferStatus = null;
 let avatarCropState = null;
 let conversationSearchTerm = "";
+let friendPendingDeletion = null;
 let isLeavingChatPage = false;
 let voiceRecorder = null;
 let voiceStream = null;
@@ -113,6 +117,19 @@ function getConversationStorageKey(userId) {
     const otherUserId = normalizeId(userId);
     const pair = [currentUserId, otherUserId].sort().join(":");
     return `elovo:messages:${pair}`;
+}
+
+function getConversationStorageUserId(key) {
+    const prefix = "elovo:messages:";
+    if (!key || !key.startsWith(prefix)) {
+        return "";
+    }
+
+    const ids = key.slice(prefix.length).split(":");
+    const currentUserId = getCurrentUserId();
+    return ids.includes(currentUserId)
+        ? ids.find((id) => id !== currentUserId) || ""
+        : "";
 }
 
 function getHiddenConversationStorageKey() {
@@ -420,6 +437,28 @@ function writeStoredMessages(userId, messages) {
     }
 }
 
+function deleteStoredMessages(userId) {
+    try {
+        window.localStorage.removeItem(getConversationStorageKey(userId));
+    } catch {
+        // Local cleanup is best-effort.
+    }
+}
+
+async function deleteLocalConversationHistory(userId) {
+    const messages = readStoredMessages(userId);
+    for (const message of messages) {
+        if (!message || !message.id) {
+            continue;
+        }
+
+        await removeCachedImage(message.id);
+        await removeCachedVoice(message.id);
+    }
+
+    deleteStoredMessages(userId);
+}
+
 function updateStoredMessage(otherUserId, messageId, update) {
     const messages = readStoredMessages(otherUserId);
     let changed = false;
@@ -626,6 +665,30 @@ function applyLocalConversationHistory(items) {
             const secondTime = second.lastMessageAt ? new Date(second.lastMessageAt).getTime() : 0;
             return secondTime - firstTime || first.username.localeCompare(second.username);
         });
+}
+
+async function purgeRemovedLocalConversations(validUserIds) {
+    const validIds = new Set(validUserIds.map(normalizeId).filter(Boolean));
+    const keys = [];
+
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+        const key = window.localStorage.key(index);
+        const otherUserId = getConversationStorageUserId(key);
+        if (otherUserId && !validIds.has(otherUserId)) {
+            keys.push({ key, otherUserId });
+        }
+    }
+
+    for (const item of keys) {
+        await deleteLocalConversationHistory(item.otherUserId);
+        window.localStorage.removeItem(item.key);
+        hiddenConversationIds.delete(item.otherUserId);
+    }
+
+    if (keys.length > 0) {
+        writeHiddenConversationIds();
+        updateRestoreHiddenButton();
+    }
 }
 
 function formatTime(value) {
@@ -1080,12 +1143,14 @@ function positionIncomingCallBanner() {
     }
 
     if (window.matchMedia("(max-width: 640px)").matches) {
-        incomingCallBanner.style.inset = "18px auto auto 50%";
-        incomingCallBanner.style.transform = "translateX(-50%)";
+        incomingCallBanner.style.inset = "calc(env(safe-area-inset-top, 0px) + 12px) 12px auto 12px";
+        incomingCallBanner.style.width = "auto";
+        incomingCallBanner.style.transform = "";
         return;
     }
 
     incomingCallBanner.style.inset = "18px 18px auto auto";
+    incomingCallBanner.style.width = "min(360px, calc(100vw - 36px))";
     incomingCallBanner.style.transform = "";
 }
 
@@ -1107,6 +1172,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     banner.style.position = "fixed";
     banner.style.zIndex = "90";
     banner.style.width = "min(360px, calc(100vw - 36px))";
+    banner.style.boxSizing = "border-box";
     banner.style.display = "grid";
     banner.style.gridTemplateColumns = "48px minmax(0, 1fr)";
     banner.style.gap = "12px";
@@ -1474,6 +1540,86 @@ function restoreHiddenConversations() {
     }
     renderChatList(getFilteredConversations());
     renderAllFriends(conversations);
+}
+
+function promptDeleteFriend(friend) {
+    if (!friend || !deleteFriendModal) {
+        return;
+    }
+
+    friendPendingDeletion = friend;
+    if (deleteFriendCopy) {
+        deleteFriendCopy.textContent = `${friend.username} will be removed from your friends and the entire chat history will be permanently deleted.`;
+    }
+
+    openModal(deleteFriendModal);
+}
+
+async function removeLocalFriendConversation(friendId) {
+    const id = normalizeId(friendId);
+    if (!id) {
+        return;
+    }
+
+    await deleteLocalConversationHistory(id);
+    hiddenConversationIds.delete(id);
+    writeHiddenConversationIds();
+    updateRestoreHiddenButton();
+    conversations = conversations.filter((chat) => !sameId(chat.userId, id));
+
+    if (activeCall && sameId(activeCall.remoteUserId, id)) {
+        endActiveCall(false);
+    }
+
+    if (incomingCall && sameId(incomingCall.callerId, id)) {
+        dismissIncomingCallBanner();
+    }
+
+    if (activeConversation && sameId(activeConversation.userId, id)) {
+        activeConversation = getFilteredConversations()[0] || null;
+        if (activeConversation) {
+            renderConversationHeader(activeConversation);
+            await loadMessages(activeConversation.userId);
+        } else {
+            renderEmptyConversationHeader();
+        }
+    }
+
+    renderChatList(getFilteredConversations());
+    renderAllFriends(conversations);
+}
+
+async function confirmDeleteFriend() {
+    if (!friendPendingDeletion || !confirmDeleteFriendButton) {
+        return;
+    }
+
+    const friend = friendPendingDeletion;
+    confirmDeleteFriendButton.disabled = true;
+    confirmDeleteFriendButton.classList.add("is-loading");
+
+    const response = await fetch(`/api/friends/${encodeURIComponent(friend.userId)}`, {
+        method: "DELETE",
+        headers: {
+            "RequestVerificationToken": getAntiForgeryToken()
+        }
+    });
+
+    confirmDeleteFriendButton.disabled = false;
+    confirmDeleteFriendButton.classList.remove("is-loading");
+
+    if (!response.ok) {
+        const error = await readResponseText(response);
+        if (deleteFriendCopy) {
+            deleteFriendCopy.textContent = error || "Friend could not be deleted. Try again.";
+        }
+        return;
+    }
+
+    friendPendingDeletion = null;
+    closeModal(deleteFriendModal);
+    closeModal(allFriendsModal);
+    await removeLocalFriendConversation(friend.userId);
 }
 
 function updateComposerAction() {
@@ -2099,6 +2245,7 @@ async function loadConversations() {
 
     conversations = applyLocalConversationHistory(await response.json());
     hiddenConversationIds = readHiddenConversationIds();
+    await purgeRemovedLocalConversations(conversations.map((chat) => chat.userId));
     updateRestoreHiddenButton();
     const visibleConversations = getFilteredConversations();
 
@@ -2106,10 +2253,12 @@ async function loadConversations() {
         activeConversation = null;
     }
 
+    if (activeConversation) {
+        activeConversation = conversations.find(x => sameId(x.userId, activeConversation.userId)) || null;
+    }
+
     if (!activeConversation && visibleConversations.length > 0) {
         activeConversation = visibleConversations[0];
-    } else if (activeConversation) {
-        activeConversation = conversations.find(x => sameId(x.userId, activeConversation.userId)) || activeConversation;
     }
 
     renderChatList(visibleConversations);
@@ -2196,13 +2345,24 @@ function renderAllFriends(items) {
         const copy = document.createElement("span");
         const name = document.createElement("strong");
         const status = document.createElement("span");
+        const actions = document.createElement("span");
         const button = document.createElement("button");
+        const deleteButton = document.createElement("button");
+        const deleteIcon = document.createElement("img");
 
         row.className = "user-row";
         avatar.className = "avatar";
         copy.className = "chat-copy";
+        actions.className = "user-row-actions";
         button.type = "button";
         button.className = "row-action primary";
+        deleteButton.type = "button";
+        deleteButton.className = "row-action danger";
+        deleteButton.setAttribute("aria-label", `Delete ${friend.username}`);
+        deleteButton.title = `Delete ${friend.username}`;
+        deleteIcon.className = "action-icon";
+        deleteIcon.src = "/Assets/Images/Icons/remove-friend.svg";
+        deleteIcon.alt = "";
 
         setAvatarElement(avatar, friend, friend.initial);
         name.textContent = friend.username;
@@ -2212,9 +2372,12 @@ function renderAllFriends(items) {
             closeModal(allFriendsModal);
             selectConversation(friend.userId);
         });
+        deleteButton.appendChild(deleteIcon);
+        deleteButton.addEventListener("click", () => promptDeleteFriend(friend));
 
         copy.append(name, status);
-        row.append(avatar, copy, button);
+        actions.append(button, deleteButton);
+        row.append(avatar, copy, actions);
         allFriendsList.appendChild(row);
     });
 }
@@ -2549,6 +2712,10 @@ async function startSignalR() {
     connection.on("CallEnded", () => {
         dismissIncomingCallBanner();
         endActiveCall(false);
+    });
+
+    connection.on("FriendRemoved", async (friendId) => {
+        await removeLocalFriendConversation(friendId);
     });
 
     await connection.start();
@@ -3078,12 +3245,6 @@ window.addEventListener("pagehide", () => {
 
 window.addEventListener("resize", positionIncomingCallBanner);
 
-document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && activeCall) {
-        endActiveCall(true);
-    }
-});
-
 if (messengerView && chatList && messageStream) {
     requestPersistentStorage();
     purgeExpiredChatMessages()
@@ -3119,14 +3280,6 @@ if (speakerCallButton) {
     speakerCallButton.addEventListener("click", cycleCallSpeaker);
 }
 
-if (callModal) {
-    callModal.addEventListener("click", (event) => {
-        if (event.target === callModal) {
-            endActiveCall(true);
-        }
-    });
-}
-
 if (searchInput) {
     searchInput.addEventListener("input", () => {
         clearSearchValidation(searchInput);
@@ -3154,6 +3307,10 @@ if (restoreHiddenButton) {
 
 if (confirmRestoreHiddenButton) {
     confirmRestoreHiddenButton.addEventListener("click", restoreHiddenConversations);
+}
+
+if (confirmDeleteFriendButton) {
+    confirmDeleteFriendButton.addEventListener("click", confirmDeleteFriend);
 }
 
 if (messageForm) {

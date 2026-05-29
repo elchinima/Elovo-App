@@ -14,6 +14,7 @@ public class ElovoDbContext : DbContext
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
     public DbSet<PendingMessage> PendingMessages => Set<PendingMessage>();
+    public DbSet<ActiveCall> ActiveCalls => Set<ActiveCall>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -112,6 +113,27 @@ public class ElovoDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ActiveCall>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.CallerName).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.CallerAvatar).HasMaxLength(512).IsRequired();
+            entity.Property(x => x.OfferSdp);
+            entity.HasIndex(x => x.ReceiverId);
+            entity.HasIndex(x => new { x.CallerId, x.ReceiverId }).IsUnique();
+            entity.HasIndex(x => x.StartedAt);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.CallerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(x => x.ReceiverId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
     }

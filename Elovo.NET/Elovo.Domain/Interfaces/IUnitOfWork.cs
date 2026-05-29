@@ -6,5 +6,6 @@ public interface IUnitOfWork
     IConversationRepository Conversations { get; }
     IFriendRequestRepository FriendRequests { get; }
     IPendingMessageRepository PendingMessages { get; }
+    IActiveCallRepository ActiveCalls { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

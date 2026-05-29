@@ -22,6 +22,46 @@ namespace Elovo.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Elovo.Domain.ActiveCall", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CallerAvatar")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<Guid>("CallerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CallerName")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("OfferSdp")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ReceiverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("StartedAt");
+
+                    b.HasIndex("CallerId", "ReceiverId")
+                        .IsUnique();
+
+                    b.ToTable("ActiveCalls");
+                });
+
             modelBuilder.Entity("Elovo.Domain.Conversation", b =>
                 {
                     b.Property<Guid>("Id")
@@ -214,6 +254,21 @@ namespace Elovo.Infrastructure.Migrations
                     b.HasKey("UserId");
 
                     b.ToTable("UserTwoFactor", (string)null);
+                });
+
+            modelBuilder.Entity("Elovo.Domain.ActiveCall", b =>
+                {
+                    b.HasOne("Elovo.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("CallerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Elovo.Domain.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Elovo.Domain.Conversation", b =>

@@ -29,6 +29,15 @@ public class FriendRequestRepository : IFriendRequestRepository
                 cancellationToken);
     }
 
+    public async Task<IReadOnlyList<FriendRequest>> GetAllBetweenUsersAsync(Guid firstUserId, Guid secondUserId, CancellationToken cancellationToken = default)
+    {
+        return await _context.FriendRequests
+            .Where(x =>
+                (x.SenderId == firstUserId && x.ReceiverId == secondUserId) ||
+                (x.SenderId == secondUserId && x.ReceiverId == firstUserId))
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<FriendRequest>> GetIncomingAsync(Guid receiverId, CancellationToken cancellationToken = default)
     {
         return await _context.FriendRequests
@@ -46,5 +55,10 @@ public class FriendRequestRepository : IFriendRequestRepository
     public void Remove(FriendRequest request)
     {
         _context.FriendRequests.Remove(request);
+    }
+
+    public void RemoveRange(IEnumerable<FriendRequest> requests)
+    {
+        _context.FriendRequests.RemoveRange(requests);
     }
 }

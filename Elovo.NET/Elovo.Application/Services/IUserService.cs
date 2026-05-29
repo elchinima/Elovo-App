@@ -15,5 +15,6 @@ public interface IUserService
     Task<ProfileDto> RemoveProfileImagePathAsync(Guid userId, CancellationToken cancellationToken = default);
     Task SendFriendRequestAsync(Guid currentUserId, Guid receiverId, CancellationToken cancellationToken = default);
     Task AcceptFriendRequestAsync(Guid currentUserId, Guid requestId, CancellationToken cancellationToken = default);
+    Task RemoveFriendAsync(Guid currentUserId, Guid friendId, CancellationToken cancellationToken = default);
     Task<DateTime?> SetOnlineStatusAsync(Guid userId, bool isOnline, string? clientIp = null, CancellationToken cancellationToken = default);
 }

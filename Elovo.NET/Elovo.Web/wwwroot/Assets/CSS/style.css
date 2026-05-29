@@ -1577,6 +1577,28 @@ body.is-page-loading .page-loader {
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
+.restore-hidden-actions .danger-icon-button {
+    background: linear-gradient(135deg, #ff607e, #8b7cff);
+}
+
+.user-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.row-action.danger {
+    border-color: rgba(255, 96, 126, 0.42);
+    color: #fff;
+    background: rgba(255, 96, 126, 0.14);
+}
+
+.row-action.danger:hover,
+.row-action.danger:focus-visible {
+    border-color: rgba(255, 96, 126, 0.72);
+    background: rgba(255, 96, 126, 0.22);
+}
+
 .profile-confirm-panel {
     width: min(460px, 100%);
     border-color: rgba(139, 124, 255, 0.28);

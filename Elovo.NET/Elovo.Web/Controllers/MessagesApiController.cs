@@ -6,10 +6,12 @@ namespace Elovo.Web.Controllers;
 public class MessagesApiController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IHubContext<ChatHub> _chatHubContext;
 
-    public MessagesApiController(IUserService userService)
+    public MessagesApiController(IUserService userService, IHubContext<ChatHub> chatHubContext)
     {
         _userService = userService;
+        _chatHubContext = chatHubContext;
     }
 
     [HttpGet("/api/conversations")]
@@ -47,6 +49,18 @@ public class MessagesApiController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("/api/friends/{friendId:guid}")]
+    public async Task<IActionResult> RemoveFriend(Guid friendId, CancellationToken cancellationToken)
+    {
+        var currentUserId = GetCurrentUserId();
+        await _userService.RemoveFriendAsync(currentUserId, friendId, cancellationToken);
+
+        await _chatHubContext.Clients.Group(UserGroup(currentUserId)).SendAsync("FriendRemoved", friendId, cancellationToken);
+        await _chatHubContext.Clients.Group(UserGroup(friendId)).SendAsync("FriendRemoved", currentUserId, cancellationToken);
+
+        return NoContent();
+    }
+
     private Guid GetCurrentUserId()
     {
         var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -54,4 +68,6 @@ public class MessagesApiController : ControllerBase
             ? userId
             : throw new InvalidOperationException("Current user id is missing.");
     }
+
+    private static string UserGroup(Guid userId) => $"user:{userId}";
 }

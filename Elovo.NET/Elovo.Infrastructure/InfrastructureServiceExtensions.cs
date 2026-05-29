@@ -20,6 +20,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IConversationRepository, ConversationRepository>();
         services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
         services.AddScoped<IPendingMessageRepository, PendingMessageRepository>();
+        services.AddScoped<IActiveCallRepository, ActiveCallRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;

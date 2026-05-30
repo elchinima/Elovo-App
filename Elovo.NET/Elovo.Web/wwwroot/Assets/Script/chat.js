@@ -1025,13 +1025,16 @@ async function startOutgoingCall() {
     createCallState(activeConversation.userId, activeConversation);
     if (window.AndroidBridge) {
         window.AndroidBridge.onCallStarted();
-        // Ждём пока WebView поставит speaker, потом переключаем на earpiece
+        // Сначала speaker (WebView уже там)
         setTimeout(() => {
-            window.AndroidBridge.setAudioDevice('earpiece');
-            updateSpeakerButtonUI('earpiece');
-            if (speakerCallButton) speakerCallButton.disabled = false;
-        }, 350);
-        // Блокируем кнопку динамика на 350мс
+            window.AndroidBridge.setAudioDevice('speaker');
+            setTimeout(() => {
+                // Потом earpiece
+                window.AndroidBridge.setAudioDevice('earpiece');
+                updateSpeakerButtonUI('earpiece');
+                if (speakerCallButton) speakerCallButton.disabled = false;
+            }, 100);
+        }, 250);
         if (speakerCallButton) speakerCallButton.disabled = true;
     }
 
@@ -1061,13 +1064,16 @@ async function acceptIncomingCall() {
     });
     if (window.AndroidBridge) {
         window.AndroidBridge.onCallStarted();
-        // Ждём пока WebView поставит speaker, потом переключаем на earpiece
+        // Сначала speaker (WebView уже там)
         setTimeout(() => {
-            window.AndroidBridge.setAudioDevice('earpiece');
-            updateSpeakerButtonUI('earpiece');
-            if (speakerCallButton) speakerCallButton.disabled = false;
-        }, 350);
-        // Блокируем кнопку динамика на 350мс
+            window.AndroidBridge.setAudioDevice('speaker');
+            setTimeout(() => {
+                // Потом earpiece
+                window.AndroidBridge.setAudioDevice('earpiece');
+                updateSpeakerButtonUI('earpiece');
+                if (speakerCallButton) speakerCallButton.disabled = false;
+            }, 100);
+        }, 250);
         if (speakerCallButton) speakerCallButton.disabled = true;
     }
 

@@ -302,22 +302,25 @@ public class ChatHub : Hub
         activeCall.StartedAt = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
 
+        if (!_presenceTracker.IsOnline(targetId))
+        {
+            var fcmToken = await _unitOfWork.Users.GetFcmTokenByUserIdAsync(targetId, Context.ConnectionAborted);
+            if (!string.IsNullOrWhiteSpace(fcmToken))
+            {
+                await _pushNotificationService.SendCallPushAsync(
+                    fcmToken,
+                    caller.Username,
+                    caller.ProfileImageUrl ?? string.Empty,
+                    callerId.ToString());
+            }
+        }
+
         await Clients.Group(UserGroup(targetId)).SendAsync(
             "IncomingCall",
             callerId,
             caller.Username,
             caller.ProfileImageUrl,
             Context.ConnectionAborted);
-
-        var fcmToken = await _unitOfWork.Users.GetFcmTokenByUserIdAsync(targetId, Context.ConnectionAborted);
-        if (!string.IsNullOrWhiteSpace(fcmToken))
-        {
-            await _pushNotificationService.SendCallPushAsync(
-                fcmToken,
-                caller.Username,
-                caller.ProfileImageUrl ?? string.Empty,
-                callerId.ToString());
-        }
     }
 
     public async Task CallOffer(string targetUserId, string sdpOffer)

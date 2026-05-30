@@ -1067,6 +1067,17 @@ async function acceptIncomingCall() {
     }
 }
 
+window.acceptIncomingCall = function(callerId, callerName) {
+    incomingCall = {
+        callerId: callerId,
+        callerName: callerName,
+        callerAvatar: "",
+        offer: null,
+        pendingIceCandidates: []
+    };
+    acceptIncomingCall();
+};
+
 function rejectIncomingCall() {
     if (incomingCall && connection && connection.state === signalR.HubConnectionState.Connected) {
         connection.invoke("CallReject", incomingCall.callerId).catch(() => { });
@@ -1161,6 +1172,10 @@ async function cycleBrowserSpeaker() {
     }
 
     const audioElement = getRemoteCallAudio();
+
+    await navigator.mediaDevices.getUserMedia({ audio: true })
+        .then((stream) => { stream.getTracks().forEach((track) => track.stop()); })
+        .catch(() => { });
 
     if (typeof audioElement.setSinkId !== "function") {
         updateSpeakerButtonState("Speaker", true);

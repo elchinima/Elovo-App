@@ -326,17 +326,7 @@ public class ChatHub : Hub
         var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(callerId, targetId, Context.ConnectionAborted);
         if (activeCall is null)
         {
-            var caller = await _userService.GetProfileAsync(callerId, Context.ConnectionAborted);
-            activeCall = new ActiveCall
-            {
-                Id = Guid.NewGuid(),
-                CallerId = callerId,
-                ReceiverId = targetId,
-                CallerName = caller.Username,
-                CallerAvatar = caller.ProfileImageUrl ?? string.Empty,
-                StartedAt = DateTime.UtcNow
-            };
-            await _unitOfWork.ActiveCalls.AddAsync(activeCall, Context.ConnectionAborted);
+            return;
         }
 
         activeCall.OfferSdp = sdpOffer;

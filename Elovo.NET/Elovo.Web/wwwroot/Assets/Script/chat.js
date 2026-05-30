@@ -83,7 +83,7 @@ let callTimer = null;
 let incomingCall = null;
 let incomingCallBanner = null;
 let remoteCallAudio = null;
-const callSpeakerModes = ["Speaker", "Earpiece", "Headphones"];
+let browserSpeakerDeviceIndex = 0;
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
 const maxVoiceDurationMs = 60 * 1000;
@@ -774,8 +774,6 @@ function updateCallControls() {
         return;
     }
 
-    const speakerMode = callSpeakerModes[activeCall.speakerIndex] || callSpeakerModes[0];
-
     if (muteCallButton) {
         muteCallButton.classList.toggle("is-active", activeCall.isMuted);
         muteCallButton.setAttribute("aria-pressed", activeCall.isMuted ? "true" : "false");
@@ -793,15 +791,7 @@ function updateCallControls() {
         muteCallLabel.textContent = activeCall.isMuted ? "Muted" : "Mute";
     }
 
-    if (speakerCallButton) {
-        speakerCallButton.classList.toggle("is-active", activeCall.speakerIndex > 0);
-        speakerCallButton.setAttribute("aria-label", `Change speaker. Current: ${speakerMode}`);
-        speakerCallButton.title = `Change speaker: ${speakerMode}`;
-    }
-
-    if (callSpeakerLabel) {
-        callSpeakerLabel.textContent = speakerMode;
-    }
+    updateSpeakerButtonState(activeCall.speakerLabel, activeCall.speakerPressed);
 }
 
 function updateCallStatus(status) {
@@ -868,7 +858,7 @@ function resetCallControls() {
     }
 
     if (callSpeakerLabel) {
-        callSpeakerLabel.textContent = callSpeakerModes[0];
+        callSpeakerLabel.textContent = "Speaker";
     }
 
     if (callDuration) {
@@ -913,7 +903,8 @@ function createCallState(remoteUserId, remoteUser) {
         pendingIceCandidates: [],
         startedAt: 0,
         isMuted: false,
-        speakerIndex: 0
+        speakerLabel: "Speaker",
+        speakerPressed: true
     };
 
     setCallModalUser(remoteUser);
@@ -974,6 +965,11 @@ async function createPeerConnection(remoteUserId) {
 
         if (peerConnection.iceConnectionState === "connected" || peerConnection.iceConnectionState === "completed") {
             startCallTimer();
+        }
+
+        if (peerConnection.iceConnectionState === "connected" && window.AndroidBridge) {
+            window.AndroidBridge.onCallStarted();
+            updateSpeakerButtonUI(window.AndroidBridge.getCurrentAudioDevice());
         }
 
         if (peerConnection.iceConnectionState === "failed") {
@@ -1088,6 +1084,10 @@ function endActiveCall(notifyRemote = true) {
             connection.invoke("CallEnd", call.remoteUserId).catch(() => { });
         }
 
+        if (window.AndroidBridge) {
+            window.AndroidBridge.onCallEnded();
+        }
+
         if (call.peerConnection) {
             call.peerConnection.onicecandidate = null;
             call.peerConnection.ontrack = null;
@@ -1119,13 +1119,70 @@ function toggleCallMute() {
     updateCallControls();
 }
 
-function cycleCallSpeaker() {
+function updateSpeakerButtonState(label, pressed) {
+    if (speakerCallButton) {
+        speakerCallButton.classList.toggle("is-active", pressed);
+        speakerCallButton.setAttribute("aria-pressed", pressed ? "true" : "false");
+        speakerCallButton.setAttribute("aria-label", `Change speaker. Current: ${label}`);
+        speakerCallButton.title = `Change speaker: ${label}`;
+    }
+
+    if (callSpeakerLabel) {
+        callSpeakerLabel.textContent = label;
+    }
+
+    if (activeCall) {
+        activeCall.speakerLabel = label;
+        activeCall.speakerPressed = pressed;
+    }
+}
+
+function updateSpeakerButtonUI(mode) {
+    const speakerMode = String(mode || "speaker").toLowerCase();
+
+    if (speakerMode === "earpiece") {
+        updateSpeakerButtonState("Earpiece", false);
+        return;
+    }
+
+    if (speakerMode === "bluetooth") {
+        updateSpeakerButtonState("BT", true);
+        return;
+    }
+
+    updateSpeakerButtonState("Speaker", true);
+}
+
+async function cycleBrowserSpeaker() {
     if (!activeCall) {
         return;
     }
 
-    activeCall.speakerIndex = (activeCall.speakerIndex + 1) % callSpeakerModes.length;
-    updateCallControls();
+    const audioElement = getRemoteCallAudio();
+
+    if (typeof audioElement.setSinkId !== "function") {
+        updateSpeakerButtonState("Speaker", true);
+        return;
+    }
+
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioOutputs = devices.filter((device) => device.kind === "audiooutput");
+        const speakerOptions = [
+            { deviceId: "", label: "Speaker" },
+            ...audioOutputs.map((device, index) => ({
+                deviceId: device.deviceId,
+                label: device.label || `Speaker ${index + 1}`
+            }))
+        ];
+
+        browserSpeakerDeviceIndex = (browserSpeakerDeviceIndex + 1) % speakerOptions.length;
+        const speaker = speakerOptions[browserSpeakerDeviceIndex];
+        await audioElement.setSinkId(speaker.deviceId);
+        updateSpeakerButtonState(speaker.label, true);
+    } catch {
+        updateSpeakerButtonState("Speaker", true);
+    }
 }
 
 function dismissIncomingCallBanner() {
@@ -3278,7 +3335,14 @@ if (muteCallButton) {
 }
 
 if (speakerCallButton) {
-    speakerCallButton.addEventListener("click", cycleCallSpeaker);
+    speakerCallButton.addEventListener("click", () => {
+        if (window.AndroidBridge) {
+            const mode = window.AndroidBridge.cycleSpeaker();
+            updateSpeakerButtonUI(mode);
+        } else {
+            cycleBrowserSpeaker();
+        }
+    });
 }
 
 if (searchInput) {

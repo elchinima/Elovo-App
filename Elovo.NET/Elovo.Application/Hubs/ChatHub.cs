@@ -303,18 +303,14 @@ public class ChatHub : Hub
             caller.ProfileImageUrl,
             Context.ConnectionAborted);
 
-        if (!_presenceTracker.IsOnline(targetId))
+        var fcmToken = await _unitOfWork.Users.GetFcmTokenByUserIdAsync(targetId, Context.ConnectionAborted);
+        if (!string.IsNullOrWhiteSpace(fcmToken))
         {
-            var targetUser = await _unitOfWork.Users.GetByIdAsync(targetId, Context.ConnectionAborted);
-            var fcmToken = targetUser?.Session?.FcmToken;
-            if (!string.IsNullOrWhiteSpace(fcmToken))
-            {
-                await _pushNotificationService.SendCallPushAsync(
-                    fcmToken,
-                    caller.Username,
-                    caller.ProfileImageUrl ?? string.Empty,
-                    callerId.ToString());
-            }
+            await _pushNotificationService.SendCallPushAsync(
+                fcmToken,
+                caller.Username,
+                caller.ProfileImageUrl ?? string.Empty,
+                callerId.ToString());
         }
     }
 

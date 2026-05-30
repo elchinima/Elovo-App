@@ -25,6 +25,14 @@ public class UserRepository : IUserRepository
         return UsersWithDetails().FirstOrDefaultAsync(x => x.Email == email, cancellationToken);
     }
 
+    public Task<string?> GetFcmTokenByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return _context.UserSessions
+            .Where(session => session.UserId == userId)
+            .Select(session => session.FcmToken)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<User>> GetAllExceptAsync(Guid currentUserId, CancellationToken cancellationToken = default)
     {
         return await UsersWithDetails()

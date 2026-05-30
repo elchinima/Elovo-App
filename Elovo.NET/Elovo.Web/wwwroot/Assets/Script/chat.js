@@ -1552,7 +1552,8 @@ function promptDeleteFriend(friend) {
         deleteFriendCopy.textContent = `${friend.username} will be removed from your friends and the entire chat history will be permanently deleted.`;
     }
 
-    openModal(deleteFriendModal);
+    closeModal(allFriendsModal);
+    window.setTimeout(() => openModal(deleteFriendModal), 120);
 }
 
 async function removeLocalFriendConversation(friendId) {

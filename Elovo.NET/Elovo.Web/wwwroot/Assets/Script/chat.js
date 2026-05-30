@@ -924,10 +924,6 @@ async function createPeerConnection(remoteUserId) {
         throw new Error("Call state is unavailable.");
     }
 
-    if (window.AndroidBridge) {
-        window.AndroidBridge.onCallStarted();
-    }
-
     const iceServers = await fetchTurnIceServers();
     const peerConnection = new RTCPeerConnection({ iceServers });
     const localStream = await navigator.mediaDevices.getUserMedia({
@@ -1027,6 +1023,17 @@ async function startOutgoingCall() {
     }
 
     createCallState(activeConversation.userId, activeConversation);
+    if (window.AndroidBridge) {
+        window.AndroidBridge.onCallStarted();
+        // Ждём пока WebView поставит speaker, потом переключаем на earpiece
+        setTimeout(() => {
+            window.AndroidBridge.setAudioDevice('earpiece');
+            updateSpeakerButtonUI('earpiece');
+            if (speakerCallButton) speakerCallButton.disabled = false;
+        }, 350);
+        // Блокируем кнопку динамика на 350мс
+        if (speakerCallButton) speakerCallButton.disabled = true;
+    }
 
     try {
         const peerConnection = await createPeerConnection(activeConversation.userId);
@@ -1052,6 +1059,17 @@ async function acceptIncomingCall() {
         profileImageUrl: call.callerAvatar,
         initial: call.callerName ? call.callerName.slice(0, 1).toUpperCase() : "?"
     });
+    if (window.AndroidBridge) {
+        window.AndroidBridge.onCallStarted();
+        // Ждём пока WebView поставит speaker, потом переключаем на earpiece
+        setTimeout(() => {
+            window.AndroidBridge.setAudioDevice('earpiece');
+            updateSpeakerButtonUI('earpiece');
+            if (speakerCallButton) speakerCallButton.disabled = false;
+        }, 350);
+        // Блокируем кнопку динамика на 350мс
+        if (speakerCallButton) speakerCallButton.disabled = true;
+    }
 
     try {
         const peerConnection = await createPeerConnection(call.callerId);

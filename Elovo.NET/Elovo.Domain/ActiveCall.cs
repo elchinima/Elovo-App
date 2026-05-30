@@ -8,5 +8,6 @@ public class ActiveCall
     public string CallerName { get; set; } = string.Empty;
     public string CallerAvatar { get; set; } = string.Empty;
     public string? OfferSdp { get; set; }
+    public bool IsRejected { get; set; }
     public DateTime StartedAt { get; set; }
 }

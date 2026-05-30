@@ -121,6 +121,7 @@ public class ElovoDbContext : DbContext
             entity.Property(x => x.CallerName).HasMaxLength(32).IsRequired();
             entity.Property(x => x.CallerAvatar).HasMaxLength(512).IsRequired();
             entity.Property(x => x.OfferSdp);
+            entity.Property(x => x.IsRejected).HasDefaultValue(false);
             entity.HasIndex(x => x.ReceiverId);
             entity.HasIndex(x => new { x.CallerId, x.ReceiverId }).IsUnique();
             entity.HasIndex(x => x.StartedAt);

@@ -969,6 +969,7 @@ async function createPeerConnection(remoteUserId) {
 
         if (peerConnection.iceConnectionState === "connected" && window.AndroidBridge) {
             window.AndroidBridge.onCallStarted();
+            window.AndroidBridge.enableProximitySensor();
             updateSpeakerButtonUI(window.AndroidBridge.getCurrentAudioDevice());
         }
 
@@ -1086,6 +1087,7 @@ function endActiveCall(notifyRemote = true) {
 
         if (window.AndroidBridge) {
             window.AndroidBridge.onCallEnded();
+            window.AndroidBridge.disableProximitySensor();
         }
 
         if (call.peerConnection) {
@@ -1183,6 +1185,58 @@ async function cycleBrowserSpeaker() {
     } catch {
         updateSpeakerButtonState("Speaker", true);
     }
+}
+
+function showAndroidSpeakerPicker() {
+    const existing = document.getElementById("speakerPickerModal");
+    if (existing) { existing.remove(); return; }
+
+    let devices = [];
+    try {
+        devices = JSON.parse(window.AndroidBridge.getAvailableAudioDevices());
+    } catch { return; }
+
+    const overlay = document.createElement("div");
+    overlay.id = "speakerPickerModal";
+    overlay.style.cssText = `
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; align-items: flex-end; justify-content: center;
+        background: rgba(0,0,0,0.5);
+    `;
+
+    const sheet = document.createElement("div");
+    sheet.style.cssText = `
+        background: var(--color-surface, #1e1e2e);
+        border-radius: 16px 16px 0 0;
+        padding: 16px;
+        width: 100%;
+        max-width: 480px;
+    `;
+
+    devices.forEach(device => {
+        const btn = document.createElement("button");
+        btn.textContent = device.label;
+        btn.style.cssText = `
+            display: block; width: 100%;
+            padding: 14px 16px; margin-bottom: 8px;
+            background: var(--color-surface-variant, #2a2a3e);
+            color: var(--color-on-surface, #fff);
+            border: none; border-radius: 10px;
+            font-size: 15px; text-align: left; cursor: pointer;
+        `;
+        btn.addEventListener("click", () => {
+            window.AndroidBridge.setAudioDevice(device.id);
+            updateSpeakerButtonUI(device.id);
+            overlay.remove();
+        });
+        sheet.appendChild(btn);
+    });
+
+    overlay.appendChild(sheet);
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+    document.body.appendChild(overlay);
 }
 
 function dismissIncomingCallBanner() {
@@ -3337,8 +3391,7 @@ if (muteCallButton) {
 if (speakerCallButton) {
     speakerCallButton.addEventListener("click", () => {
         if (window.AndroidBridge) {
-            const mode = window.AndroidBridge.cycleSpeaker();
-            updateSpeakerButtonUI(mode);
+            showAndroidSpeakerPicker();
         } else {
             cycleBrowserSpeaker();
         }

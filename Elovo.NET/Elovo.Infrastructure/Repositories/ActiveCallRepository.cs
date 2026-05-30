@@ -18,7 +18,16 @@ public class ActiveCallRepository : IActiveCallRepository
     {
         return _context.ActiveCalls
             .OrderByDescending(x => x.StartedAt)
-            .FirstOrDefaultAsync(x => x.ReceiverId == receiverId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.ReceiverId == receiverId && !x.IsRejected, cancellationToken);
+    }
+
+    public Task<ActiveCall?> GetByParticipantsAsync(Guid participantId, CancellationToken cancellationToken = default)
+    {
+        return _context.ActiveCalls
+            .OrderByDescending(x => x.StartedAt)
+            .FirstOrDefaultAsync(
+                x => (x.CallerId == participantId || x.ReceiverId == participantId) && !x.IsRejected,
+                cancellationToken);
     }
 
     public Task<ActiveCall?> GetByParticipantsAsync(Guid callerId, Guid receiverId, CancellationToken cancellationToken = default)

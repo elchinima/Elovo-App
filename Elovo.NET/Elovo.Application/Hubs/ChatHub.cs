@@ -279,6 +279,11 @@ public class ChatHub : Hub
         var caller = await _userService.GetProfileAsync(callerId, Context.ConnectionAborted);
         var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(callerId, targetId, Context.ConnectionAborted);
 
+        if (activeCall is not null && (!string.IsNullOrWhiteSpace(activeCall.OfferSdp) || activeCall.IsRejected))
+        {
+            return;
+        }
+
         if (activeCall is null)
         {
             activeCall = new ActiveCall
@@ -293,6 +298,7 @@ public class ChatHub : Hub
         activeCall.CallerName = caller.Username;
         activeCall.CallerAvatar = caller.ProfileImageUrl ?? string.Empty;
         activeCall.OfferSdp = null;
+        activeCall.IsRejected = false;
         activeCall.StartedAt = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
 
@@ -324,7 +330,7 @@ public class ChatHub : Hub
         var callerId = GetCurrentUserId();
         var targetId = ParseUserId(targetUserId);
         var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(callerId, targetId, Context.ConnectionAborted);
-        if (activeCall is null)
+        if (activeCall is null || activeCall.IsRejected)
         {
             return;
         }
@@ -358,7 +364,13 @@ public class ChatHub : Hub
     public async Task CallReject(string callerId)
     {
         var parsedCallerId = ParseUserId(callerId);
-        await DeleteActiveCallsBetweenAsync(parsedCallerId, GetCurrentUserId());
+        var activeCalls = await _unitOfWork.ActiveCalls.GetBetweenUsersAsync(parsedCallerId, GetCurrentUserId(), Context.ConnectionAborted);
+        foreach (var activeCall in activeCalls)
+        {
+            activeCall.IsRejected = true;
+        }
+
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
         await Clients.Group(UserGroup(parsedCallerId)).SendAsync("CallRejected", Context.ConnectionAborted);
     }
 

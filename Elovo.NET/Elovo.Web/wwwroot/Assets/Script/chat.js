@@ -924,6 +924,10 @@ async function createPeerConnection(remoteUserId) {
         throw new Error("Call state is unavailable.");
     }
 
+    if (window.AndroidBridge) {
+        window.AndroidBridge.onCallStarted();
+    }
+
     const iceServers = await fetchTurnIceServers();
     const peerConnection = new RTCPeerConnection({ iceServers });
     const localStream = await navigator.mediaDevices.getUserMedia({
@@ -968,7 +972,6 @@ async function createPeerConnection(remoteUserId) {
         }
 
         if (peerConnection.iceConnectionState === "connected" && window.AndroidBridge) {
-            window.AndroidBridge.onCallStarted();
             window.AndroidBridge.enableProximitySensor();
             updateSpeakerButtonUI(window.AndroidBridge.getCurrentAudioDevice());
         }

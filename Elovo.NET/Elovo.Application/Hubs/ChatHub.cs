@@ -344,6 +344,13 @@ public class ChatHub : Hub
         await Clients.Group(UserGroup(targetId)).SendAsync("CallOffer", sdpOffer, callerId, Context.ConnectionAborted);
     }
 
+    public async Task RequestCallOffer(string callerId)
+    {
+        var currentUserId = GetCurrentUserId();
+        await Clients.Group(UserGroup(ParseUserId(callerId)))
+            .SendAsync("ResendCallOffer", currentUserId.ToString());
+    }
+
     public async Task CallAnswer(string callerId, string sdpAnswer)
     {
         if (string.IsNullOrWhiteSpace(sdpAnswer))

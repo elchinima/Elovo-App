@@ -1050,6 +1050,10 @@ async function startOutgoingCall() {
 }
 
 async function acceptIncomingCall() {
+    if (window.AndroidBridge) {
+        window.AndroidBridge.stopCallNotification();
+    }
+
     if (!incomingCall || !callModal || !connection || connection.state !== signalR.HubConnectionState.Connected) {
         return;
     }
@@ -1103,6 +1107,11 @@ window.acceptIncomingCall = function(callerId, callerName) {
         pendingIceCandidates: []
     };
     acceptIncomingCall();
+
+    // Попросить звонящего повторно отправить offer
+    if (connection && connection.state === signalR.HubConnectionState.Connected) {
+        connection.invoke("RequestCallOffer", callerId).catch(() => {});
+    }
 };
 
 function rejectIncomingCall() {
@@ -1282,6 +1291,10 @@ function showAndroidSpeakerPicker() {
 }
 
 function dismissIncomingCallBanner() {
+    if (window.AndroidBridge) {
+        window.AndroidBridge.stopCallNotification();
+    }
+
     if (incomingCallBanner) {
         incomingCallBanner.remove();
         incomingCallBanner = null;
@@ -2848,6 +2861,17 @@ async function startSignalR() {
 
     connection.on("CallOffer", async (sdpOffer, callerId) => {
         await handleCallOffer(sdpOffer, callerId);
+    });
+
+    connection.on("ResendCallOffer", async (targetUserId) => {
+        if (activeCall && sameId(activeCall.remoteUserId, targetUserId)) {
+            // Пересоздать и отправить offer заново
+            try {
+                const offer = await activeCall.peerConnection.createOffer();
+                await activeCall.peerConnection.setLocalDescription(offer);
+                await connection.invoke("CallOffer", targetUserId, offer.sdp);
+            } catch {}
+        }
     });
 
     connection.on("CallAnswered", async (sdpAnswer) => {

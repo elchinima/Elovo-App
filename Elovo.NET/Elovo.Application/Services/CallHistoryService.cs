@@ -31,13 +31,14 @@ public class CallHistoryService : ICallHistoryService
         var durationSeconds = activeCall.AnsweredAt.HasValue
             ? Math.Max(0, (completedAt - activeCall.AnsweredAt.Value).TotalSeconds)
             : 0;
+        var receiver = await _unitOfWork.Users.GetByIdAsync(activeCall.ReceiverId, cancellationToken);
         var message = new MessageDto
         {
             Id = Guid.NewGuid(),
             ConversationId = conversation.Id,
             SenderId = activeCall.CallerId,
             ReceiverId = activeCall.ReceiverId,
-            Content = BuildContent(status, durationSeconds),
+            Content = BuildContent(status, durationSeconds, receiver?.PreferredLanguage),
             SentAt = completedAt,
             IsPending = true,
             IsCall = true,
@@ -64,7 +65,7 @@ public class CallHistoryService : ICallHistoryService
         return message;
     }
 
-    private static string BuildContent(string status, double durationSeconds)
+    private static string BuildContent(string status, double durationSeconds, string? language)
     {
         var label = status switch
         {
@@ -74,6 +75,6 @@ public class CallHistoryService : ICallHistoryService
         };
 
         var duration = TimeSpan.FromSeconds(Math.Max(0, durationSeconds));
-        return $"{label} - {(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
+        return $"{PushLocalization.GetText(label, language)} - {(int)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
     }
 }

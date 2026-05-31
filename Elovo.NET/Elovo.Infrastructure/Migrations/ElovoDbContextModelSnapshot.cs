@@ -205,6 +205,12 @@ namespace Elovo.Infrastructure.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<string>("PreferredLanguage")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)")
+                        .HasDefaultValue("en");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(32)

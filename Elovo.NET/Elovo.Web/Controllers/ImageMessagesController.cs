@@ -79,7 +79,7 @@ public class ImageMessagesController : ControllerBase
         {
             var image = await _imageStorageService.DownloadAsync(path, cancellationToken);
             Response.Headers.CacheControl = "private, max-age=604800";
-            return File(image.Bytes, image.ContentType);
+            return File(image.Bytes, image.ContentType, "image.jpg");
         }
         catch (Exception)
         {

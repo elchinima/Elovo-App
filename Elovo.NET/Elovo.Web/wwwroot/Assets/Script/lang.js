@@ -2,9 +2,9 @@
     const storageKey = "elovo:language";
     const supportedLanguages = ["en", "ru", "az"];
     const languageOptions = [
-        { code: "en", flag: "🇬🇧", label: "English" },
-        { code: "ru", flag: "🇷🇺", label: "Русский" },
-        { code: "az", flag: "🇦🇿", label: "Azərbaycan dili" }
+        { code: "en", flag: "/Assets/Images/Flags/en.svg", label: "English" },
+        { code: "ru", flag: "/Assets/Images/Flags/ru.svg", label: "Русский" },
+        { code: "az", flag: "/Assets/Images/Flags/az.svg", label: "Azərbaycan dili" }
     ];
     const dictionaries = window.ElovoTranslations || {};
 
@@ -17,9 +17,13 @@
         return normalizeLanguage(navigator.language);
     }
 
+    function getProfileLanguage() {
+        return document.querySelector('meta[name="elovo-preferred-language"]')?.content;
+    }
+
     function getLanguage() {
         const stored = window.localStorage.getItem(storageKey);
-        return stored ? normalizeLanguage(stored) : getSystemLanguage();
+        return stored ? normalizeLanguage(stored) : normalizeLanguage(getProfileLanguage() || getSystemLanguage());
     }
 
     function interpolate(value, params) {
@@ -66,7 +70,14 @@
     }
 
     function setLanguage(language) {
-        window.localStorage.setItem(storageKey, normalizeLanguage(language));
+        const normalizedLanguage = normalizeLanguage(language);
+        window.localStorage.setItem(storageKey, normalizedLanguage);
+        fetch("/api/account/language", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ language: normalizedLanguage }),
+            keepalive: true
+        }).catch(() => { });
         window.location.reload();
     }
 
@@ -79,6 +90,13 @@
         const current = languageOptions.find((item) => item.code === getLanguage()) || languageOptions[0];
         const toggle = document.createElement("button");
         const menu = document.createElement("div");
+        const createFlag = (item) => {
+            const image = document.createElement("img");
+            image.src = item.flag;
+            image.alt = "";
+            image.setAttribute("aria-hidden", "true");
+            return image;
+        };
 
         selector.className = "language-selector";
         toggle.type = "button";
@@ -86,7 +104,7 @@
         toggle.setAttribute("aria-label", t("Choose language"));
         toggle.setAttribute("title", t("Choose language"));
         toggle.setAttribute("aria-expanded", "false");
-        toggle.textContent = current.flag;
+        toggle.appendChild(createFlag(current));
         menu.className = "language-selector-menu";
         menu.hidden = true;
 
@@ -98,7 +116,7 @@
                 button.className = "language-selector-option";
                 button.setAttribute("aria-label", item.label);
                 button.setAttribute("title", item.label);
-                button.textContent = item.flag;
+                button.appendChild(createFlag(item));
                 button.addEventListener("click", () => setLanguage(item.code));
                 menu.appendChild(button);
             });

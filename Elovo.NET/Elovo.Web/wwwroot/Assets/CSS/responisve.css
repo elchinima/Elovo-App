@@ -406,6 +406,15 @@
         min-width: 0;
     }
 
+    .open-chat-action {
+        width: 36px;
+        padding: 0;
+    }
+
+    .open-chat-label {
+        display: none;
+    }
+
     .chat-retention-options {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

@@ -49,12 +49,23 @@ public sealed class PendingMessageNotificationJob : BackgroundService
                 (message, session) => new { Message = message, ReceiverFcmToken = session.FcmToken })
             .Join(
                 dbContext.Users,
+                notification => notification.Message.ReceiverId,
+                receiver => receiver.Id,
+                (notification, receiver) => new
+                {
+                    notification.Message,
+                    notification.ReceiverFcmToken,
+                    ReceiverPreferredLanguage = receiver.PreferredLanguage
+                })
+            .Join(
+                dbContext.Users,
                 notification => notification.Message.SenderId,
                 sender => sender.Id,
                 (notification, sender) => new
                 {
                     notification.Message,
                     notification.ReceiverFcmToken,
+                    notification.ReceiverPreferredLanguage,
                     SenderUsername = sender.Username
                 })
             .Where(notification => notification.ReceiverFcmToken != null && notification.ReceiverFcmToken != string.Empty)
@@ -66,8 +77,8 @@ public sealed class PendingMessageNotificationJob : BackgroundService
         foreach (var notification in pendingNotifications)
         {
             var body = notification.Message.IsVoice
-                ? "Voice message"
-                : GetMessageNotificationBody(notification.Message.Content);
+                ? PushLocalization.GetText("Voice message", notification.ReceiverPreferredLanguage)
+                : GetMessageNotificationBody(notification.Message.Content, notification.ReceiverPreferredLanguage);
 
             await pushNotificationService.SendPushAsync(
                 notification.ReceiverFcmToken!,
@@ -83,10 +94,10 @@ public sealed class PendingMessageNotificationJob : BackgroundService
         }
     }
 
-    private static string GetMessageNotificationBody(string content)
+    private static string GetMessageNotificationBody(string content, string? language)
     {
         return IsFileContent(content)
-            ? "Sent a file"
+            ? PushLocalization.GetText("Sent a file", language)
             : content;
     }
 

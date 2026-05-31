@@ -7,6 +7,7 @@ public class User
     public string PasswordHash { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? ProfileImagePath { get; set; }
+    public string? PreferredLanguage { get; set; } = "en";
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public UserSession? Session { get; set; }

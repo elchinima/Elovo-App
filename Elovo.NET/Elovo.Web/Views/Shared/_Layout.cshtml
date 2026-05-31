@@ -1,8 +1,25 @@
+@using Microsoft.EntityFrameworkCore
+@inject Elovo.Infrastructure.Data.ElovoDbContext LanguageDbContext
+@{
+    string? preferredLanguage = null;
+    if (User.Identity?.IsAuthenticated == true &&
+        Guid.TryParse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier), out var currentUserId))
+    {
+        preferredLanguage = await LanguageDbContext.Users
+            .Where(user => user.Id == currentUserId)
+            .Select(user => user.PreferredLanguage)
+            .FirstOrDefaultAsync();
+    }
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    @if (!string.IsNullOrWhiteSpace(preferredLanguage))
+    {
+        <meta name="elovo-preferred-language" content="@preferredLanguage">
+    }
     <title>@ViewData["Title"]</title>
     <link rel="icon" type="image/png" href="~/Assets/Images/Logo/Elovo-Logo.png" asp-append-version="true">
     <link rel="stylesheet" href="~/Assets/CSS/style.css" asp-append-version="true">

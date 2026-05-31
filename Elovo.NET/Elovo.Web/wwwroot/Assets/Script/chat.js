@@ -2212,6 +2212,12 @@ function showMessageActions(message, bubble) {
 }
 
 async function downloadImageMessage(message) {
+    if (window.AndroidBridge && window.AndroidBridge.downloadFile && message.imagePath) {
+        const absoluteUrl = new URL(message.imagePath, window.location.origin).href;
+        window.AndroidBridge.downloadFile(absoluteUrl, "image.jpg");
+        return;
+    }
+
     let blob = await readCachedImageBlob(message.id);
     if (!blob && message.imagePath) {
         const response = await fetch(message.imagePath);
@@ -2714,6 +2720,8 @@ function renderAllFriends(items) {
         const status = document.createElement("span");
         const actions = document.createElement("span");
         const button = document.createElement("button");
+        const openIcon = document.createElement("img");
+        const openLabel = document.createElement("span");
         const deleteButton = document.createElement("button");
         const deleteIcon = document.createElement("img");
 
@@ -2722,7 +2730,14 @@ function renderAllFriends(items) {
         copy.className = "chat-copy";
         actions.className = "user-row-actions";
         button.type = "button";
-        button.className = "row-action primary";
+        button.className = "row-action primary open-chat-action";
+        button.setAttribute("aria-label", t("Open"));
+        button.title = t("Open");
+        openIcon.className = "action-icon";
+        openIcon.src = "/Assets/Images/Icons/open-chat.svg";
+        openIcon.alt = "";
+        openLabel.className = "open-chat-label";
+        openLabel.textContent = t("Open");
         deleteButton.type = "button";
         deleteButton.className = "row-action danger";
         deleteButton.setAttribute("aria-label", t("Delete {name}", { name: friend.username }));
@@ -2734,7 +2749,7 @@ function renderAllFriends(items) {
         setAvatarElement(avatar, friend, friend.initial);
         name.textContent = friend.username;
         status.textContent = formatStatus(friend);
-        button.textContent = t("Open");
+        button.append(openIcon, openLabel);
         button.addEventListener("click", () => {
             closeModal(allFriendsModal);
             selectConversation(friend.userId);

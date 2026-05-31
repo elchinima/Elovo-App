@@ -18,7 +18,7 @@ public class CallsController : ControllerBase
     [HttpPost("/api/calls/reject")]
     public async Task<IActionResult> RejectCall([FromBody] RejectCallRequest request, CancellationToken cancellationToken)
     {
-        var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(request.CallerId, cancellationToken);
+        var activeCall = await _unitOfWork.ActiveCalls.GetByCallerIdAsync(request.CallerId, cancellationToken);
         if (activeCall is null)
         {
             return NoContent();

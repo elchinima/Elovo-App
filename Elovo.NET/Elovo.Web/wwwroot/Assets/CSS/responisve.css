@@ -87,6 +87,90 @@
         border-top: 1px solid var(--line);
     }
 
+    .app-shell.has-message-pulse::before,
+    .app-shell.has-message-pulse::after {
+        animation: mobileBoundaryPulse 860ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .app-shell.has-active-call {
+        padding-top: 100px;
+    }
+
+    .app-shell.has-active-call::before,
+    .app-shell.has-active-call::after {
+        border-color: rgba(34, 197, 94, 0.82);
+        background:
+            linear-gradient(180deg, rgba(34, 197, 94, 0.34), rgba(34, 197, 94, 0.18)),
+            rgba(8, 34, 24, 0.9);
+        box-shadow: 0 0 24px rgba(34, 197, 94, 0.28);
+    }
+
+    .active-call-banner:not([hidden]) {
+        position: fixed;
+        top: 50px;
+        left: 0;
+        right: 0;
+        z-index: 85;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 10px 6px 14px;
+        color: #04120a;
+        background: var(--call-green);
+        box-shadow: 0 6px 20px rgba(34, 197, 94, 0.22);
+        cursor: pointer;
+    }
+
+    .active-call-banner-copy {
+        min-width: 0;
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+    }
+
+    .active-call-banner-copy strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .active-call-banner-copy span {
+        flex: 0 0 auto;
+        font-size: 0.82rem;
+        font-weight: 800;
+        opacity: 0.78;
+    }
+
+    .active-call-banner-actions {
+        display: flex;
+        flex: 0 0 auto;
+        gap: 6px;
+    }
+
+    .active-call-banner-button {
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(4, 18, 10, 0.2);
+        border-radius: 8px;
+        padding: 0;
+        color: #04120a;
+        background: rgba(255, 255, 255, 0.14);
+    }
+
+    .active-call-banner-button.is-active {
+        background: rgba(4, 18, 10, 0.16);
+    }
+
+    .active-call-banner-button .button-icon {
+        width: 24px;
+        height: 24px;
+        filter: brightness(0);
+    }
+
     .login-view {
         height: 100%;
         overflow: auto;
@@ -145,6 +229,11 @@
         height: calc(100dvh - 75px);
         grid-template-columns: 1fr;
         border-radius: 0;
+    }
+
+    .app-shell.has-active-call .messenger-view {
+        height: calc(100vh - 125px);
+        height: calc(100dvh - 125px);
     }
 
     .sidebar,
@@ -264,14 +353,23 @@
         border-radius: var(--radius);
     }
 
+    .app-shell.has-active-call .call-modal-backdrop {
+        padding-top: 100px;
+    }
+
+    .app-shell.has-active-call .call-modal-panel {
+        height: calc(100vh - 125px);
+        height: calc(100dvh - 125px);
+    }
+
     .call-modal-body {
         min-height: 0;
         padding: 28px 16px 18px;
     }
 
     .call-actions {
-        grid-template-columns: repeat(3, 64px);
-        gap: 28px;
+        grid-template-columns: repeat(4, 64px);
+        gap: 15px;
         transform: translateY(-10px);
     }
 

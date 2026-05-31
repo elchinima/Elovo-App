@@ -87,6 +87,21 @@
         </section>
     </section>
 
+    <aside class="active-call-banner" id="activeCallBanner" aria-label="Active audio call" hidden>
+        <div class="active-call-banner-copy">
+            <strong id="activeCallBannerName">Audio call</strong>
+            <span id="activeCallBannerDuration">00:00</span>
+        </div>
+        <div class="active-call-banner-actions" aria-label="Active call controls">
+            <button class="active-call-banner-button" id="activeCallBannerMuteButton" type="button" aria-label="Mute microphone" title="Mute microphone" aria-pressed="false">
+                <img class="button-icon" src="~/Assets/Images/Icons/microphone.svg" alt="">
+            </button>
+            <button class="active-call-banner-button" id="activeCallBannerEndButton" type="button" aria-label="End call" title="End call">
+                <img class="button-icon" src="~/Assets/Images/Icons/call-end.svg" alt="">
+            </button>
+        </div>
+    </aside>
+
     <div class="modal-backdrop" id="addFriendModal" aria-hidden="true">
         <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="addFriendTitle">
             <header class="modal-header">
@@ -197,6 +212,10 @@
                     <strong id="callDuration">00:00</strong>
                 </div>
                 <div class="call-actions" aria-label="Call controls">
+                    <button class="call-control-button" id="collapseCallButton" type="button" aria-label="Close call window" title="Close call window">
+                        <img class="button-icon" src="~/Assets/Images/Icons/call-collapse.svg" alt="">
+                        <span>Close</span>
+                    </button>
                     <button class="call-control-button" id="speakerCallButton" type="button" aria-label="Change speaker" title="Change speaker">
                         <img class="button-icon" src="~/Assets/Images/Icons/speaker.svg" alt="">
                         <span id="callSpeakerLabel">Speaker</span>

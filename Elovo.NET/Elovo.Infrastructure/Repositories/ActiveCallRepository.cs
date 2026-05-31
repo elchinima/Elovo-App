@@ -21,6 +21,14 @@ public class ActiveCallRepository : IActiveCallRepository
             .FirstOrDefaultAsync(x => x.ReceiverId == receiverId && !x.IsRejected, cancellationToken);
     }
 
+    public async Task<ActiveCall?> GetByCallerIdAsync(Guid callerId, CancellationToken cancellationToken = default)
+    {
+        return await _context.ActiveCalls
+            .Where(x => x.CallerId == callerId && !x.IsRejected)
+            .OrderByDescending(x => x.StartedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public Task<ActiveCall?> GetByParticipantsAsync(Guid participantId, CancellationToken cancellationToken = default)
     {
         return _context.ActiveCalls

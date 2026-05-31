@@ -10,6 +10,7 @@
 const logoutButton = document.querySelector("#logoutButton");
 const settingsButton = document.querySelector("#settingsButton");
 const restoreHiddenButton = document.querySelector("#restoreHiddenButton");
+const appShell = document.querySelector(".app-shell");
 const messengerView = document.querySelector("#messengerView");
 const chatList = document.querySelector("#chatList");
 const searchInput = document.querySelector("#searchInput");
@@ -29,11 +30,17 @@ const callModal = document.querySelector("#callModal");
 const callAvatar = document.querySelector("#callAvatar");
 const callUserName = document.querySelector("#callUserName");
 const callDuration = document.querySelector("#callDuration");
+const collapseCallButton = document.querySelector("#collapseCallButton");
 const endCallButton = document.querySelector("#endCallButton");
 const muteCallButton = document.querySelector("#muteCallButton");
 const muteCallLabel = document.querySelector("#muteCallLabel");
 const speakerCallButton = document.querySelector("#speakerCallButton");
 const callSpeakerLabel = document.querySelector("#callSpeakerLabel");
+const activeCallBanner = document.querySelector("#activeCallBanner");
+const activeCallBannerName = document.querySelector("#activeCallBannerName");
+const activeCallBannerDuration = document.querySelector("#activeCallBannerDuration");
+const activeCallBannerMuteButton = document.querySelector("#activeCallBannerMuteButton");
+const activeCallBannerEndButton = document.querySelector("#activeCallBannerEndButton");
 if (callDuration) {
     callDuration.style.color = "var(--muted)";
 }
@@ -84,6 +91,7 @@ let incomingCall = null;
 let incomingCallBanner = null;
 let remoteCallAudio = null;
 let browserSpeakerDeviceIndex = 0;
+let mobileBoundaryPulseTimer = null;
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
 const maxVoiceDurationMs = 60 * 1000;
@@ -761,12 +769,78 @@ function formatCallDuration(totalSeconds) {
     return `${pad(minutes)}:${pad(seconds)}`;
 }
 
+function triggerMobileBoundaryPulse() {
+    if (!appShell || appShell.classList.contains("has-active-call")) {
+        return;
+    }
+
+    if (mobileBoundaryPulseTimer) {
+        window.clearTimeout(mobileBoundaryPulseTimer);
+    }
+
+    appShell.classList.remove("has-message-pulse");
+    window.requestAnimationFrame(() => {
+        appShell.classList.add("has-message-pulse");
+        mobileBoundaryPulseTimer = window.setTimeout(() => {
+            appShell.classList.remove("has-message-pulse");
+            mobileBoundaryPulseTimer = null;
+        }, 900);
+    });
+}
+
+function syncActiveCallBanner() {
+    const shouldShow = Boolean(activeCall && activeCall.isEstablished);
+
+    if (appShell) {
+        appShell.classList.toggle("has-active-call", shouldShow);
+        if (shouldShow) {
+            appShell.classList.remove("has-message-pulse");
+        }
+    }
+
+    if (!activeCallBanner) {
+        return;
+    }
+
+    activeCallBanner.hidden = !shouldShow;
+    if (!shouldShow) {
+        return;
+    }
+
+    if (activeCallBannerName) {
+        activeCallBannerName.textContent = activeCall.remoteUser.username || "Audio call";
+    }
+
+    if (activeCallBannerDuration) {
+        activeCallBannerDuration.textContent = activeCall.startedAt
+            ? formatCallDuration((Date.now() - activeCall.startedAt) / 1000)
+            : "00:00";
+    }
+
+    if (activeCallBannerMuteButton) {
+        activeCallBannerMuteButton.classList.toggle("is-active", activeCall.isMuted);
+        activeCallBannerMuteButton.setAttribute("aria-pressed", activeCall.isMuted ? "true" : "false");
+        activeCallBannerMuteButton.setAttribute("aria-label", activeCall.isMuted ? "Unmute microphone" : "Mute microphone");
+        activeCallBannerMuteButton.title = activeCall.isMuted ? "Unmute microphone" : "Mute microphone";
+        const muteIcon = activeCallBannerMuteButton.querySelector("img");
+        if (muteIcon) {
+            muteIcon.src = activeCall.isMuted
+                ? "/Assets/Images/Icons/microphone-off.svg"
+                : "/Assets/Images/Icons/microphone.svg";
+        }
+    }
+}
+
 function updateCallDuration() {
     if (!activeCall || !activeCall.startedAt || !callDuration) {
         return;
     }
 
-    callDuration.textContent = formatCallDuration((Date.now() - activeCall.startedAt) / 1000);
+    const duration = formatCallDuration((Date.now() - activeCall.startedAt) / 1000);
+    callDuration.textContent = duration;
+    if (activeCallBannerDuration) {
+        activeCallBannerDuration.textContent = duration;
+    }
 }
 
 function updateCallControls() {
@@ -792,6 +866,7 @@ function updateCallControls() {
     }
 
     updateSpeakerButtonState(activeCall.speakerLabel, activeCall.speakerPressed);
+    syncActiveCallBanner();
 }
 
 function updateCallStatus(status) {
@@ -808,6 +883,16 @@ function startCallTimer() {
     activeCall.startedAt = Date.now();
     updateCallDuration();
     callTimer = window.setInterval(updateCallDuration, 1000);
+}
+
+function markActiveCallEstablished() {
+    if (!activeCall || activeCall.isEstablished) {
+        return;
+    }
+
+    activeCall.isEstablished = true;
+    startCallTimer();
+    syncActiveCallBanner();
 }
 
 function stopCallTimer() {
@@ -893,7 +978,7 @@ async function fetchTurnIceServers() {
     return credentials.iceServers;
 }
 
-function createCallState(remoteUserId, remoteUser) {
+function createCallState(remoteUserId, remoteUser, isEstablished = false) {
     activeCall = {
         remoteUserId,
         remoteUser,
@@ -902,13 +987,14 @@ function createCallState(remoteUserId, remoteUser) {
         remoteStream: new MediaStream(),
         pendingIceCandidates: [],
         startedAt: 0,
+        isEstablished,
         isMuted: false,
         speakerLabel: "Speaker",
         speakerPressed: true
     };
 
     setCallModalUser(remoteUser);
-    updateCallStatus("00:00");
+    updateCallStatus(isEstablished ? "00:00" : "Calling...");
 
     if (callButton) {
         callButton.classList.add("is-active");
@@ -916,6 +1002,10 @@ function createCallState(remoteUserId, remoteUser) {
     }
 
     updateCallControls();
+    if (isEstablished) {
+        startCallTimer();
+        syncActiveCallBanner();
+    }
     openModal(callModal);
 }
 
@@ -964,7 +1054,7 @@ async function createPeerConnection(remoteUserId) {
         }
 
         if (peerConnection.iceConnectionState === "connected" || peerConnection.iceConnectionState === "completed") {
-            startCallTimer();
+            markActiveCallEstablished();
         }
 
         if (peerConnection.iceConnectionState === "connected" && window.AndroidBridge) {
@@ -1065,7 +1155,7 @@ async function acceptIncomingCall() {
         username: call.callerName,
         profileImageUrl: call.callerAvatar,
         initial: call.callerName ? call.callerName.slice(0, 1).toUpperCase() : "?"
-    });
+    }, true);
     if (window.AndroidBridge) {
         window.AndroidBridge.onCallStarted();
         // Сначала speaker (WebView уже там)
@@ -1098,7 +1188,8 @@ async function acceptIncomingCall() {
     }
 }
 
-window.acceptIncomingCall = function(callerId, callerName) {
+window.showIncomingCallBanner = function(callerId, callerName) {
+    // Показать баннер входящего звонка вместо автоматического принятия
     incomingCall = {
         callerId: callerId,
         callerName: callerName,
@@ -1106,7 +1197,7 @@ window.acceptIncomingCall = function(callerId, callerName) {
         offer: null,
         pendingIceCandidates: []
     };
-    acceptIncomingCall();
+    showIncomingCallBanner(callerId, callerName, null);
 
     // Попросить звонящего повторно отправить offer
     if (connection && connection.state === signalR.HubConnectionState.Connected) {
@@ -1154,6 +1245,7 @@ function endActiveCall(notifyRemote = true) {
 
     closeModal(callModal);
     resetCallControls();
+    syncActiveCallBanner();
 }
 
 function toggleCallMute() {
@@ -1278,6 +1370,13 @@ function showAndroidSpeakerPicker() {
         btn.addEventListener("click", () => {
             window.AndroidBridge.setAudioDevice(device.id);
             updateSpeakerButtonUI(device.id);
+
+            if (device.id === 'speaker') {
+                window.AndroidBridge.disableProximitySensor();
+            } else {
+                window.AndroidBridge.enableProximitySensor();
+            }
+
             overlay.remove();
         });
         sheet.appendChild(btn);
@@ -1333,6 +1432,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     };
 
     const banner = document.createElement("div");
+    banner.className = "incoming-call-banner";
     banner.setAttribute("role", "dialog");
     banner.setAttribute("aria-label", `Incoming call from ${callerName}`);
     banner.style.position = "fixed";
@@ -1357,9 +1457,11 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     });
 
     const content = document.createElement("div");
+    content.className = "incoming-call-banner-copy";
     content.style.minWidth = "0";
 
     const title = document.createElement("strong");
+    title.className = "incoming-call-banner-title";
     title.textContent = callerName || "Incoming call";
     title.style.display = "block";
     title.style.overflow = "hidden";
@@ -1367,6 +1469,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     title.style.whiteSpace = "nowrap";
 
     const subtitle = document.createElement("span");
+    subtitle.className = "incoming-call-banner-subtitle";
     subtitle.textContent = "Incoming audio call";
     subtitle.style.display = "block";
     subtitle.style.marginTop = "2px";
@@ -1374,12 +1477,14 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     subtitle.style.fontSize = "0.88rem";
 
     const actions = document.createElement("div");
+    actions.className = "incoming-call-banner-actions";
     actions.style.display = "flex";
     actions.style.gap = "8px";
     actions.style.marginTop = "12px";
 
     const acceptButton = document.createElement("button");
     acceptButton.type = "button";
+    acceptButton.className = "incoming-call-banner-button incoming-call-accept";
     acceptButton.style.display = "inline-flex";
     acceptButton.style.alignItems = "center";
     acceptButton.style.justifyContent = "center";
@@ -1404,6 +1509,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
 
     const rejectButton = document.createElement("button");
     rejectButton.type = "button";
+    rejectButton.className = "incoming-call-banner-button incoming-call-reject";
     rejectButton.style.display = "inline-flex";
     rejectButton.style.alignItems = "center";
     rejectButton.style.justifyContent = "center";
@@ -1465,6 +1571,7 @@ async function handleCallAnswered(sdpAnswer) {
     try {
         await activeCall.peerConnection.setRemoteDescription({ type: "answer", sdp: sdpAnswer });
         await addPendingIceCandidates();
+        markActiveCallEstablished();
     } catch {
         endActiveCall(true);
     }
@@ -2767,6 +2874,13 @@ async function startSignalR() {
 
     connection.on("ReceiveMessage", async (message) => {
         latestMessageId = message.id;
+        const isIncomingFromAnotherChat =
+            !sameId(message.senderId, getCurrentUserId()) &&
+            !messageBelongsToActiveConversation(message);
+        if (isIncomingFromAnotherChat) {
+            triggerMobileBoundaryPulse();
+        }
+
         const messageStored = storeMessage(message);
         if (messageStored && !message.isImage && !message.isVoice) {
             acknowledgePendingMessage(message);
@@ -3450,8 +3564,28 @@ if (endCallButton) {
     endCallButton.addEventListener("click", () => endActiveCall(true));
 }
 
+if (collapseCallButton) {
+    collapseCallButton.addEventListener("click", () => closeModal(callModal));
+}
+
 if (muteCallButton) {
     muteCallButton.addEventListener("click", toggleCallMute);
+}
+
+if (activeCallBanner) {
+    activeCallBanner.addEventListener("click", (event) => {
+        if (!event.target.closest("button")) {
+            openModal(callModal);
+        }
+    });
+}
+
+if (activeCallBannerMuteButton) {
+    activeCallBannerMuteButton.addEventListener("click", toggleCallMute);
+}
+
+if (activeCallBannerEndButton) {
+    activeCallBannerEndButton.addEventListener("click", () => endActiveCall(true));
 }
 
 if (speakerCallButton) {

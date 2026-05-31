@@ -435,8 +435,8 @@ public class ChatHub : Hub
             .FirstOrDefault();
         if (activeCall is not null)
         {
-            await _unitOfWork.ActiveCalls.DeleteAsync(activeCall, Context.ConnectionAborted);
-            await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+            var message = await _callHistoryService.CompleteAsync(activeCall, CallStatuses.Missed, Context.ConnectionAborted);
+            await PublishCallHistoryAsync(message);
         }
 
         await Clients.Group(UserGroup(targetId)).SendAsync("CallCancelled", Context.ConnectionAborted);

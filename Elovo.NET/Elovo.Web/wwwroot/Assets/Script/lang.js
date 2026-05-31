@@ -83,6 +83,9 @@
             body: JSON.stringify({ language: normalizedLanguage }),
             keepalive: true
         }).catch(() => { });
+        if (window.AndroidBridge && window.AndroidBridge.setLanguage) {
+            window.AndroidBridge.setLanguage(normalizedLanguage);
+        }
         window.location.reload();
     }
 

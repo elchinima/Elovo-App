@@ -649,6 +649,10 @@ function getStoredConversationSummary(userId) {
 }
 
 function getMessagePreview(message) {
+    if (message.isCall) {
+        return formatCallMessageStatus(message.callStatus);
+    }
+
     if (message.isVoice) {
         return "Voice message";
     }
@@ -744,6 +748,9 @@ function openModal(modal) {
 
     modal.classList.add("is-open");
     modal.setAttribute("aria-hidden", "false");
+    if (modal === callModal) {
+        syncActiveCallBanner();
+    }
 }
 
 function closeModal(modal) {
@@ -753,6 +760,9 @@ function closeModal(modal) {
 
     modal.classList.remove("is-open");
     modal.setAttribute("aria-hidden", "true");
+    if (modal === callModal) {
+        syncActiveCallBanner();
+    }
 }
 
 function formatCallDuration(totalSeconds) {
@@ -789,11 +799,12 @@ function triggerMobileBoundaryPulse() {
 }
 
 function syncActiveCallBanner() {
-    const shouldShow = Boolean(activeCall && activeCall.isEstablished);
+    const hasEstablishedCall = Boolean(activeCall && activeCall.isEstablished);
+    const shouldShowBanner = hasEstablishedCall && !callModal?.classList.contains("is-open");
 
     if (appShell) {
-        appShell.classList.toggle("has-active-call", shouldShow);
-        if (shouldShow) {
+        appShell.classList.toggle("has-active-call", hasEstablishedCall);
+        if (hasEstablishedCall) {
             appShell.classList.remove("has-message-pulse");
         }
     }
@@ -802,8 +813,8 @@ function syncActiveCallBanner() {
         return;
     }
 
-    activeCallBanner.hidden = !shouldShow;
-    if (!shouldShow) {
+    activeCallBanner.hidden = !shouldShowBanner;
+    if (!shouldShowBanner) {
         return;
     }
 
@@ -2027,13 +2038,15 @@ function appendMessage(message) {
     const currentUserId = getCurrentUserId();
     const isMine = (message.senderId || "").toLowerCase() === currentUserId;
 
-    bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}${message.isImage ? " has-image" : ""}${message.isVoice ? " has-voice" : ""}`;
+    bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}${message.isImage ? " has-image" : ""}${message.isVoice ? " has-voice" : ""}${message.isCall ? " has-call" : ""}`;
     bubble.dataset.messageId = message.id;
     meta.className = "message-meta";
     time.textContent = formatTime(message.sentAt);
     meta.appendChild(time);
 
-    if (message.isVoice && message.voiceUrl) {
+    if (message.isCall) {
+        bubble.appendChild(createCallMessage(message));
+    } else if (message.isVoice && message.voiceUrl) {
         bubble.appendChild(createVoiceMessage(message));
     } else if (message.isImage && message.imagePath) {
         bubble.appendChild(createImageMessage(message));
@@ -2058,6 +2071,48 @@ function appendMessage(message) {
         attachMessageActions(bubble, message);
     }
     messageStream.appendChild(bubble);
+}
+
+function formatCallMessageStatus(status) {
+    if (status === "answered") {
+        return "Answered call";
+    }
+
+    if (status === "rejected") {
+        return "Rejected call";
+    }
+
+    return "Missed call";
+}
+
+function getCallMessageIcon(status) {
+    if (status === "answered") {
+        return "/Assets/Images/Icons/call-answered.svg";
+    }
+
+    if (status === "rejected") {
+        return "/Assets/Images/Icons/call-rejected.svg";
+    }
+
+    return "/Assets/Images/Icons/call-missed.svg";
+}
+
+function createCallMessage(message) {
+    const call = document.createElement("span");
+    const icon = document.createElement("img");
+    const copy = document.createElement("span");
+    const status = document.createElement("strong");
+    const duration = document.createElement("span");
+
+    call.className = `message-call is-${message.callStatus || "missed"}`;
+    icon.src = getCallMessageIcon(message.callStatus);
+    icon.alt = "";
+    copy.className = "message-call-copy";
+    status.textContent = formatCallMessageStatus(message.callStatus);
+    duration.textContent = formatCallDuration(message.callDurationSeconds || 0);
+    copy.append(status, duration);
+    call.append(icon, copy);
+    return call;
 }
 
 function attachMessageActions(bubble, message) {
@@ -2126,7 +2181,7 @@ function showMessageActions(message, bubble) {
             await deleteMessageForEveryone(message);
         }));
 
-        if (!message.isImage && !message.isVoice) {
+        if (!message.isImage && !message.isVoice && !message.isCall) {
             menu.appendChild(createActionButton("/Assets/Images/Icons/edit-message.svg", "Edit", () => {
                 closeMessageActions();
                 startPendingMessageEdit(message);
@@ -2170,7 +2225,7 @@ async function deleteMessageForEveryone(message) {
 }
 
 function startPendingMessageEdit(message) {
-    if (!messageInput || !messageForm || !activeConversation || message.isImage || message.isVoice) {
+    if (!messageInput || !messageForm || !activeConversation || message.isImage || message.isVoice || message.isCall) {
         return;
     }
 

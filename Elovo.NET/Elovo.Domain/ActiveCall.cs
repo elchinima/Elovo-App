@@ -10,4 +10,5 @@ public class ActiveCall
     public string? OfferSdp { get; set; }
     public bool IsRejected { get; set; }
     public DateTime StartedAt { get; set; }
+    public DateTime? AnsweredAt { get; set; }
 }

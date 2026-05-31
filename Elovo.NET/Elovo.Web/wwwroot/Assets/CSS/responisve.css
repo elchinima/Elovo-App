@@ -106,69 +106,15 @@
     }
 
     .active-call-banner:not([hidden]) {
-        position: fixed;
         top: 50px;
         left: 0;
         right: 0;
-        z-index: 85;
+        z-index: 65;
         height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 6px 10px 6px 14px;
-        color: #04120a;
-        background: var(--call-green);
+        width: auto;
+        min-height: 0;
+        border-radius: 0;
         box-shadow: 0 6px 20px rgba(34, 197, 94, 0.22);
-        cursor: pointer;
-    }
-
-    .active-call-banner-copy {
-        min-width: 0;
-        display: flex;
-        align-items: baseline;
-        gap: 9px;
-    }
-
-    .active-call-banner-copy strong {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .active-call-banner-copy span {
-        flex: 0 0 auto;
-        font-size: 0.82rem;
-        font-weight: 800;
-        opacity: 0.78;
-    }
-
-    .active-call-banner-actions {
-        display: flex;
-        flex: 0 0 auto;
-        gap: 6px;
-    }
-
-    .active-call-banner-button {
-        width: 38px;
-        height: 38px;
-        display: grid;
-        place-items: center;
-        border: 1px solid rgba(4, 18, 10, 0.2);
-        border-radius: 8px;
-        padding: 0;
-        color: #04120a;
-        background: rgba(255, 255, 255, 0.14);
-    }
-
-    .active-call-banner-button.is-active {
-        background: rgba(4, 18, 10, 0.16);
-    }
-
-    .active-call-banner-button .button-icon {
-        width: 24px;
-        height: 24px;
-        filter: brightness(0);
     }
 
     .login-view {
@@ -293,6 +239,11 @@
     .message.has-voice {
         width: min(84%, calc(100vw - 64px));
         max-width: 320px;
+    }
+
+    .message.has-call {
+        width: min(84%, calc(100vw - 64px));
+        max-width: 280px;
     }
 
     .message-voice {

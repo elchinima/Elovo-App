@@ -15,6 +15,7 @@ builder.Services.AddInfrastructure(config);
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<ICallHistoryService, CallHistoryService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IUserPresenceTracker, UserPresenceTracker>();
 builder.Services.AddOptions();
@@ -29,7 +30,14 @@ builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
     {
-        var clientKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        if (context.Request.Path.StartsWithSegments("/chatHub"))
+        {
+            return RateLimitPartition.GetNoLimiter("signalr");
+        }
+
+        var clientKey = context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+            ?? context.Connection.RemoteIpAddress?.ToString()
+            ?? "unknown";
 
         return RateLimitPartition.GetFixedWindowLimiter(clientKey, _ => new FixedWindowRateLimiterOptions
         {
@@ -85,6 +93,11 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 const long bandwidthLimitBytesPerSecond = 1024 * 1024;
 
 var scope = app.Services.CreateScope();
@@ -97,6 +110,8 @@ finally
 {
     scope.Dispose();
 }
+
+app.UseExceptionHandler("/Home/Error");
 
 app.Use(async (context, next) =>
 {

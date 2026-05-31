@@ -4,6 +4,7 @@ namespace Elovo.Application.Services;
 public class UserService : IUserService
 {
     private const int MinimumPasswordLength = 8;
+    private const string HiddenProfileImageUrl = "/Assets/Images/Icons/profile-hidden.svg";
 
     private readonly IImageStorageService _imageStorageService;
     private readonly IMapper _mapper;
@@ -31,7 +32,9 @@ public class UserService : IUserService
     public async Task<IReadOnlyList<UserDto>> GetUsersAsync(Guid currentUserId, CancellationToken cancellationToken = default)
     {
         var users = await _unitOfWork.Users.GetAllExceptAsync(currentUserId, cancellationToken);
-        return users.Select(ToUserDto).ToList();
+        var conversations = await _unitOfWork.Conversations.GetForUserAsync(currentUserId, cancellationToken);
+        var friendIds = GetFriendIds(currentUserId, conversations);
+        return users.Select(user => ToUserDto(user, friendIds.Contains(user.Id))).ToList();
     }
 
     public async Task<IReadOnlyList<ConversationDto>> GetConversationsAsync(Guid currentUserId, CancellationToken cancellationToken = default)
@@ -78,15 +81,14 @@ public class UserService : IUserService
 
         var users = await _unitOfWork.Users.GetAllExceptAsync(currentUserId, cancellationToken);
         var conversations = await _unitOfWork.Conversations.GetForUserAsync(currentUserId, cancellationToken);
-        var friendIds = conversations
-            .Select(x => x.FirstUserId == currentUserId ? x.SecondUserId : x.FirstUserId)
-            .ToHashSet();
+        var friendIds = GetFriendIds(currentUserId, conversations);
 
         var items = new List<FriendCandidateDto>();
 
         foreach (var user in users.Where(x => x.Username.Contains(term, StringComparison.OrdinalIgnoreCase)))
         {
             var request = await _unitOfWork.FriendRequests.GetBetweenUsersAsync(currentUserId, user.Id, cancellationToken);
+            var isFriend = friendIds.Contains(user.Id);
 
             items.Add(new FriendCandidateDto
             {
@@ -94,9 +96,9 @@ public class UserService : IUserService
                 Username = user.Username,
                 IsOnline = _presenceTracker.IsOnline(user.Id),
                 LastSeenAt = user.Session?.LastSeenAt,
-                ProfileImagePath = user.ProfileImagePath,
-                ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
-                Status = friendIds.Contains(user.Id)
+                ProfileImagePath = isFriend ? user.ProfileImagePath : null,
+                ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, isFriend),
+                Status = isFriend
                     ? "friend"
                     : request is null
                         ? "none"
@@ -119,8 +121,8 @@ public class UserService : IUserService
             Id = x.Id,
             SenderId = x.SenderId,
             SenderUsername = x.Sender.Username,
-            ProfileImagePath = x.Sender.ProfileImagePath,
-            ProfileImageUrl = GetImageUrl(x.Sender.ProfileImagePath),
+            ProfileImagePath = null,
+            ProfileImageUrl = GetVisibleProfileImageUrl(x.Sender.ProfileImagePath, false),
             CreatedAt = x.CreatedAt
         }).ToList();
     }
@@ -350,12 +352,30 @@ public class UserService : IUserService
             ?? throw new InvalidOperationException("User was not found.");
     }
 
-    private UserDto ToUserDto(User user)
+    private UserDto ToUserDto(User user, bool canSeeProfileImage)
     {
         var dto = _mapper.Map<UserDto>(user);
         dto.IsOnline = _presenceTracker.IsOnline(user.Id);
-        dto.ProfileImageUrl = GetImageUrl(user.ProfileImagePath);
+        dto.ProfileImagePath = canSeeProfileImage ? user.ProfileImagePath : null;
+        dto.ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, canSeeProfileImage);
         return dto;
+    }
+
+    private static HashSet<Guid> GetFriendIds(Guid currentUserId, IEnumerable<Conversation> conversations)
+    {
+        return conversations
+            .Select(x => x.FirstUserId == currentUserId ? x.SecondUserId : x.FirstUserId)
+            .ToHashSet();
+    }
+
+    private string? GetVisibleProfileImageUrl(string? path, bool canSeeProfileImage)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        return canSeeProfileImage ? GetImageUrl(path) : HiddenProfileImageUrl;
     }
 
     private ProfileDto ToProfileDto(User user)

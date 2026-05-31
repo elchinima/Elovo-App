@@ -173,7 +173,7 @@ public class ProfileController : Controller
             .Crop(crop)
             .Resize(new ResizeOptions
             {
-                Size = new Size(512, 512),
+                Size = new Size(256, 256),
                 Mode = ResizeMode.Stretch,
                 Sampler = KnownResamplers.Lanczos3
             }));

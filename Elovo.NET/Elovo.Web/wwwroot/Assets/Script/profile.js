@@ -201,8 +201,8 @@ function getCroppedAvatarBlob() {
         const left = stageSize / 2 + avatarCropState.offsetX - width / 2;
         const top = stageSize / 2 + avatarCropState.offsetY - height / 2;
         const canvas = document.createElement("canvas");
-        canvas.width = 512;
-        canvas.height = 512;
+        canvas.width = 256;
+        canvas.height = 256;
         const context = canvas.getContext("2d");
 
         if (!context) {
@@ -210,9 +210,9 @@ function getCroppedAvatarBlob() {
             return;
         }
 
-        const ratio = 512 / stageSize;
+        const ratio = 256 / stageSize;
         context.fillStyle = "#070914";
-        context.fillRect(0, 0, 512, 512);
+        context.fillRect(0, 0, 256, 256);
         context.drawImage(avatarCropImage, left * ratio, top * ratio, width * ratio, height * ratio);
         canvas.toBlob((blob) => {
             if (blob) {

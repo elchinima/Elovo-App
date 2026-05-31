@@ -33,6 +33,9 @@ namespace Elovo.Infrastructure.Migrations
                         .HasMaxLength(512)
                         .HasColumnType("character varying(512)");
 
+                    b.Property<DateTime?>("AnsweredAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("CallerId")
                         .HasColumnType("uuid");
 
@@ -137,6 +140,18 @@ namespace Elovo.Infrastructure.Migrations
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<double?>("CallDurationSeconds")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("CallStatus")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<bool>("IsCall")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<bool>("IsNotificationSent")
                         .HasColumnType("boolean");

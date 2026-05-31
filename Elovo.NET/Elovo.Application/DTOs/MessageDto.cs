@@ -17,4 +17,7 @@ public class MessageDto
     public string? ImageStoragePath { get; set; }
     public string? ImageFileName { get; set; }
     public bool IsPending { get; set; }
+    public bool IsCall { get; set; }
+    public string? CallStatus { get; set; }
+    public double? CallDurationSeconds { get; set; }
 }

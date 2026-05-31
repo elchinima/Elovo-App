@@ -100,6 +100,8 @@ public class ElovoDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Content).IsRequired();
             entity.Property(x => x.VoiceUrl).HasMaxLength(512);
+            entity.Property(x => x.CallStatus).HasMaxLength(16);
+            entity.Property(x => x.IsCall).HasDefaultValue(false);
             entity.HasIndex(x => x.IsNotificationSent);
             entity.HasIndex(x => new { x.ReceiverId, x.SentAt });
             entity.HasIndex(x => x.SenderId);
@@ -122,6 +124,7 @@ public class ElovoDbContext : DbContext
             entity.Property(x => x.CallerAvatar).HasMaxLength(512).IsRequired();
             entity.Property(x => x.OfferSdp);
             entity.Property(x => x.IsRejected).HasDefaultValue(false);
+            entity.Property(x => x.AnsweredAt);
             entity.HasIndex(x => x.ReceiverId);
             entity.HasIndex(x => new { x.CallerId, x.ReceiverId }).IsUnique();
             entity.HasIndex(x => x.StartedAt);

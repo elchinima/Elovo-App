@@ -1,0 +1,47 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = "Something went wrong | Elovo";
+}
+
+<main class="error-page">
+    <div class="error-page__glow error-page__glow--top" aria-hidden="true"></div>
+    <div class="error-page__glow error-page__glow--bottom" aria-hidden="true"></div>
+    <div class="error-page__grid" aria-hidden="true"></div>
+
+    <section class="error-card" aria-labelledby="errorTitle">
+        <div class="error-card__visual" aria-hidden="true">
+            <div class="error-orbit error-orbit--outer"></div>
+            <div class="error-orbit error-orbit--inner"></div>
+            <div class="error-card__code">500</div>
+            <span class="error-spark error-spark--one"></span>
+            <span class="error-spark error-spark--two"></span>
+            <span class="error-spark error-spark--three"></span>
+        </div>
+
+        <div class="error-card__content">
+            <p class="eyebrow">Connection interrupted</p>
+            <h1 id="errorTitle">Something went off course.</h1>
+            <p class="error-card__copy">
+                Elovo could not complete this request. Your conversations are safe.
+                Try refreshing the page or return to the sign-in screen.
+            </p>
+
+            <div class="error-card__actions">
+                <button class="error-action error-action--primary" type="button" onclick="window.location.reload()">
+                    Try again
+                </button>
+                <a class="error-action error-action--secondary" asp-controller="Auth" asp-action="Login">
+                    Back to sign in
+                </a>
+            </div>
+
+            @if (Model.ShowRequestId)
+            {
+                <p class="error-card__request">
+                    <span>Reference</span>
+                    <code>@Model.RequestId</code>
+                </p>
+            }
+        </div>
+    </section>
+</main>

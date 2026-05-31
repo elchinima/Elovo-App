@@ -10,6 +10,7 @@ public class ChatHub : Hub
     private readonly IImageStorageService _imageStorageService;
     private readonly IUserPresenceTracker _presenceTracker;
     private readonly IPushNotificationService _pushNotificationService;
+    private readonly ICallHistoryService _callHistoryService;
 
     public ChatHub(
         IMessageService messageService,
@@ -17,7 +18,8 @@ public class ChatHub : Hub
         IUnitOfWork unitOfWork,
         IImageStorageService imageStorageService,
         IUserPresenceTracker presenceTracker,
-        IPushNotificationService pushNotificationService)
+        IPushNotificationService pushNotificationService,
+        ICallHistoryService callHistoryService)
     {
         _messageService = messageService;
         _userService = userService;
@@ -25,6 +27,7 @@ public class ChatHub : Hub
         _imageStorageService = imageStorageService;
         _presenceTracker = presenceTracker;
         _pushNotificationService = pushNotificationService;
+        _callHistoryService = callHistoryService;
     }
 
     public override async Task OnConnectedAsync()
@@ -186,7 +189,8 @@ public class ChatHub : Hub
         if (message is null ||
             message.SenderId != senderId ||
             _imageStorageService.IsImagePath(message.Content) ||
-            message.IsVoice)
+            message.IsVoice ||
+            message.IsCall)
         {
             return false;
         }
@@ -279,7 +283,14 @@ public class ChatHub : Hub
         var caller = await _userService.GetProfileAsync(callerId, Context.ConnectionAborted);
         var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(callerId, targetId, Context.ConnectionAborted);
 
-        if (activeCall is not null && (!string.IsNullOrWhiteSpace(activeCall.OfferSdp) || activeCall.IsRejected))
+        if (activeCall is not null && activeCall.IsRejected)
+        {
+            await _unitOfWork.ActiveCalls.DeleteAsync(activeCall, Context.ConnectionAborted);
+            await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+            activeCall = null;
+        }
+
+        if (activeCall is not null && !string.IsNullOrWhiteSpace(activeCall.OfferSdp))
         {
             return;
         }
@@ -299,6 +310,7 @@ public class ChatHub : Hub
         activeCall.CallerAvatar = caller.ProfileImageUrl ?? string.Empty;
         activeCall.OfferSdp = null;
         activeCall.IsRejected = false;
+        activeCall.AnsweredAt = null;
         activeCall.StartedAt = DateTime.UtcNow;
         await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
 
@@ -358,7 +370,16 @@ public class ChatHub : Hub
             return;
         }
 
-        await Clients.Group(UserGroup(ParseUserId(callerId))).SendAsync("CallAnswered", sdpAnswer, Context.ConnectionAborted);
+        var parsedCallerId = ParseUserId(callerId);
+        var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(parsedCallerId, GetCurrentUserId(), Context.ConnectionAborted);
+        if (activeCall is null)
+        {
+            return;
+        }
+
+        activeCall.AnsweredAt ??= DateTime.UtcNow;
+        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+        await Clients.Group(UserGroup(parsedCallerId)).SendAsync("CallAnswered", sdpAnswer, Context.ConnectionAborted);
     }
 
     public async Task IceCandidate(string targetUserId, string candidate)
@@ -374,20 +395,32 @@ public class ChatHub : Hub
     public async Task CallReject(string callerId)
     {
         var parsedCallerId = ParseUserId(callerId);
-        var activeCalls = await _unitOfWork.ActiveCalls.GetBetweenUsersAsync(parsedCallerId, GetCurrentUserId(), Context.ConnectionAborted);
-        foreach (var activeCall in activeCalls)
+        var activeCall = await _unitOfWork.ActiveCalls.GetByParticipantsAsync(parsedCallerId, GetCurrentUserId(), Context.ConnectionAborted);
+        if (activeCall is not null)
         {
             activeCall.IsRejected = true;
+            var message = await _callHistoryService.CompleteAsync(activeCall, CallStatuses.Rejected, Context.ConnectionAborted);
+            await PublishCallHistoryAsync(message);
         }
 
-        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
         await Clients.Group(UserGroup(parsedCallerId)).SendAsync("CallRejected", Context.ConnectionAborted);
     }
 
     public async Task CallEnd(string targetUserId)
     {
+        var currentUserId = GetCurrentUserId();
         var targetId = ParseUserId(targetUserId);
-        await DeleteActiveCallsBetweenAsync(GetCurrentUserId(), targetId);
+        var activeCalls = await _unitOfWork.ActiveCalls.GetBetweenUsersAsync(currentUserId, targetId, Context.ConnectionAborted);
+        var activeCall = activeCalls.OrderByDescending(x => x.StartedAt).FirstOrDefault();
+        if (activeCall is not null)
+        {
+            var status = activeCall.AnsweredAt.HasValue
+                ? CallStatuses.Answered
+                : activeCall.CallerId == currentUserId ? CallStatuses.Missed : CallStatuses.Rejected;
+            var message = await _callHistoryService.CompleteAsync(activeCall, status, Context.ConnectionAborted);
+            await PublishCallHistoryAsync(message);
+        }
+
         await Clients.Group(UserGroup(targetId)).SendAsync("CallEnded", Context.ConnectionAborted);
     }
 
@@ -429,7 +462,10 @@ public class ChatHub : Hub
                 ImagePath = isImage ? _imageStorageService.GetPublicUrl(message.Content) : null,
                 ImageStoragePath = isImage ? message.Content : null,
                 ImageFileName = isImage ? message.VoiceUrl : null,
-                IsPending = true
+                IsPending = true,
+                IsCall = message.IsCall,
+                CallStatus = message.CallStatus,
+                CallDurationSeconds = message.CallDurationSeconds
             }, Context.ConnectionAborted);
         }
     }
@@ -459,16 +495,15 @@ public class ChatHub : Hub
         }
     }
 
-    private async Task DeleteActiveCallsBetweenAsync(Guid firstUserId, Guid secondUserId)
+    private async Task PublishCallHistoryAsync(MessageDto? message)
     {
-        var activeCalls = await _unitOfWork.ActiveCalls.GetBetweenUsersAsync(firstUserId, secondUserId, Context.ConnectionAborted);
-        if (activeCalls.Count == 0)
+        if (message is null)
         {
             return;
         }
 
-        await _unitOfWork.ActiveCalls.DeleteRangeAsync(activeCalls, Context.ConnectionAborted);
-        await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+        await Clients.Groups(UserGroup(message.SenderId), UserGroup(message.ReceiverId))
+            .SendAsync("ReceiveMessage", message, Context.ConnectionAborted);
     }
 
     private MessageDto ToClientMessage(MessageDto message)

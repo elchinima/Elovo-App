@@ -10,4 +10,7 @@ public class PendingMessage
     public bool IsVoice { get; set; }
     public string? VoiceUrl { get; set; }
     public bool IsNotificationSent { get; set; }
+    public bool IsCall { get; set; }
+    public string? CallStatus { get; set; }
+    public double? CallDurationSeconds { get; set; }
 }

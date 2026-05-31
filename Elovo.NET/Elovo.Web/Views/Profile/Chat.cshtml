@@ -1,9 +1,9 @@
 @{
-    ViewData["Title"] = "Elovo Chat Settings";
+    ViewData["Title"] = "Elovo Preferences";
 }
 
 <main class="app-shell">
-    <section class="profile-view is-active" id="chatSettingsView" aria-label="Chat settings">
+    <section class="profile-view is-active" id="chatSettingsView" aria-label="Preferences">
         <header class="profile-topbar">
             <div class="settings-title-row">
                 <a class="icon-button" asp-controller="Chat" asp-action="Index" aria-label="Back to chat" title="Back to chat">
@@ -11,7 +11,7 @@
                 </a>
                 <div>
                     <p class="eyebrow">Settings</p>
-                    <h1>Chats</h1>
+                    <h1>Preferences</h1>
                 </div>
             </div>
             <nav class="settings-nav" aria-label="Settings navigation">
@@ -20,13 +20,22 @@
                     <span>User Profile</span>
                 </a>
                 <button class="settings-nav-button is-active" type="button" aria-current="page" disabled>
-                    <img class="button-icon" src="~/Assets/Images/Icons/settings-chat.svg" alt="">
-                    <span>Chats</span>
+                    <img class="button-icon" src="~/Assets/Images/Icons/preferences.svg" alt="">
+                    <span>Preferences</span>
                 </button>
             </nav>
         </header>
 
         <div class="profile-grid chat-settings-grid">
+            <section class="profile-panel settings-language-panel">
+                <div class="profile-panel-heading">
+                    <img src="~/Assets/Images/Icons/preferences.svg" alt="">
+                    <h2>App language</h2>
+                </div>
+                <p class="chat-settings-copy">Choose the language used across Elovo on this device.</p>
+                <div class="settings-language-options" id="settingsLanguageOptions" role="radiogroup" aria-label="App language"></div>
+            </section>
+
             <section class="profile-panel chat-retention-panel">
                 <div class="profile-panel-heading">
                     <img src="~/Assets/Images/Icons/chat-retention.svg" alt="">

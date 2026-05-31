@@ -16,6 +16,12 @@
     const confirmAccept = document.querySelector("#chatRetentionConfirmAccept");
     const confirmCancel = document.querySelector("#chatRetentionConfirmCancel");
     const confirmClose = document.querySelector("#chatRetentionConfirmClose");
+    const languageOptions = document.querySelector("#settingsLanguageOptions");
+    const languages = [
+        { code: "en", flag: "/Assets/Images/Flags/en.svg", label: "English" },
+        { code: "ru", flag: "/Assets/Images/Flags/ru.svg", label: "Русский" },
+        { code: "az", flag: "/Assets/Images/Flags/az.svg", label: "Azərbaycan dili" }
+    ];
     let pendingDays = null;
 
     function setStatus(message, kind = "") {
@@ -51,6 +57,43 @@
             button.append(icon, label, detail);
             button.addEventListener("click", () => requestRetentionChange(days));
             options.appendChild(button);
+        });
+    }
+
+    function renderLanguageOptions() {
+        if (!languageOptions || !window.ElovoI18n) {
+            return;
+        }
+
+        const selectedLanguage = window.ElovoI18n.getLanguage();
+        languageOptions.innerHTML = "";
+        languages.forEach((language) => {
+            const button = document.createElement("button");
+            const flag = document.createElement("img");
+            const copy = document.createElement("span");
+            const label = document.createElement("strong");
+            const detail = document.createElement("small");
+            const isActive = language.code === selectedLanguage;
+
+            button.type = "button";
+            button.className = `settings-language-option${isActive ? " active" : ""}`;
+            button.setAttribute("role", "radio");
+            button.setAttribute("aria-checked", isActive ? "true" : "false");
+            button.setAttribute("aria-label", language.label);
+            flag.src = language.flag;
+            flag.alt = "";
+            label.textContent = language.label;
+            detail.textContent = isActive ? t("Selected") : t("Choose");
+            copy.append(label, detail);
+            button.append(flag, copy);
+            button.addEventListener("click", () => {
+                if (button.classList.contains("active")) {
+                    return;
+                }
+
+                window.ElovoI18n.setLanguage(language.code);
+            });
+            languageOptions.appendChild(button);
         });
     }
 
@@ -102,6 +145,7 @@
         }
     }
 
+    renderLanguageOptions();
     renderOptions();
     purgeExpiredChatMessages().catch(() => { });
 

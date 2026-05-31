@@ -2409,6 +2409,66 @@ body:has(.profile-view.is-active) {
     line-height: 1.55;
 }
 
+.settings-language-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.settings-language-option {
+    min-height: 92px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    text-align: left;
+    transition: transform 120ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.settings-language-option:active {
+    transform: scale(0.98);
+}
+
+.settings-language-option img {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    box-shadow: 0 8px 16px rgba(9, 11, 26, 0.2);
+}
+
+.settings-language-option span,
+.settings-language-option strong,
+.settings-language-option small {
+    display: block;
+}
+
+.settings-language-option strong {
+    line-height: 1.25;
+}
+
+.settings-language-option small {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.settings-language-option.active {
+    border-color: rgba(139, 124, 255, 0.58);
+    background: linear-gradient(135deg, rgba(109, 103, 255, 0.2), rgba(83, 214, 164, 0.08));
+    box-shadow: inset 0 0 0 1px rgba(139, 124, 255, 0.14);
+    cursor: default;
+}
+
+.settings-language-option.active small {
+    color: var(--success);
+}
+
 .chat-retention-options {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));

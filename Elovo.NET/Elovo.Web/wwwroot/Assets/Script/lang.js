@@ -81,6 +81,19 @@
         window.location.reload();
     }
 
+    function syncSystemLanguage() {
+        if (window.localStorage.getItem(storageKey) || getProfileLanguage()) {
+            return;
+        }
+
+        fetch("/api/account/language", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ language: getLanguage() }),
+            keepalive: true
+        }).catch(() => { });
+    }
+
     function createLanguageSelector() {
         if (!document.querySelector(".login-view")) {
             return;
@@ -136,6 +149,7 @@
         document.body.appendChild(selector);
     }
 
+    syncSystemLanguage();
     translatePage();
     createLanguageSelector();
 

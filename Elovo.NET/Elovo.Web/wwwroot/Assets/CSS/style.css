@@ -83,6 +83,40 @@ button {
     user-select: none;
 }
 
+.language-selector {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 110;
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+}
+
+.language-selector-toggle,
+.language-selector-option {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--text);
+    background: rgba(18, 24, 50, 0.94);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.language-selector-menu {
+    display: grid;
+    gap: 8px;
+}
+
+.language-selector-menu[hidden] {
+    display: none;
+}
+
 button:active {
     transform: scale(0.95);
     opacity: 0.85;

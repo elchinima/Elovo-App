@@ -1,6 +1,7 @@
 (() => {
     const pageLoader = document.querySelector("#pageLoader");
     const keepAliveIntervalMs = 10 * 60 * 1000;
+    const { t } = window.ElovoI18n;
 
     function keepAlive() {
         fetch(`/health?ts=${Date.now()}`, {
@@ -65,7 +66,7 @@
 
     async function readResponseText(response) {
         const text = await response.text();
-        return text || "Request failed.";
+        return t(text || "Request failed.");
     }
 
     function openModal(modal) {
@@ -231,7 +232,8 @@
         chatRetentionDefaultDays,
         getChatRetentionDays,
         setChatRetentionDays,
-        purgeExpiredChatMessages
+        purgeExpiredChatMessages,
+        t
     };
 
     document.querySelectorAll("[data-close-modal]").forEach((button) => {

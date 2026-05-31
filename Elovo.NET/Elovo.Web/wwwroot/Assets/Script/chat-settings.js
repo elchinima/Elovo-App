@@ -5,7 +5,8 @@
         chatRetentionAllowedDays,
         getChatRetentionDays,
         setChatRetentionDays,
-        purgeExpiredChatMessages
+        purgeExpiredChatMessages,
+        t
     } = window.Elovo;
 
     const options = document.querySelector("#chatRetentionOptions");
@@ -45,8 +46,8 @@
             button.setAttribute("aria-checked", days === selectedDays ? "true" : "false");
             icon.src = "/Assets/Images/Icons/chat-retention.svg";
             icon.alt = "";
-            label.textContent = `${days} days`;
-            detail.textContent = days === 90 ? "Default" : "Auto delete";
+            label.textContent = t("{days} days", { days });
+            detail.textContent = days === 90 ? t("Default") : t("Auto delete");
             button.append(icon, label, detail);
             button.addEventListener("click", () => requestRetentionChange(days));
             options.appendChild(button);
@@ -67,7 +68,7 @@
 
         pendingDays = days;
         if (confirmMessage) {
-            confirmMessage.textContent = `Local messages older than ${days} days will be deleted from this browser or mobile app.`;
+            confirmMessage.textContent = t("Local messages older than {days} days will be deleted from this browser or mobile app.", { days });
         }
         openModal(confirmModal);
     }
@@ -91,13 +92,13 @@
     async function applyRetentionChange(days) {
         setChatRetentionDays(days);
         renderOptions(days);
-        setStatus("Cleaning old local messages...");
+        setStatus(t("Cleaning old local messages..."));
 
         try {
             const result = await purgeExpiredChatMessages(days);
-            setStatus(`Auto delete is set to ${days} days. ${result.removed} old local message${result.removed === 1 ? "" : "s"} removed.`, "success");
+            setStatus(t("Auto delete is set to {days} days. {count} old local messages removed.", { days, count: result.removed }), "success");
         } catch {
-            setStatus("Auto delete period was saved, but cleanup could not finish now.", "error");
+            setStatus(t("Auto delete period was saved, but cleanup could not finish now."), "error");
         }
     }
 

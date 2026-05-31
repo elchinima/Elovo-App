@@ -55,6 +55,29 @@ public sealed class PushNotificationService : IPushNotificationService
         await FirebaseMessaging.GetMessaging(GetFirebaseApp()).SendAsync(message);
     }
 
+    public async Task SendCallCancelPushAsync(string fcmToken)
+    {
+        if (string.IsNullOrWhiteSpace(fcmToken))
+        {
+            return;
+        }
+
+        var message = new Message
+        {
+            Token = fcmToken,
+            Data = new Dictionary<string, string>
+            {
+                { "type", "call_cancelled" }
+            },
+            Android = new AndroidConfig
+            {
+                Priority = Priority.High
+            }
+        };
+
+        await FirebaseMessaging.GetMessaging(GetFirebaseApp()).SendAsync(message);
+    }
+
     private FirebaseApp GetFirebaseApp()
     {
         if (_firebaseApp is not null)

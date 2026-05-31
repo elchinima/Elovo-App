@@ -3,7 +3,8 @@
         getAntiForgeryToken,
         setAvatarElement,
         openModal,
-        closeModal
+        closeModal,
+        t
     } = window.Elovo;
 const profileAvatar = document.querySelector("#profileAvatar");
 const profileImageInput = document.querySelector("#profileImageInput");
@@ -56,7 +57,7 @@ function setProfileStatus(element, message, kind = "") {
 
 async function readResponseText(response) {
     const text = await response.text();
-    return text || "Request failed.";
+    return t(text || "Request failed.");
 }
 
 function renderProfile(profile) {
@@ -82,7 +83,7 @@ function renderProfile(profile) {
     if (twoFactorToggle) {
         twoFactorToggle.checked = false;
         twoFactorToggle.disabled = true;
-        setProfileStatus(twoFactorStatus, "Temporarily unavailable.");
+        setProfileStatus(twoFactorStatus, t("Temporarily unavailable."));
     }
 }
 
@@ -94,7 +95,7 @@ function closeProfileConfirm(result) {
     }
 }
 
-function confirmProfileAction(title, message, confirmText = "Confirm", icon = "default") {
+function confirmProfileAction(title, message, confirmText = t("Confirm"), icon = "default") {
     if (!profileConfirmModal || !profileConfirmTitle || !profileConfirmMessage || !profileConfirmAccept) {
         return Promise.resolve(true);
     }
@@ -189,7 +190,7 @@ function openAvatarCrop(file) {
 function getCroppedAvatarBlob() {
     return new Promise((resolve, reject) => {
         if (!avatarCropState || !avatarCropStage || !avatarCropImage) {
-            reject(new Error("Image is not ready."));
+            reject(new Error(t("Image is not ready.")));
             return;
         }
 
@@ -206,7 +207,7 @@ function getCroppedAvatarBlob() {
         const context = canvas.getContext("2d");
 
         if (!context) {
-            reject(new Error("Canvas is unavailable."));
+            reject(new Error(t("Canvas is unavailable.")));
             return;
         }
 
@@ -220,7 +221,7 @@ function getCroppedAvatarBlob() {
                 return;
             }
 
-            reject(new Error("Image crop failed."));
+            reject(new Error(t("Image crop failed.")));
         }, "image/png", 0.92);
     });
 }
@@ -250,16 +251,16 @@ async function saveAvatarCrop() {
     }
 
     avatarCropSave.disabled = true;
-    setProfileStatus(profileImageStatus, "Uploading image...");
+    setProfileStatus(profileImageStatus, t("Uploading image..."));
 
     try {
         const blob = await getCroppedAvatarBlob();
         const profile = await uploadProfileAvatar(blob);
         renderProfile(profile);
         closeAvatarCrop();
-        setProfileStatus(profileImageStatus, "Profile image updated.", "success");
+        setProfileStatus(profileImageStatus, t("Profile image updated."), "success");
     } catch (error) {
-        setProfileStatus(profileImageStatus, error.message || "Image upload failed.", "error");
+        setProfileStatus(profileImageStatus, t(error.message || "Image upload failed."), "error");
     } finally {
         avatarCropSave.disabled = false;
     }
@@ -271,9 +272,9 @@ async function deleteProfileAvatar() {
     }
 
     const confirmed = await confirmProfileAction(
-        "Delete profile image?",
-        "Your current profile image will be removed from the account.",
-        "Delete",
+        t("Delete profile image?"),
+        t("Your current profile image will be removed from the account."),
+        t("Delete"),
         "delete"
     );
     if (!confirmed) {
@@ -281,7 +282,7 @@ async function deleteProfileAvatar() {
     }
 
     deleteProfileImageButton.disabled = true;
-    setProfileStatus(profileImageStatus, "Deleting image...");
+    setProfileStatus(profileImageStatus, t("Deleting image..."));
 
     const response = await fetch("/api/profile/image", {
         method: "DELETE",
@@ -292,7 +293,7 @@ async function deleteProfileAvatar() {
 
     if (response.ok) {
         renderProfile(await response.json());
-        setProfileStatus(profileImageStatus, "Profile image deleted.", "success");
+        setProfileStatus(profileImageStatus, t("Profile image deleted."), "success");
         return;
     }
 
@@ -303,16 +304,16 @@ async function deleteProfileAvatar() {
 async function saveProfileEmail(event) {
     event.preventDefault();
     const confirmed = await confirmProfileAction(
-        "Save email?",
-        "This email will be used for account security and two-factor authentication.",
-        "Save email",
+        t("Save email?"),
+        t("This email will be used for account security and two-factor authentication."),
+        t("Save email"),
         "email"
     );
     if (!confirmed) {
         return;
     }
 
-    setProfileStatus(profileEmailStatus, "Saving email...");
+    setProfileStatus(profileEmailStatus, t("Saving email..."));
 
     const response = await fetch("/api/profile/email", {
         method: "POST",
@@ -325,7 +326,7 @@ async function saveProfileEmail(event) {
 
     if (response.ok) {
         renderProfile(await response.json());
-        setProfileStatus(profileEmailStatus, "Email saved.", "success");
+        setProfileStatus(profileEmailStatus, t("Email saved."), "success");
         setProfileStatus(twoFactorStatus, "");
         return;
     }
@@ -336,16 +337,16 @@ async function saveProfileEmail(event) {
 async function saveProfilePassword(event) {
     event.preventDefault();
     const confirmed = await confirmProfileAction(
-        "Change password?",
-        "After changing your password, use the new password on your next sign in.",
-        "Change password",
+        t("Change password?"),
+        t("After changing your password, use the new password on your next sign in."),
+        t("Change password"),
         "password"
     );
     if (!confirmed) {
         return;
     }
 
-    setProfileStatus(profilePasswordStatus, "Changing password...");
+    setProfileStatus(profilePasswordStatus, t("Changing password..."));
 
     const response = await fetch("/api/profile/password", {
         method: "POST",
@@ -364,7 +365,7 @@ async function saveProfilePassword(event) {
             profilePasswordForm.reset();
         }
 
-        setProfileStatus(profilePasswordStatus, "Password changed.", "success");
+        setProfileStatus(profilePasswordStatus, t("Password changed."), "success");
         return;
     }
 
@@ -378,7 +379,7 @@ async function setTwoFactorEnabled() {
 
     twoFactorToggle.checked = false;
     twoFactorToggle.disabled = true;
-    setProfileStatus(twoFactorStatus, "Temporarily unavailable.", "error");
+    setProfileStatus(twoFactorStatus, t("Temporarily unavailable."), "error");
     return;
 
     /*
@@ -431,7 +432,7 @@ if (profileImageButton && profileImageInput) {
         }
 
         if (!allowedProfileImageTypes.includes(file.type) || file.size > maxImageSize) {
-            setProfileStatus(profileImageStatus, "Only PNG, JPEG and JPG images up to 10 MB are allowed.", "error");
+            setProfileStatus(profileImageStatus, t("Only PNG, JPEG and JPG images up to 10 MB are allowed."), "error");
             return;
         }
 
@@ -454,7 +455,7 @@ if (profilePasswordForm) {
 if (twoFactorToggle) {
     twoFactorToggle.checked = false;
     twoFactorToggle.disabled = true;
-    setProfileStatus(twoFactorStatus, "Temporarily unavailable.");
+    setProfileStatus(twoFactorStatus, t("Temporarily unavailable."));
     twoFactorToggle.addEventListener("change", setTwoFactorEnabled);
 }
 

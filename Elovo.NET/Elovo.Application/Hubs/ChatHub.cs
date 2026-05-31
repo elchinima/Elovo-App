@@ -424,6 +424,30 @@ public class ChatHub : Hub
         await Clients.Group(UserGroup(targetId)).SendAsync("CallEnded", Context.ConnectionAborted);
     }
 
+    public async Task CancelCall(string targetUserId)
+    {
+        var callerId = GetCurrentUserId();
+        var targetId = ParseUserId(targetUserId);
+        var activeCalls = await _unitOfWork.ActiveCalls.GetBetweenUsersAsync(callerId, targetId, Context.ConnectionAborted);
+        var activeCall = activeCalls
+            .Where(x => x.CallerId == callerId && x.ReceiverId == targetId)
+            .OrderByDescending(x => x.StartedAt)
+            .FirstOrDefault();
+        if (activeCall is not null)
+        {
+            await _unitOfWork.ActiveCalls.DeleteAsync(activeCall, Context.ConnectionAborted);
+            await _unitOfWork.SaveChangesAsync(Context.ConnectionAborted);
+        }
+
+        await Clients.Group(UserGroup(targetId)).SendAsync("CallCancelled", Context.ConnectionAborted);
+
+        var fcmToken = await _unitOfWork.Users.GetFcmTokenByUserIdAsync(targetId, Context.ConnectionAborted);
+        if (!string.IsNullOrWhiteSpace(fcmToken))
+        {
+            await _pushNotificationService.SendCallCancelPushAsync(fcmToken);
+        }
+    }
+
     private Guid GetCurrentUserId()
     {
         var value = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);

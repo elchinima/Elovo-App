@@ -5,7 +5,8 @@
         setAvatarElement,
         readResponseText,
         showPageLoader,
-        purgeExpiredChatMessages
+        purgeExpiredChatMessages,
+        t
     } = window.Elovo;
 const logoutButton = document.querySelector("#logoutButton");
 const settingsButton = document.querySelector("#settingsButton");
@@ -643,7 +644,7 @@ function getStoredConversationSummary(userId) {
     const lastMessage = messages.at(-1);
 
     return {
-        lastMessage: lastMessage ? getMessagePreview(lastMessage) : "Start a conversation.",
+        lastMessage: lastMessage ? getMessagePreview(lastMessage) : t("Start a conversation."),
         lastMessageAt: lastMessage ? lastMessage.sentAt : null
     };
 }
@@ -654,10 +655,10 @@ function getMessagePreview(message) {
     }
 
     if (message.isVoice) {
-        return "Voice message";
+        return t("Voice message");
     }
 
-    return message.isImage ? "Image" : message.content;
+    return message.isImage ? t("Image") : message.content;
 }
 
 function applyLocalConversationHistory(items) {
@@ -716,14 +717,14 @@ function formatTime(value) {
     }
 
     if (date.toDateString() === now.toDateString()) {
-        return new Intl.DateTimeFormat("en", {
+        return new Intl.DateTimeFormat(document.documentElement.lang, {
             hour: "2-digit",
             minute: "2-digit",
             hour12: false
         }).format(date);
     }
 
-    return new Intl.DateTimeFormat("en", {
+    return new Intl.DateTimeFormat(document.documentElement.lang, {
         month: "short",
         day: "numeric"
     }).format(date);
@@ -731,14 +732,14 @@ function formatTime(value) {
 
 function formatStatus(chat) {
     if (chat.isOnline) {
-        return "Online now";
+        return t("Online now");
     }
 
     if (!chat.lastSeenAt) {
-        return "Offline";
+        return t("Offline");
     }
 
-    return `Last seen ${formatTime(chat.lastSeenAt)}`;
+    return t("Last seen {time}", { time: formatTime(chat.lastSeenAt) });
 }
 
 function openModal(modal) {
@@ -819,7 +820,7 @@ function syncActiveCallBanner() {
     }
 
     if (activeCallBannerName) {
-        activeCallBannerName.textContent = activeCall.remoteUser.username || "Audio call";
+        activeCallBannerName.textContent = activeCall.remoteUser.username || t("Audio call");
     }
 
     if (activeCallBannerDuration) {
@@ -831,8 +832,8 @@ function syncActiveCallBanner() {
     if (activeCallBannerMuteButton) {
         activeCallBannerMuteButton.classList.toggle("is-active", activeCall.isMuted);
         activeCallBannerMuteButton.setAttribute("aria-pressed", activeCall.isMuted ? "true" : "false");
-        activeCallBannerMuteButton.setAttribute("aria-label", activeCall.isMuted ? "Unmute microphone" : "Mute microphone");
-        activeCallBannerMuteButton.title = activeCall.isMuted ? "Unmute microphone" : "Mute microphone";
+        activeCallBannerMuteButton.setAttribute("aria-label", activeCall.isMuted ? t("Unmute microphone") : t("Mute microphone"));
+        activeCallBannerMuteButton.title = activeCall.isMuted ? t("Unmute microphone") : t("Mute microphone");
         const muteIcon = activeCallBannerMuteButton.querySelector("img");
         if (muteIcon) {
             muteIcon.src = activeCall.isMuted
@@ -862,8 +863,8 @@ function updateCallControls() {
     if (muteCallButton) {
         muteCallButton.classList.toggle("is-active", activeCall.isMuted);
         muteCallButton.setAttribute("aria-pressed", activeCall.isMuted ? "true" : "false");
-        muteCallButton.setAttribute("aria-label", activeCall.isMuted ? "Unmute microphone" : "Mute microphone");
-        muteCallButton.title = activeCall.isMuted ? "Unmute microphone" : "Mute microphone";
+        muteCallButton.setAttribute("aria-label", activeCall.isMuted ? t("Unmute microphone") : t("Mute microphone"));
+        muteCallButton.title = activeCall.isMuted ? t("Unmute microphone") : t("Mute microphone");
         const muteIcon = muteCallButton.querySelector("img");
         if (muteIcon) {
             muteIcon.src = activeCall.isMuted
@@ -873,7 +874,7 @@ function updateCallControls() {
     }
 
     if (muteCallLabel) {
-        muteCallLabel.textContent = activeCall.isMuted ? "Muted" : "Mute";
+        muteCallLabel.textContent = activeCall.isMuted ? t("Muted") : t("Mute");
     }
 
     updateSpeakerButtonState(activeCall.speakerLabel, activeCall.speakerPressed);
@@ -935,8 +936,8 @@ function resetCallControls() {
     if (muteCallButton) {
         muteCallButton.classList.remove("is-active");
         muteCallButton.setAttribute("aria-pressed", "false");
-        muteCallButton.setAttribute("aria-label", "Mute microphone");
-        muteCallButton.title = "Mute microphone";
+        muteCallButton.setAttribute("aria-label", t("Mute microphone"));
+        muteCallButton.title = t("Mute microphone");
         const muteIcon = muteCallButton.querySelector("img");
         if (muteIcon) {
             muteIcon.src = "/Assets/Images/Icons/microphone.svg";
@@ -944,17 +945,17 @@ function resetCallControls() {
     }
 
     if (muteCallLabel) {
-        muteCallLabel.textContent = "Mute";
+        muteCallLabel.textContent = t("Mute");
     }
 
     if (speakerCallButton) {
         speakerCallButton.classList.remove("is-active");
-        speakerCallButton.setAttribute("aria-label", "Change speaker. Current: Speaker");
-        speakerCallButton.title = "Change speaker: Speaker";
+        speakerCallButton.setAttribute("aria-label", t("Change speaker. Current: {speaker}", { speaker: t("Speaker") }));
+        speakerCallButton.title = t("Change speaker: {speaker}", { speaker: t("Speaker") });
     }
 
     if (callSpeakerLabel) {
-        callSpeakerLabel.textContent = "Speaker";
+        callSpeakerLabel.textContent = t("Speaker");
     }
 
     if (callDuration) {
@@ -964,7 +965,7 @@ function resetCallControls() {
 
 function setCallModalUser(user) {
     if (callUserName) {
-        callUserName.textContent = user.username || "Audio call";
+        callUserName.textContent = user.username || t("Audio call");
     }
 
     if (callAvatar) {
@@ -1000,12 +1001,12 @@ function createCallState(remoteUserId, remoteUser, isEstablished = false) {
         startedAt: 0,
         isEstablished,
         isMuted: false,
-        speakerLabel: "Speaker",
+        speakerLabel: t("Speaker"),
         speakerPressed: true
     };
 
     setCallModalUser(remoteUser);
-    updateCallStatus(isEstablished ? "00:00" : "Calling...");
+    updateCallStatus(isEstablished ? "00:00" : t("Calling..."));
 
     if (callButton) {
         callButton.classList.add("is-active");
@@ -1114,7 +1115,7 @@ async function startOutgoingCall() {
     }
 
     if (!navigator.mediaDevices || !window.RTCPeerConnection) {
-        updateCallStatus("Calls unavailable");
+        updateCallStatus(t("Calls unavailable"));
         return;
     }
 
@@ -1231,7 +1232,8 @@ function endActiveCall(notifyRemote = true) {
 
     if (call) {
         if (notifyRemote && connection && connection.state === signalR.HubConnectionState.Connected) {
-            connection.invoke("CallEnd", call.remoteUserId).catch(() => { });
+            const method = call.isEstablished ? "CallEnd" : "CancelCall";
+            connection.invoke(method, call.remoteUserId).catch(() => { });
         }
 
         if (window.AndroidBridge) {
@@ -1275,8 +1277,8 @@ function updateSpeakerButtonState(label, pressed) {
     if (speakerCallButton) {
         speakerCallButton.classList.toggle("is-active", pressed);
         speakerCallButton.setAttribute("aria-pressed", pressed ? "true" : "false");
-        speakerCallButton.setAttribute("aria-label", `Change speaker. Current: ${label}`);
-        speakerCallButton.title = `Change speaker: ${label}`;
+        speakerCallButton.setAttribute("aria-label", t("Change speaker. Current: {speaker}", { speaker: label }));
+        speakerCallButton.title = t("Change speaker: {speaker}", { speaker: label });
     }
 
     if (callSpeakerLabel) {
@@ -1293,7 +1295,7 @@ function updateSpeakerButtonUI(mode) {
     const speakerMode = String(mode || "speaker").toLowerCase();
 
     if (speakerMode === "earpiece") {
-        updateSpeakerButtonState("Earpiece", false);
+        updateSpeakerButtonState(t("Earpiece"), false);
         return;
     }
 
@@ -1302,7 +1304,7 @@ function updateSpeakerButtonUI(mode) {
         return;
     }
 
-    updateSpeakerButtonState("Speaker", true);
+    updateSpeakerButtonState(t("Speaker"), true);
 }
 
 async function cycleBrowserSpeaker() {
@@ -1317,7 +1319,7 @@ async function cycleBrowserSpeaker() {
         .catch(() => { });
 
     if (typeof audioElement.setSinkId !== "function") {
-        updateSpeakerButtonState("Speaker", true);
+        updateSpeakerButtonState(t("Speaker"), true);
         return;
     }
 
@@ -1325,10 +1327,10 @@ async function cycleBrowserSpeaker() {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const audioOutputs = devices.filter((device) => device.kind === "audiooutput");
         const speakerOptions = [
-            { deviceId: "", label: "Speaker" },
+            { deviceId: "", label: t("Speaker") },
             ...audioOutputs.map((device, index) => ({
                 deviceId: device.deviceId,
-                label: device.label || `Speaker ${index + 1}`
+                label: device.label || t("Speaker {number}", { number: index + 1 })
             }))
         ];
 
@@ -1337,7 +1339,7 @@ async function cycleBrowserSpeaker() {
         await audioElement.setSinkId(speaker.deviceId);
         updateSpeakerButtonState(speaker.label, true);
     } catch {
-        updateSpeakerButtonState("Speaker", true);
+        updateSpeakerButtonState(t("Speaker"), true);
     }
 }
 
@@ -1445,7 +1447,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     const banner = document.createElement("div");
     banner.className = "incoming-call-banner";
     banner.setAttribute("role", "dialog");
-    banner.setAttribute("aria-label", `Incoming call from ${callerName}`);
+    banner.setAttribute("aria-label", t("Incoming call from {name}", { name: callerName }));
     banner.style.position = "fixed";
     banner.style.zIndex = "90";
     banner.style.width = "min(360px, calc(100vw - 36px))";
@@ -1473,7 +1475,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
 
     const title = document.createElement("strong");
     title.className = "incoming-call-banner-title";
-    title.textContent = callerName || "Incoming call";
+    title.textContent = callerName || t("Incoming call");
     title.style.display = "block";
     title.style.overflow = "hidden";
     title.style.textOverflow = "ellipsis";
@@ -1481,7 +1483,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
 
     const subtitle = document.createElement("span");
     subtitle.className = "incoming-call-banner-subtitle";
-    subtitle.textContent = "Incoming audio call";
+    subtitle.textContent = t("Incoming audio call");
     subtitle.style.display = "block";
     subtitle.style.marginTop = "2px";
     subtitle.style.color = "rgba(255, 255, 255, 0.72)";
@@ -1514,7 +1516,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     acceptIcon.style.height = "18px";
     acceptIcon.style.filter = "brightness(0)";
     const acceptLabel = document.createElement("span");
-    acceptLabel.textContent = "Accept";
+    acceptLabel.textContent = t("Accept");
     acceptButton.append(acceptIcon, acceptLabel);
     acceptButton.addEventListener("click", acceptIncomingCall);
 
@@ -1539,7 +1541,7 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     rejectIcon.style.height = "18px";
     rejectIcon.style.filter = "brightness(0)";
     const rejectLabel = document.createElement("span");
-    rejectLabel.textContent = "Reject";
+    rejectLabel.textContent = t("Reject");
     rejectButton.append(rejectIcon, rejectLabel);
     rejectButton.addEventListener("click", rejectIncomingCall);
 
@@ -1566,7 +1568,7 @@ async function handleCallOffer(sdpOffer, callerId) {
     }
 
     if (!incomingCall || !sameId(incomingCall.callerId, callerId)) {
-        showIncomingCallBanner(callerId, "Incoming call", null);
+        showIncomingCallBanner(callerId, t("Incoming call"), null);
     }
 
     if (incomingCall) {
@@ -1655,7 +1657,7 @@ function clearSearchValidation(input) {
 }
 
 function submitConversationSearch() {
-    if (!validateSearchInput(searchInput, "Enter a chat name to search.")) {
+    if (!validateSearchInput(searchInput, t("Enter a chat name to search."))) {
         return;
     }
 
@@ -1675,7 +1677,7 @@ function createChatSwipeShell(chat, button) {
     shell.className = "chat-swipe-shell";
     action.type = "button";
     action.className = "chat-hide-action";
-    action.setAttribute("aria-label", "Remove conversation from list");
+    action.setAttribute("aria-label", t("Remove conversation from list"));
     actionIcon.src = "/Assets/Images/Icons/hidden-chats.svg";
     actionIcon.alt = "";
     actionIcon.className = "chat-hide-icon";
@@ -1833,7 +1835,7 @@ function promptDeleteFriend(friend) {
 
     friendPendingDeletion = friend;
     if (deleteFriendCopy) {
-        deleteFriendCopy.textContent = `${friend.username} will be removed from your friends and the entire chat history will be permanently deleted.`;
+        deleteFriendCopy.textContent = t("{name} will be removed from your friends and the entire chat history will be permanently deleted.", { name: friend.username });
     }
 
     closeModal(allFriendsModal);
@@ -1896,7 +1898,7 @@ async function confirmDeleteFriend() {
     if (!response.ok) {
         const error = await readResponseText(response);
         if (deleteFriendCopy) {
-            deleteFriendCopy.textContent = error || "Friend could not be deleted. Try again.";
+            deleteFriendCopy.textContent = error || t("Friend could not be deleted. Try again.");
         }
         return;
     }
@@ -1917,8 +1919,8 @@ function updateComposerAction() {
     messageSubmitIcon.src = hasText
         ? "/Assets/Images/Icons/send.svg"
         : "/Assets/Images/Icons/voice-message.svg";
-    submitButton.setAttribute("aria-label", hasText ? "Send message" : "Send voice message");
-    submitButton.setAttribute("title", hasText ? "Send message" : "Send voice message");
+    submitButton.setAttribute("aria-label", hasText ? t("Send message") : t("Send voice message"));
+    submitButton.setAttribute("title", hasText ? t("Send message") : t("Send voice message"));
 }
 
 function renderChatList(items = conversations) {
@@ -1931,7 +1933,7 @@ function renderChatList(items = conversations) {
     if (items.length === 0) {
         const empty = document.createElement("span");
         empty.className = "chat-copy";
-        empty.textContent = "No conversations yet.";
+        empty.textContent = t("No conversations yet.");
         chatList.appendChild(empty);
         return;
     }
@@ -1961,7 +1963,7 @@ function renderChatList(items = conversations) {
         status.className = `chat-status-dot${chat.isOnline ? " is-online" : ""}`;
         setAvatarElement(avatar, chat, chat.initial);
         name.textContent = chat.username;
-        preview.textContent = chat.lastMessage || "Start a conversation.";
+        preview.textContent = chat.lastMessage || t("Start a conversation.");
         time.textContent = formatTime(chat.lastMessageAt);
         avatarRing.appendChild(avatar);
         nameRow.append(name, status);
@@ -1994,7 +1996,7 @@ function renderEmptyConversationHeader() {
     }
 
     if (activeStatus) {
-        activeStatus.textContent = "Choose a conversation";
+        activeStatus.textContent = t("Choose a conversation");
     }
 
     if (activeAvatar) {
@@ -2056,7 +2058,7 @@ function appendMessage(message) {
 
     if (isMine) {
         const status = document.createElement("img");
-        const statusText = message.readAt ? "Read" : message.isPending ? "Pending" : "Delivered";
+        const statusText = message.readAt ? t("Read") : message.isPending ? t("Pending") : t("Delivered");
         status.className = `message-status-icon ${message.readAt ? "is-read" : message.isPending ? "is-pending" : "is-delivered"}`;
         status.src = message.readAt
             ? "/Assets/Images/Icons/message-read.svg"
@@ -2067,7 +2069,7 @@ function appendMessage(message) {
     }
 
     bubble.appendChild(meta);
-    if (isMine) {
+    if (isMine || message.isImage) {
         attachMessageActions(bubble, message);
     }
     messageStream.appendChild(bubble);
@@ -2075,14 +2077,14 @@ function appendMessage(message) {
 
 function formatCallMessageStatus(status) {
     if (status === "answered") {
-        return "Answered call";
+        return t("Answered call");
     }
 
     if (status === "rejected") {
-        return "Rejected call";
+        return t("Rejected call");
     }
 
-    return "Missed call";
+    return t("Missed call");
 }
 
 function getCallMessageIcon(status) {
@@ -2161,28 +2163,40 @@ function showMessageActions(message, bubble) {
     closeMessageActions();
 
     const menu = document.createElement("div");
+    const isMine = sameId(message.senderId, getCurrentUserId());
     const canModifyPending = message.isPending === true;
     const rect = bubble.getBoundingClientRect();
-    const top = Math.max(12, Math.min(window.innerHeight - 170, Math.max(12, rect.top - 8)));
+    const actionCount = (message.isImage ? 1 : 0) + (isMine ? 1 : 0) + (isMine && canModifyPending ? 1 : 0) +
+        (isMine && canModifyPending && !message.isImage && !message.isVoice && !message.isCall ? 1 : 0);
+    const top = Math.max(12, Math.min(window.innerHeight - (actionCount * 46 + 12), Math.max(12, rect.top - 8)));
     const left = Math.min(window.innerWidth - 212, Math.max(12, rect.left));
 
     menu.className = "message-actions-popover";
     menu.style.top = `${top}px`;
     menu.style.left = `${left}px`;
     menu.addEventListener("pointerdown", (event) => event.stopPropagation());
-    menu.appendChild(createActionButton("/Assets/Images/Icons/delete-local.svg", "Delete for me", async () => {
-        closeMessageActions();
-        await deleteMessageForMe(message);
-    }));
+    if (message.isImage) {
+        menu.appendChild(createActionButton("/Assets/Images/Icons/download.svg", t("Download"), async () => {
+            closeMessageActions();
+            await downloadImageMessage(message);
+        }));
+    }
 
-    if (canModifyPending) {
-        menu.appendChild(createActionButton("/Assets/Images/Icons/delete-all.svg", "Delete for everyone", async () => {
+    if (isMine) {
+        menu.appendChild(createActionButton("/Assets/Images/Icons/delete-local.svg", t("Delete for me"), async () => {
+            closeMessageActions();
+            await deleteMessageForMe(message);
+        }));
+    }
+
+    if (isMine && canModifyPending) {
+        menu.appendChild(createActionButton("/Assets/Images/Icons/delete-all.svg", t("Delete for everyone"), async () => {
             closeMessageActions();
             await deleteMessageForEveryone(message);
         }));
 
         if (!message.isImage && !message.isVoice && !message.isCall) {
-            menu.appendChild(createActionButton("/Assets/Images/Icons/edit-message.svg", "Edit", () => {
+            menu.appendChild(createActionButton("/Assets/Images/Icons/edit-message.svg", t("Edit"), () => {
                 closeMessageActions();
                 startPendingMessageEdit(message);
             }));
@@ -2195,6 +2209,30 @@ function showMessageActions(message, bubble) {
         document.addEventListener("pointerdown", closeMessageActions, { once: true });
         document.addEventListener("keydown", closeMessageActions, { once: true });
     });
+}
+
+async function downloadImageMessage(message) {
+    let blob = await readCachedImageBlob(message.id);
+    if (!blob && message.imagePath) {
+        const response = await fetch(message.imagePath);
+        if (response.ok) {
+            blob = await response.blob();
+            await writeCachedImageBlob(message, blob);
+        }
+    }
+
+    if (!blob) {
+        return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = message.imageFileName || "elovo-image";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 async function deleteMessageForMe(message) {
@@ -2242,9 +2280,9 @@ function createImageMessage(message) {
 
     frame.type = "button";
     frame.className = "message-image-frame is-loading";
-    frame.title = message.imageFileName || "Open image";
+    frame.title = message.imageFileName || t("Open image");
     image.src = previewPath;
-    image.alt = message.imageFileName || "Sent image";
+    image.alt = message.imageFileName || t("Sent image");
     image.loading = "lazy";
     loader.className = "image-transfer-loader";
 
@@ -2285,8 +2323,8 @@ function createVoiceMessage(message) {
     player.style.setProperty("--voice-progress", "0%");
     playButton.type = "button";
     playButton.className = "voice-play-button";
-    playButton.setAttribute("aria-label", "Play voice message");
-    playButton.setAttribute("title", "Play voice message");
+    playButton.setAttribute("aria-label", t("Play voice message"));
+    playButton.setAttribute("title", t("Play voice message"));
     icon.src = "/Assets/Images/Icons/play-voice.svg";
     icon.alt = "";
     wave.className = "voice-wave";
@@ -2320,15 +2358,15 @@ function createVoiceMessage(message) {
         activeVoiceAudio = audio;
         player.classList.add("is-playing");
         icon.src = "/Assets/Images/Icons/pause-voice.svg";
-        playButton.setAttribute("aria-label", "Pause voice message");
-        playButton.setAttribute("title", "Pause voice message");
+        playButton.setAttribute("aria-label", t("Pause voice message"));
+        playButton.setAttribute("title", t("Pause voice message"));
     });
 
     const resetPlayState = () => {
         player.classList.remove("is-playing");
         icon.src = "/Assets/Images/Icons/play-voice.svg";
-        playButton.setAttribute("aria-label", "Play voice message");
-        playButton.setAttribute("title", "Play voice message");
+        playButton.setAttribute("aria-label", t("Play voice message"));
+        playButton.setAttribute("title", t("Play voice message"));
         if (activeVoiceAudio === audio) {
             activeVoiceAudio = null;
         }
@@ -2408,14 +2446,14 @@ function openImagePreview(path, fileName) {
     backdrop.setAttribute("role", "dialog");
     backdrop.setAttribute("aria-modal", "true");
     image.src = path;
-    image.alt = fileName || "Image preview";
+    image.alt = fileName || t("Image preview");
     image.draggable = false;
     close.type = "button";
     close.className = "image-preview-close";
-    close.setAttribute("aria-label", "Close");
+    close.setAttribute("aria-label", t("Close"));
     close.textContent = "Г—";
 
-    close.title = "Close";
+    close.title = t("Close");
 
     const closeIcon = document.createElement("img");
     closeIcon.src = "/Assets/Images/Icons/close.svg";
@@ -2609,7 +2647,7 @@ function renderUsers(items) {
     if (items.length === 0) {
         const empty = document.createElement("span");
         empty.className = "modal-empty";
-        empty.textContent = "No users found.";
+        empty.textContent = t("No users found.");
         userSearchResults.appendChild(empty);
         return;
     }
@@ -2663,7 +2701,7 @@ function renderAllFriends(items) {
     if (items.length === 0) {
         const empty = document.createElement("span");
         empty.className = "modal-empty";
-        empty.textContent = "No friends yet.";
+        empty.textContent = t("No friends yet.");
         allFriendsList.appendChild(empty);
         return;
     }
@@ -2687,8 +2725,8 @@ function renderAllFriends(items) {
         button.className = "row-action primary";
         deleteButton.type = "button";
         deleteButton.className = "row-action danger";
-        deleteButton.setAttribute("aria-label", `Delete ${friend.username}`);
-        deleteButton.title = `Delete ${friend.username}`;
+        deleteButton.setAttribute("aria-label", t("Delete {name}", { name: friend.username }));
+        deleteButton.title = t("Delete {name}", { name: friend.username });
         deleteIcon.className = "action-icon";
         deleteIcon.src = "/Assets/Images/Icons/remove-friend.svg";
         deleteIcon.alt = "";
@@ -2696,7 +2734,7 @@ function renderAllFriends(items) {
         setAvatarElement(avatar, friend, friend.initial);
         name.textContent = friend.username;
         status.textContent = formatStatus(friend);
-        button.textContent = "Open";
+        button.textContent = t("Open");
         button.addEventListener("click", () => {
             closeModal(allFriendsModal);
             selectConversation(friend.userId);
@@ -2721,34 +2759,34 @@ async function openAllFriends() {
 
 function formatCandidateStatus(status) {
     if (status === "friend") {
-        return "Already friends";
+        return t("Already friends");
     }
 
     if (status === "sent") {
-        return "Request sent";
+        return t("Request sent");
     }
 
     if (status === "incoming") {
-        return "Sent you a request";
+        return t("Sent you a request");
     }
 
-    return "Not in friends";
+    return t("Not in friends");
 }
 
 function formatCandidateAction(status) {
     if (status === "friend") {
-        return "Friend";
+        return t("Friend");
     }
 
     if (status === "sent") {
-        return "Sent";
+        return t("Sent");
     }
 
     if (status === "incoming") {
-        return "Open requests";
+        return t("Open requests");
     }
 
-    return "Add";
+    return t("Add");
 }
 
 async function searchUsers(validateEmpty = false) {
@@ -2759,13 +2797,13 @@ async function searchUsers(validateEmpty = false) {
     const term = userSearchInput.value.trim();
     if (!term) {
         if (validateEmpty) {
-            validateSearchInput(userSearchInput, "Enter a username to search.");
+            validateSearchInput(userSearchInput, t("Enter a username to search."));
         }
 
         userSearchResults.innerHTML = "";
         const empty = document.createElement("span");
         empty.className = "modal-empty";
-        empty.textContent = "Enter a username.";
+        empty.textContent = t("Enter a username.");
         userSearchResults.appendChild(empty);
         return;
     }
@@ -2781,7 +2819,7 @@ async function searchUsers(validateEmpty = false) {
 
 async function sendFriendRequest(receiverId, button, status) {
     button.disabled = true;
-    setActionButtonLabel(button, "Sending", "/Assets/Images/Icons/sent-action.svg");
+    setActionButtonLabel(button, t("Sending"), "/Assets/Images/Icons/sent-action.svg");
 
     const response = await fetch("/api/friend-requests", {
         method: "POST",
@@ -2793,12 +2831,12 @@ async function sendFriendRequest(receiverId, button, status) {
     });
 
     if (response.ok) {
-        setActionButtonLabel(button, "Sent", "/Assets/Images/Icons/sent-action.svg");
+        setActionButtonLabel(button, t("Sent"), "/Assets/Images/Icons/sent-action.svg");
         button.classList.remove("primary");
-        status.textContent = "Request sent";
+        status.textContent = t("Request sent");
     } else {
         button.disabled = false;
-        setActionButtonLabel(button, "Add", "/Assets/Images/Icons/add-action.svg");
+        setActionButtonLabel(button, t("Add"), "/Assets/Images/Icons/add-action.svg");
     }
 }
 
@@ -2828,7 +2866,7 @@ function renderFriendRequests(items) {
     if (items.length === 0) {
         const empty = document.createElement("span");
         empty.className = "modal-empty";
-        empty.textContent = "No friend requests.";
+        empty.textContent = t("No friend requests.");
         friendRequestsList.appendChild(empty);
         return;
     }
@@ -2850,7 +2888,7 @@ function renderFriendRequests(items) {
         setAvatarElement(avatar, request, request.initial);
         name.textContent = request.senderUsername;
         date.textContent = formatTime(request.createdAt);
-        button.textContent = "Accept";
+        button.textContent = t("Accept");
         button.addEventListener("click", () => acceptFriendRequest(request.id, button));
 
         copy.append(name, date);
@@ -2871,7 +2909,7 @@ async function loadFriendRequests() {
 
 async function acceptFriendRequest(requestId, button) {
     button.disabled = true;
-    button.textContent = "Adding";
+    button.textContent = t("Adding");
 
     const response = await fetch(`/api/friend-requests/${requestId}/accept`, {
         method: "POST",
@@ -2885,7 +2923,7 @@ async function acceptFriendRequest(requestId, button) {
         await loadConversations();
     } else {
         button.disabled = false;
-        button.textContent = "Accept";
+        button.textContent = t("Accept");
     }
 }
 
@@ -2915,7 +2953,7 @@ async function selectConversation(userId) {
 async function startSignalR() {
     if (!messengerView || !window.signalR) {
         if (activeStatus) {
-            activeStatus.textContent = "Realtime client is unavailable";
+            activeStatus.textContent = t("Realtime client is unavailable");
         }
         return;
     }
@@ -2977,7 +3015,7 @@ async function startSignalR() {
 
     connection.on("UserTyping", (userId) => {
         if (activeConversation && sameId(userId, activeConversation.userId)) {
-            activeStatus.textContent = "Typing...";
+            activeStatus.textContent = t("Typing...");
         }
     });
 
@@ -3057,6 +3095,11 @@ async function startSignalR() {
     });
 
     connection.on("CallEnded", () => {
+        dismissIncomingCallBanner();
+        endActiveCall(false);
+    });
+
+    connection.on("CallCancelled", () => {
         dismissIncomingCallBanner();
         endActiveCall(false);
     });
@@ -3195,7 +3238,7 @@ function updateImageTransferStatus(active, progress = 0, loaded = 0, total = 0) 
 
     const percent = Math.max(0, Math.min(100, Math.round(progress)));
     const remaining = total > 0 ? Math.max(0, total - loaded) : 0;
-    const remainingText = total > 0 ? `, ${formatBytes(remaining)} left` : "";
+    const remainingText = total > 0 ? `, ${t("{size} left", { size: formatBytes(remaining) })}` : "";
     imageTransferStatus.innerHTML = `<img src="/Assets/Images/Icons/image-upload-loader.svg" alt=""> <span>${percent}%${remainingText}</span>`;
 }
 
@@ -3239,11 +3282,11 @@ function uploadImage(file) {
                 return;
             }
 
-            reject(new Error("Image upload failed."));
+            reject(new Error(t("Image upload failed.")));
         });
 
-        request.addEventListener("error", () => reject(new Error("Image upload failed.")));
-        request.addEventListener("abort", () => reject(new Error("Image upload was cancelled.")));
+        request.addEventListener("error", () => reject(new Error(t("Image upload failed."))));
+        request.addEventListener("abort", () => reject(new Error(t("Image upload was cancelled."))));
         request.send(data);
     });
 }
@@ -3316,7 +3359,7 @@ function setVoiceRecordingState(active) {
     messageForm.classList.toggle("is-voice-recording", active);
     if (messageInput) {
         messageInput.disabled = active || isSending;
-        messageInput.placeholder = active ? "Recording voice message" : "Write a message";
+        messageInput.placeholder = active ? t("Recording voice message") : t("Write a message");
     }
 
     if (!active) {
@@ -3449,7 +3492,7 @@ function resetVoiceRecording() {
     shouldStopVoiceWhenReady = false;
     if (messageInput) {
         messageInput.disabled = isSending;
-        messageInput.placeholder = "Write a message";
+        messageInput.placeholder = t("Write a message");
     }
     if (messageForm) {
         messageForm.style.removeProperty("--voice-record-progress");
@@ -3496,11 +3539,11 @@ function uploadVoice(blob) {
                 return;
             }
 
-            reject(new Error("Voice upload failed."));
+            reject(new Error(t("Voice upload failed.")));
         });
 
-        request.addEventListener("error", () => reject(new Error("Voice upload failed.")));
-        request.addEventListener("abort", () => reject(new Error("Voice upload was cancelled.")));
+        request.addEventListener("error", () => reject(new Error(t("Voice upload failed."))));
+        request.addEventListener("abort", () => reject(new Error(t("Voice upload was cancelled."))));
         request.send(data);
     });
 }

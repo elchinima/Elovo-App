@@ -6,13 +6,13 @@ public class RegisterDtoValidator : AbstractValidator<RegisterDto>
     public RegisterDtoValidator()
     {
         RuleFor(x => x.Username)
-            .NotEmpty()
-            .MinimumLength(3)
-            .MaximumLength(32);
+            .NotEmpty().WithMessage("Username is required.")
+            .MinimumLength(3).WithMessage("Username must be at least 3 characters.")
+            .MaximumLength(32).WithMessage("Username must be 32 characters or fewer.");
 
         RuleFor(x => x.Password)
-            .NotEmpty()
-            .MinimumLength(8)
-            .MaximumLength(128);
+            .NotEmpty().WithMessage("Password is required.")
+            .MinimumLength(8).WithMessage("Password must be at least 8 characters.")
+            .MaximumLength(128).WithMessage("Password must be 128 characters or fewer.");
     }
 }

@@ -18,6 +18,7 @@
     const confirmClose = document.querySelector("#chatRetentionConfirmClose");
     const languageOptions = document.querySelector("#settingsLanguageOptions");
     const languages = [
+        { code: "system", flag: "/Assets/Images/Icons/settings.svg", label: "System language" },
         { code: "en", flag: "/Assets/Images/Flags/en.svg", label: "English" },
         { code: "ru", flag: "/Assets/Images/Flags/ru.svg", label: "Русский" },
         { code: "az", flag: "/Assets/Images/Flags/az.svg", label: "Azərbaycan dili" }
@@ -65,7 +66,7 @@
             return;
         }
 
-        const selectedLanguage = window.ElovoI18n.getLanguage();
+        const selectedLanguage = window.ElovoI18n.getLanguagePreference();
         languageOptions.innerHTML = "";
         languages.forEach((language) => {
             const button = document.createElement("button");
@@ -79,10 +80,10 @@
             button.className = `settings-language-option${isActive ? " active" : ""}`;
             button.setAttribute("role", "radio");
             button.setAttribute("aria-checked", isActive ? "true" : "false");
-            button.setAttribute("aria-label", language.label);
+            button.setAttribute("aria-label", t(language.label));
             flag.src = language.flag;
             flag.alt = "";
-            label.textContent = language.label;
+            label.textContent = t(language.label);
             detail.textContent = isActive ? t("Selected") : t("Choose");
             copy.append(label, detail);
             button.append(flag, copy);

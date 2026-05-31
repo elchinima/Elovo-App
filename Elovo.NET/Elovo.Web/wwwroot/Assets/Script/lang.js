@@ -17,13 +17,13 @@
         return normalizeLanguage(navigator.language);
     }
 
-    function getProfileLanguage() {
-        return document.querySelector('meta[name="elovo-preferred-language"]')?.content;
-    }
-
     function getLanguage() {
         const stored = window.localStorage.getItem(storageKey);
-        return stored ? normalizeLanguage(stored) : normalizeLanguage(getProfileLanguage() || getSystemLanguage());
+        return stored ? normalizeLanguage(stored) : getSystemLanguage();
+    }
+
+    function getLanguagePreference() {
+        return window.localStorage.getItem(storageKey) || "system";
     }
 
     function interpolate(value, params) {
@@ -70,8 +70,13 @@
     }
 
     function setLanguage(language) {
-        const normalizedLanguage = normalizeLanguage(language);
-        window.localStorage.setItem(storageKey, normalizedLanguage);
+        const useSystemLanguage = language === "system";
+        const normalizedLanguage = useSystemLanguage ? getSystemLanguage() : normalizeLanguage(language);
+        if (useSystemLanguage) {
+            window.localStorage.removeItem(storageKey);
+        } else {
+            window.localStorage.setItem(storageKey, normalizedLanguage);
+        }
         fetch("/api/account/language", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -82,10 +87,6 @@
     }
 
     function syncSystemLanguage() {
-        if (window.localStorage.getItem(storageKey) || getProfileLanguage()) {
-            return;
-        }
-
         fetch("/api/account/language", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -155,6 +156,7 @@
 
     window.ElovoI18n = {
         getLanguage,
+        getLanguagePreference,
         setLanguage,
         t,
         translatePage

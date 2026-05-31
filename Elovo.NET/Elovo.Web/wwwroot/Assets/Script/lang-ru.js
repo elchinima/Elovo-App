@@ -52,6 +52,7 @@ window.ElovoTranslations = {
         "Preferences": "Предпочтения",
         "App language": "Язык приложения",
         "Choose the language used across Elovo on this device.": "Выберите язык интерфейса Elovo на этом устройстве.",
+        "System language": "Язык системы",
         "Selected": "Выбрано",
         "Choose": "Выбрать",
         "Profile image": "Изображение профиля",

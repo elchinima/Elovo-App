@@ -2253,6 +2253,11 @@ body:has(.profile-view.is-active) {
     transform: none;
 }
 
+.settings-nav-preferences-icon {
+    width: 27px;
+    height: 27px;
+}
+
 .profile-topbar h1,
 .profile-topbar p {
     margin: 0;
@@ -2411,7 +2416,7 @@ body:has(.profile-view.is-active) {
 
 .settings-language-options {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
 }
 

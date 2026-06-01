@@ -69,6 +69,12 @@
         return t(text || "Request failed.");
     }
 
+    function syncModalScrollLock() {
+        const hasOpenModal = document.querySelector(".modal-backdrop.is-open, .image-preview-backdrop.is-open");
+        document.documentElement.classList.toggle("has-open-modal", !!hasOpenModal);
+        document.body.classList.toggle("has-open-modal", !!hasOpenModal);
+    }
+
     function openModal(modal) {
         if (!modal) {
             return;
@@ -76,6 +82,7 @@
 
         modal.classList.add("is-open");
         modal.setAttribute("aria-hidden", "false");
+        syncModalScrollLock();
     }
 
     function closeModal(modal) {
@@ -85,6 +92,7 @@
 
         modal.classList.remove("is-open");
         modal.setAttribute("aria-hidden", "true");
+        syncModalScrollLock();
     }
 
     const chatRetentionDefaultDays = 90;
@@ -226,6 +234,7 @@
         getAntiForgeryToken,
         setAvatarElement,
         readResponseText,
+        syncModalScrollLock,
         openModal,
         closeModal,
         chatRetentionAllowedDays,

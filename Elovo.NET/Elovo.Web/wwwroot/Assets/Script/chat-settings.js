@@ -25,9 +25,9 @@
         { code: "az", flag: "/Assets/Images/Flags/az.svg", label: "Azərbaycan dili" }
     ];
     const themes = [
-        { code: "dark", label: "Dark" },
-        { code: "default", label: "Ordinary" },
-        { code: "light", label: "Light" }
+        { code: "dark", label: "Dark", icon: "/Assets/Images/Icons/theme-dark.svg" },
+        { code: "default", label: "Ordinary", icon: "/Assets/Images/Icons/theme-default.svg" },
+        { code: "light", label: "Light", icon: "/Assets/Images/Icons/theme-light.svg" }
     ];
     let pendingDays = null;
 
@@ -113,7 +113,7 @@
         themeOptions.innerHTML = "";
         themes.forEach((theme) => {
             const button = document.createElement("button");
-            const preview = document.createElement("span");
+            const icon = document.createElement("img");
             const copy = document.createElement("span");
             const label = document.createElement("strong");
             const detail = document.createElement("small");
@@ -124,13 +124,13 @@
             button.setAttribute("role", "radio");
             button.setAttribute("aria-checked", isActive ? "true" : "false");
             button.setAttribute("aria-label", t(theme.label));
-            preview.className = `settings-theme-preview settings-theme-preview-${theme.code}`;
-            preview.setAttribute("aria-hidden", "true");
-            preview.append(document.createElement("i"), document.createElement("i"), document.createElement("i"));
+            icon.className = "settings-theme-icon";
+            icon.src = theme.icon;
+            icon.alt = "";
             label.textContent = t(theme.label);
             detail.textContent = isActive ? t("Selected") : t("Choose");
             copy.append(label, detail);
-            button.append(preview, copy);
+            button.append(icon, copy);
             button.addEventListener("click", () => {
                 if (button.classList.contains("active")) {
                     return;

@@ -6,6 +6,7 @@
         readResponseText,
         showPageLoader,
         purgeExpiredChatMessages,
+        syncModalScrollLock,
         t
     } = window.Elovo;
 const logoutButton = document.querySelector("#logoutButton");
@@ -749,6 +750,7 @@ function openModal(modal) {
 
     modal.classList.add("is-open");
     modal.setAttribute("aria-hidden", "false");
+    syncModalScrollLock();
     if (modal === callModal) {
         syncActiveCallBanner();
     }
@@ -761,6 +763,7 @@ function closeModal(modal) {
 
     modal.classList.remove("is-open");
     modal.setAttribute("aria-hidden", "true");
+    syncModalScrollLock();
     if (modal === callModal) {
         syncActiveCallBanner();
     }
@@ -2469,6 +2472,7 @@ function openImagePreview(path, fileName) {
     const closePreview = () => {
         document.removeEventListener("keydown", onKeyDown);
         backdrop.remove();
+        syncModalScrollLock();
     };
 
     const onKeyDown = (event) => {
@@ -2604,6 +2608,7 @@ function openImagePreview(path, fileName) {
 
     backdrop.append(image, close);
     document.body.appendChild(backdrop);
+    syncModalScrollLock();
 }
 
 async function loadConversations() {
@@ -3720,6 +3725,8 @@ if (searchInput) {
         }
     });
 
+    searchInput.addEventListener("blur", () => clearSearchValidation(searchInput));
+
     searchInput.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
@@ -3839,6 +3846,8 @@ if (userSearchInput) {
             userSearchResults.innerHTML = "";
         }
     });
+
+    userSearchInput.addEventListener("blur", () => clearSearchValidation(userSearchInput));
 
     userSearchInput.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {

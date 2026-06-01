@@ -29,7 +29,7 @@ public class CallsController : ControllerBase
         activeCall.IsRejected = true;
         var message = await _callHistoryService.CompleteAsync(activeCall, CallStatuses.Rejected, cancellationToken);
 
-        await _hubContext.Clients.Group($"user:{request.CallerId}").SendAsync("CallRejected", cancellationToken);
+        await _hubContext.Clients.Group($"user:{request.CallerId}").SendAsync("CallRejected");
         if (message is not null)
         {
             await _hubContext.Clients.Groups(new[] { $"user:{message.SenderId}", $"user:{message.ReceiverId}" })

@@ -42,6 +42,11 @@ body {
     overflow-x: hidden;
 }
 
+html.has-open-modal,
+body.has-open-modal {
+    overflow: hidden;
+}
+
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -81,6 +86,15 @@ button {
     transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, opacity 180ms ease;
     touch-action: manipulation;
     user-select: none;
+    box-shadow: none !important;
+}
+
+button img,
+.secondary-button,
+.primary-link-button,
+.error-action,
+.settings-nav-button {
+    box-shadow: none !important;
 }
 
 .language-selector {
@@ -1262,7 +1276,7 @@ input:disabled {
 
 .composer.is-voice-recording .send-button .button-icon {
     transform: scale(0.86);
-    filter: drop-shadow(0 0 10px rgba(83, 214, 164, 0.6));
+    filter: none;
 }
 
 .voice-recording-status {
@@ -1645,6 +1659,7 @@ body.is-page-loading .page-loader {
 .restore-hidden-card {
     display: block;
     pointer-events: none;
+    filter: brightness(0) !important;
 }
 
 .restore-hidden-card-main {
@@ -1749,6 +1764,7 @@ body.is-page-loading .page-loader {
 .profile-confirm-card {
     display: block;
     pointer-events: none;
+    filter: brightness(0) !important;
 }
 
 .profile-confirm-card-main {
@@ -2085,7 +2101,7 @@ body.is-page-loading .page-loader {
 }
 
 .call-control-button.is-active .button-icon {
-    filter: drop-shadow(0 0 10px rgba(139, 124, 255, 0.64));
+    filter: none;
 }
 
 .call-end-button {
@@ -2118,6 +2134,10 @@ body.is-page-loading .page-loader {
     color: var(--text);
     font-size: 1.45rem;
     line-height: 1;
+}
+
+.modal-panel button .button-icon {
+    filter: brightness(0) invert(1) !important;
 }
 
 .modal-search {
@@ -2487,52 +2507,15 @@ body:has(.profile-view.is-active) {
     color: var(--success);
 }
 
-.settings-theme-preview {
+.settings-theme-icon {
     width: 48px;
     height: 48px;
     flex: 0 0 auto;
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr);
-    align-items: end;
-    gap: 3px;
-    padding: 7px;
+    display: block;
+    padding: 9px;
     border: 1px solid rgba(125, 134, 255, 0.26);
     border-radius: var(--radius);
-    overflow: hidden;
-}
-
-.settings-theme-preview i {
-    display: block;
-    height: 68%;
-    border-radius: 3px 3px 0 0;
-}
-
-.settings-theme-preview i:nth-child(2) {
-    height: 100%;
-}
-
-.settings-theme-preview-dark {
-    background: #050505;
-}
-
-.settings-theme-preview-dark i {
-    background: #fff;
-}
-
-.settings-theme-preview-default {
-    background: #10142a;
-}
-
-.settings-theme-preview-default i {
-    background: #6d67ff;
-}
-
-.settings-theme-preview-light {
-    background: #fff;
-}
-
-.settings-theme-preview-light i {
-    background: #000;
+    background: rgba(109, 103, 255, 0.12);
 }
 
 .settings-language-option {
@@ -2998,12 +2981,43 @@ html[data-theme="light"] input::placeholder {
     color: #000 !important;
 }
 
-html[data-theme="dark"] img[src$=".svg"]:not(.google-auth-icon) {
+html[data-theme="dark"] img[src$=".svg"]:not([src*="/Flags/"]) {
     filter: brightness(0) invert(1) !important;
 }
 
-html[data-theme="light"] img[src$=".svg"]:not(.google-auth-icon) {
+html[data-theme="light"] img[src$=".svg"]:not([src*="/Flags/"]) {
     filter: brightness(0) !important;
+}
+
+html[data-theme] img.restore-hidden-card[src$=".svg"],
+html[data-theme] img.profile-confirm-card[src$=".svg"] {
+    filter: brightness(0) !important;
+}
+
+html[data-theme] .modal-panel button img.button-icon[src$=".svg"] {
+    filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="dark"] .chat-panel {
+    background:
+        linear-gradient(rgba(5, 5, 5, 0.94), rgba(5, 5, 5, 0.94)),
+        radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.08), transparent 20rem);
+}
+
+html[data-theme="light"] .chat-panel {
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.94)),
+        radial-gradient(circle at 20% 10%, rgba(0, 0, 0, 0.05), transparent 20rem);
+}
+
+html[data-theme="dark"] .message.them {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="light"] .message.them {
+    border-color: rgba(0, 0, 0, 0.16);
+    background: rgba(0, 0, 0, 0.07);
 }
 
 html[data-theme="dark"] input,
@@ -3060,6 +3074,26 @@ html[data-theme="light"] .page-loader {
 
 @media (max-width: 700px) {
     .settings-theme-options {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .settings-theme-option {
+        min-height: 84px;
+        flex-direction: column;
+        justify-content: center;
+        gap: 7px;
+        padding: 9px 5px;
+        text-align: center;
+    }
+
+    .settings-theme-icon {
+        width: 36px;
+        height: 36px;
+        padding: 6px;
+    }
+
+    .settings-theme-option small {
+        display: none;
     }
 }

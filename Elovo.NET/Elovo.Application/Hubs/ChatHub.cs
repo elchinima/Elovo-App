@@ -403,7 +403,7 @@ public class ChatHub : Hub
             await PublishCallHistoryAsync(message);
         }
 
-        await Clients.Group(UserGroup(parsedCallerId)).SendAsync("CallRejected", Context.ConnectionAborted);
+        await Clients.Group(UserGroup(parsedCallerId)).SendAsync("CallRejected");
     }
 
     public async Task CallEnd(string targetUserId)

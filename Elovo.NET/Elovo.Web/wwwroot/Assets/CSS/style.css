@@ -1659,7 +1659,6 @@ body.is-page-loading .page-loader {
 .restore-hidden-card {
     display: block;
     pointer-events: none;
-    filter: brightness(0) !important;
 }
 
 .restore-hidden-card-main {
@@ -1764,7 +1763,6 @@ body.is-page-loading .page-loader {
 .profile-confirm-card {
     display: block;
     pointer-events: none;
-    filter: brightness(0) !important;
 }
 
 .profile-confirm-card-main {
@@ -2989,13 +2987,42 @@ html[data-theme="light"] img[src$=".svg"]:not([src*="/Flags/"]) {
     filter: brightness(0) !important;
 }
 
-html[data-theme] img.restore-hidden-card[src$=".svg"],
-html[data-theme] img.profile-confirm-card[src$=".svg"] {
+html[data-theme="dark"] img.restore-hidden-card[src$=".svg"],
+html[data-theme="dark"] img.profile-confirm-card[src$=".svg"] {
+    filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="light"] img.restore-hidden-card[src$=".svg"],
+html[data-theme="light"] img.profile-confirm-card[src$=".svg"] {
     filter: brightness(0) !important;
 }
 
 html[data-theme] .modal-panel button img.button-icon[src$=".svg"] {
     filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="dark"] .restore-hidden-card-main,
+html[data-theme="dark"] .profile-confirm-card-main {
+    border-color: rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme="dark"] .restore-hidden-card-accent,
+html[data-theme="dark"] .profile-confirm-card-accent {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="light"] .restore-hidden-card-main,
+html[data-theme="light"] .profile-confirm-card-main {
+    border-color: rgba(0, 0, 0, 0.18);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+html[data-theme="light"] .restore-hidden-card-accent,
+html[data-theme="light"] .profile-confirm-card-accent {
+    border-color: rgba(0, 0, 0, 0.14);
+    background: rgba(255, 255, 255, 0.84);
 }
 
 html[data-theme="dark"] .chat-panel {

@@ -1,6 +1,12 @@
 window.ElovoTranslations = {
     ...(window.ElovoTranslations || {}),
     az: {
+        "Continue with Google": "Google il\u0259 daxil ol",
+        "App theme": "T\u0259tbiq temas\u0131",
+        "Choose the theme used across Elovo on this device.": "Bu cihazda Elovo interfeysi \u00fc\u00e7\u00fcn teman\u0131 se\u00e7in.",
+        "Dark": "T\u00fcnd",
+        "Ordinary": "Adi",
+        "Light": "A\u00e7\u0131q",
         "Choose language": "Dil seçin",
         "Loading": "Yüklənir",
         "Elovo Login": "Elovo giriş",

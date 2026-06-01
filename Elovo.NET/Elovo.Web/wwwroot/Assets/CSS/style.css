@@ -306,6 +306,30 @@ input:disabled {
     gap: 10px;
 }
 
+.auth-action-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    gap: 10px;
+}
+
+.google-auth-button {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--line) !important;
+    color: var(--text) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+}
+
+.google-auth-icon {
+    width: 25px;
+    height: 25px;
+    display: block;
+    pointer-events: none;
+}
+
 .button-icon {
     width: 26px;
     height: 26px;
@@ -2254,8 +2278,8 @@ body:has(.profile-view.is-active) {
 }
 
 .settings-nav-preferences-icon {
-    width: 30px;
-    height: 30px;
+    width: 35px;
+    height: 35px;
 }
 
 .profile-topbar h1,
@@ -2418,6 +2442,97 @@ body:has(.profile-view.is-active) {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 10px;
+}
+
+.settings-theme-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.settings-theme-option {
+    min-height: 92px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    text-align: left;
+}
+
+.settings-theme-option span,
+.settings-theme-option strong,
+.settings-theme-option small {
+    display: block;
+}
+
+.settings-theme-option small {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.settings-theme-option.active {
+    border-color: rgba(139, 124, 255, 0.58);
+    background: linear-gradient(135deg, rgba(109, 103, 255, 0.2), rgba(83, 214, 164, 0.08));
+    box-shadow: inset 0 0 0 1px rgba(139, 124, 255, 0.14);
+    cursor: default;
+}
+
+.settings-theme-option.active small {
+    color: var(--success);
+}
+
+.settings-theme-preview {
+    width: 48px;
+    height: 48px;
+    flex: 0 0 auto;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: end;
+    gap: 3px;
+    padding: 7px;
+    border: 1px solid rgba(125, 134, 255, 0.26);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.settings-theme-preview i {
+    display: block;
+    height: 68%;
+    border-radius: 3px 3px 0 0;
+}
+
+.settings-theme-preview i:nth-child(2) {
+    height: 100%;
+}
+
+.settings-theme-preview-dark {
+    background: #050505;
+}
+
+.settings-theme-preview-dark i {
+    background: #fff;
+}
+
+.settings-theme-preview-default {
+    background: #10142a;
+}
+
+.settings-theme-preview-default i {
+    background: #6d67ff;
+}
+
+.settings-theme-preview-light {
+    background: #fff;
+}
+
+.settings-theme-preview-light i {
+    background: #000;
 }
 
 .settings-language-option {
@@ -2832,5 +2947,119 @@ body:has(.profile-view.is-active) {
 
     .error-card__actions {
         justify-content: center;
+    }
+}
+
+html[data-theme="dark"] {
+    --bg: #050505;
+    --bg-soft: #0b0b0b;
+    --panel: rgba(12, 12, 12, 0.9);
+    --panel-solid: #101010;
+    --line: rgba(255, 255, 255, 0.18);
+    --text: #fff;
+    --muted: rgba(255, 255, 255, 0.78);
+    --quiet: rgba(255, 255, 255, 0.62);
+}
+
+html[data-theme="light"] {
+    --bg: #f4f4f4;
+    --bg-soft: #fff;
+    --panel: rgba(255, 255, 255, 0.9);
+    --panel-solid: #fff;
+    --line: rgba(0, 0, 0, 0.18);
+    --text: #000;
+    --muted: rgba(0, 0, 0, 0.72);
+    --quiet: rgba(0, 0, 0, 0.58);
+}
+
+html[data-theme="dark"] body {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.07), transparent 28rem),
+        radial-gradient(circle at 78% 72%, rgba(255, 255, 255, 0.04), transparent 30rem),
+        #050505;
+    scrollbar-color: rgba(255, 255, 255, 0.52) rgba(0, 0, 0, 0.72);
+}
+
+html[data-theme="light"] body {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.045), transparent 28rem),
+        radial-gradient(circle at 78% 72%, rgba(0, 0, 0, 0.025), transparent 30rem),
+        #f4f4f4;
+    scrollbar-color: rgba(0, 0, 0, 0.48) rgba(255, 255, 255, 0.76);
+}
+
+html[data-theme="dark"] body *,
+html[data-theme="dark"] input::placeholder {
+    color: #fff !important;
+}
+
+html[data-theme="light"] body *,
+html[data-theme="light"] input::placeholder {
+    color: #000 !important;
+}
+
+html[data-theme="dark"] img[src$=".svg"]:not(.google-auth-icon) {
+    filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="light"] img[src$=".svg"]:not(.google-auth-icon) {
+    filter: brightness(0) !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] .language-selector-toggle,
+html[data-theme="dark"] .language-selector-option,
+html[data-theme="dark"] .friend-action-dock .dock-button:not(.dock-button-primary),
+html[data-theme="dark"] .chat-item,
+html[data-theme="dark"] .message-actions-popover,
+html[data-theme="dark"] .image-preview-close,
+html[data-theme="dark"] .incoming-call-banner,
+html[data-theme="dark"] .call-modal-panel,
+html[data-theme="dark"] .settings-nav-button:not(.is-active),
+html[data-theme="dark"] .settings-theme-option:not(.active),
+html[data-theme="dark"] .settings-language-option:not(.active),
+html[data-theme="dark"] .chat-retention-option:not(.is-active),
+html[data-theme="dark"] .secondary-button,
+html[data-theme="dark"] .secondary-icon-button {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="light"] input,
+html[data-theme="light"] .language-selector-toggle,
+html[data-theme="light"] .language-selector-option,
+html[data-theme="light"] .friend-action-dock .dock-button:not(.dock-button-primary),
+html[data-theme="light"] .chat-item,
+html[data-theme="light"] .message-actions-popover,
+html[data-theme="light"] .image-preview-close,
+html[data-theme="light"] .incoming-call-banner,
+html[data-theme="light"] .call-modal-panel,
+html[data-theme="light"] .settings-nav-button:not(.is-active),
+html[data-theme="light"] .settings-theme-option:not(.active),
+html[data-theme="light"] .settings-language-option:not(.active),
+html[data-theme="light"] .chat-retention-option:not(.is-active),
+html[data-theme="light"] .secondary-button,
+html[data-theme="light"] .secondary-icon-button {
+    background: rgba(255, 255, 255, 0.82);
+}
+
+html[data-theme="dark"] .modal-backdrop {
+    background: rgba(0, 0, 0, 0.78);
+}
+
+html[data-theme="light"] .modal-backdrop {
+    background: rgba(255, 255, 255, 0.76);
+}
+
+html[data-theme="dark"] .page-loader {
+    background: rgba(0, 0, 0, 0.82);
+}
+
+html[data-theme="light"] .page-loader {
+    background: rgba(255, 255, 255, 0.82);
+}
+
+@media (max-width: 700px) {
+    .settings-theme-options {
+        grid-template-columns: 1fr;
     }
 }

@@ -1,6 +1,12 @@
 window.ElovoTranslations = {
     ...(window.ElovoTranslations || {}),
     ru: {
+        "Continue with Google": "\u0412\u043e\u0439\u0442\u0438 \u0447\u0435\u0440\u0435\u0437 Google",
+        "App theme": "\u0422\u0435\u043c\u0430 \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u044f",
+        "Choose the theme used across Elovo on this device.": "\u0412\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u0442\u0435\u043c\u0443 \u0438\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0430 Elovo \u043d\u0430 \u044d\u0442\u043e\u043c \u0443\u0441\u0442\u0440\u043e\u0439\u0441\u0442\u0432\u0435.",
+        "Dark": "\u0422\u0435\u043c\u043d\u0430\u044f",
+        "Ordinary": "\u041e\u0431\u044b\u0447\u043d\u0430\u044f",
+        "Light": "\u0421\u0432\u0435\u0442\u043b\u0430\u044f",
         "Choose language": "Выбрать язык",
         "Loading": "Загрузка",
         "Elovo Login": "Вход в Elovo",

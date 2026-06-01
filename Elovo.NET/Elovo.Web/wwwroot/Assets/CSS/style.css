@@ -133,10 +133,10 @@ button img,
 
 .language-selector-toggle img,
 .language-selector-option img {
-    width: 24px;
-    height: 18px;
+    width: 34px;
+    height: 34px;
     display: block;
-    border-radius: 2px;
+    border-radius: 50%;
     object-fit: cover;
     pointer-events: none;
 }
@@ -2989,16 +2989,20 @@ html[data-theme="light"] img[src$=".svg"]:not([src*="/Flags/"]) {
 
 html[data-theme="dark"] img.restore-hidden-card[src$=".svg"],
 html[data-theme="dark"] img.profile-confirm-card[src$=".svg"] {
-    filter: brightness(0) invert(1) !important;
+    filter: none !important;
 }
 
 html[data-theme="light"] img.restore-hidden-card[src$=".svg"],
 html[data-theme="light"] img.profile-confirm-card[src$=".svg"] {
-    filter: brightness(0) !important;
+    filter: none !important;
 }
 
 html[data-theme] .modal-panel button img.button-icon[src$=".svg"] {
     filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="light"] .modal-panel button img.button-icon[src$=".svg"] {
+    filter: brightness(0) !important;
 }
 
 html[data-theme="dark"] .restore-hidden-card-main,
@@ -3015,14 +3019,14 @@ html[data-theme="dark"] .profile-confirm-card-accent {
 
 html[data-theme="light"] .restore-hidden-card-main,
 html[data-theme="light"] .profile-confirm-card-main {
-    border-color: rgba(0, 0, 0, 0.18);
-    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.3);
+    background: rgba(18, 24, 50, 0.92);
 }
 
 html[data-theme="light"] .restore-hidden-card-accent,
 html[data-theme="light"] .profile-confirm-card-accent {
-    border-color: rgba(0, 0, 0, 0.14);
-    background: rgba(255, 255, 255, 0.84);
+    border-color: rgba(0, 0, 0, 0.26);
+    background: rgba(18, 24, 50, 0.88);
 }
 
 html[data-theme="dark"] .chat-panel {
@@ -3081,6 +3085,103 @@ html[data-theme="light"] .chat-retention-option:not(.is-active),
 html[data-theme="light"] .secondary-button,
 html[data-theme="light"] .secondary-icon-button {
     background: rgba(255, 255, 255, 0.82);
+}
+
+html[data-theme="light"] .switch span {
+    border-color: rgba(0, 0, 0, 0.34);
+    background: rgba(0, 0, 0, 0.14);
+}
+
+html[data-theme="light"] .switch span::after {
+    background: #111;
+}
+
+html[data-theme="light"] .switch input:disabled + span {
+    opacity: 0.72;
+}
+
+html[data-theme="light"] .call-modal-panel {
+    border-color: rgba(0, 0, 0, 0.2);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(242, 244, 250, 0.98)),
+        radial-gradient(circle at 50% 0%, rgba(109, 103, 255, 0.12), transparent 16rem),
+        #fff;
+}
+
+html[data-theme="light"] .call-avatar-ring {
+    border-color: rgba(0, 0, 0, 0.18);
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(230, 233, 242, 0.92)),
+        rgba(255, 255, 255, 0.94);
+}
+
+html[data-theme="light"] .call-control-button {
+    border-color: rgba(0, 0, 0, 0.22);
+    background: rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme="light"] .call-control-button:hover,
+html[data-theme="light"] .call-control-button:focus-visible,
+html[data-theme="light"] .call-control-button.is-active {
+    border-color: rgba(109, 103, 255, 0.62);
+    background: rgba(109, 103, 255, 0.16);
+}
+
+html[data-theme="light"] .call-end-button,
+html[data-theme="light"] .call-end-button:hover,
+html[data-theme="light"] .call-end-button:focus-visible {
+    border-color: rgba(214, 42, 77, 0.52);
+    background: rgba(255, 96, 126, 0.2);
+}
+
+html[data-theme="light"] .call-modal-panel .call-control-button .button-icon,
+html[data-theme="light"] .call-modal-panel .call-control-button.is-active .button-icon {
+    filter: brightness(0) !important;
+}
+
+html[data-theme="light"] .composer.is-image-transfer::before {
+    border-color: rgba(0, 0, 0, 0.16);
+    background: rgba(109, 103, 255, 0.08);
+}
+
+html[data-theme="light"] .composer.is-image-transfer .icon-button::after {
+    border-color: rgba(0, 0, 0, 0.24);
+    border-top-color: #111;
+}
+
+html[data-theme="light"] .composer.is-voice-recording {
+    background: rgba(83, 214, 164, 0.14);
+}
+
+html[data-theme="light"] .composer.is-voice-recording::before {
+    background: rgba(0, 0, 0, 0.14);
+}
+
+html[data-theme="light"] .voice-recording-status,
+html[data-theme="light"] .image-upload-status {
+    color: #111;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+html[data-theme="light"] .voice-recording-status {
+    border-color: rgba(31, 145, 101, 0.46);
+}
+
+html[data-theme="light"] .voice-recording-meter i {
+    background: rgba(0, 0, 0, 0.62);
+}
+
+html[data-theme="light"] .image-upload-status {
+    border-color: rgba(79, 86, 180, 0.36);
+}
+
+html[data-theme="light"] .image-upload-status::before {
+    background: rgba(0, 0, 0, 0.14);
+}
+
+html[data-theme="light"] .image-upload-status img {
+    filter: brightness(0) !important;
 }
 
 html[data-theme="dark"] .modal-backdrop {

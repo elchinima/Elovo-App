@@ -113,6 +113,7 @@ button img,
     height: 44px;
     display: grid;
     place-items: center;
+    padding: 0;
     border: 1px solid var(--line);
     border-radius: 50%;
     color: var(--text);
@@ -2333,6 +2334,27 @@ body:has(.profile-view.is-active) {
     text-align: center;
 }
 
+.profile-logout-panel {
+    grid-column: 1 / -1;
+}
+
+.profile-logout-button {
+    min-height: 46px;
+    border: 1px solid rgba(255, 96, 126, 0.48);
+    color: #fff;
+    background: linear-gradient(135deg, #ff607e, #c53e61);
+}
+
+.profile-logout-button:hover,
+.profile-logout-button:focus-visible {
+    border-color: rgba(255, 143, 156, 0.9);
+    background: linear-gradient(135deg, #ff718b, #d94a6d);
+}
+
+html[data-theme] .profile-logout-button .button-icon {
+    filter: brightness(0) invert(1) !important;
+}
+
 .profile-avatar {
     width: min(260px, 70vw);
     aspect-ratio: 1;
@@ -2537,8 +2559,10 @@ body:has(.profile-view.is-active) {
 .settings-language-option img {
     width: 42px;
     height: 42px;
+    display: block;
     flex: 0 0 auto;
     border-radius: 50%;
+    object-fit: cover;
     box-shadow: 0 8px 16px rgba(9, 11, 26, 0.2);
 }
 

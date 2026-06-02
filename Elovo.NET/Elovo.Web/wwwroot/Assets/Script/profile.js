@@ -4,6 +4,7 @@
         setAvatarElement,
         openModal,
         closeModal,
+        navigateWithLoader,
         t
     } = window.Elovo;
 const profileAvatar = document.querySelector("#profileAvatar");
@@ -20,6 +21,8 @@ const newPassword = document.querySelector("#newPassword");
 const profilePasswordStatus = document.querySelector("#profilePasswordStatus");
 const twoFactorToggle = document.querySelector("#twoFactorToggle");
 const twoFactorStatus = document.querySelector("#twoFactorStatus");
+const profileLogoutButton = document.querySelector("#profileLogoutButton");
+const profileLogoutStatus = document.querySelector("#profileLogoutStatus");
 const avatarCropModal = document.querySelector("#avatarCropModal");
 const avatarCropStage = document.querySelector("#avatarCropStage");
 const avatarCropImage = document.querySelector("#avatarCropImage");
@@ -41,6 +44,7 @@ const profileConfirmIcons = {
     email: "/Assets/Images/Icons/confirm-email.svg",
     password: "/Assets/Images/Icons/confirm-password.svg",
     security: "/Assets/Images/Icons/confirm-security.svg",
+    logout: "/Assets/Images/Icons/logout.svg",
     default: "/Assets/Images/Icons/confirm-profile.svg"
 };
 const allowedProfileImageTypes = ["image/png", "image/jpeg", "image/jpg"];
@@ -421,6 +425,43 @@ async function setTwoFactorEnabled() {
     */
 }
 
+async function logoutFromProfile() {
+    if (!profileLogoutButton) {
+        return;
+    }
+
+    const confirmed = await confirmProfileAction(
+        t("Log out?"),
+        t("You will need to sign in again to access your account on this device."),
+        t("Log out"),
+        "logout"
+    );
+    if (!confirmed) {
+        return;
+    }
+
+    profileLogoutButton.disabled = true;
+    setProfileStatus(profileLogoutStatus, t("Logging out..."));
+
+    try {
+        const response = await fetch("/auth/logout", {
+            method: "POST",
+            headers: {
+                "RequestVerificationToken": getAntiForgeryToken()
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(await readResponseText(response));
+        }
+
+        navigateWithLoader("/auth/login");
+    } catch (error) {
+        profileLogoutButton.disabled = false;
+        setProfileStatus(profileLogoutStatus, t(error.message || "Request failed."), "error");
+    }
+}
+
 if (profileImageButton && profileImageInput) {
     profileImageButton.addEventListener("click", () => profileImageInput.click());
     profileImageInput.addEventListener("change", () => {
@@ -457,6 +498,10 @@ if (twoFactorToggle) {
     twoFactorToggle.disabled = true;
     setProfileStatus(twoFactorStatus, t("Temporarily unavailable."));
     twoFactorToggle.addEventListener("change", setTwoFactorEnabled);
+}
+
+if (profileLogoutButton) {
+    profileLogoutButton.addEventListener("click", logoutFromProfile);
 }
 
 if (avatarZoom) {

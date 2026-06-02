@@ -314,7 +314,7 @@ async function saveProfileEmail(event) {
     const confirmed = await confirmProfileAction(
         t("Save email?"),
         t("This email will be used for account security and two-factor authentication."),
-        t("Save email"),
+        t("Save"),
         "email"
     );
     if (!confirmed) {
@@ -347,7 +347,7 @@ async function saveProfilePassword(event) {
     const confirmed = await confirmProfileAction(
         t("Change password?"),
         t("After changing your password, use the new password on your next sign in."),
-        t("Change password"),
+        t("Change"),
         "password"
     );
     if (!confirmed) {
@@ -437,7 +437,7 @@ async function logoutFromProfile() {
     const confirmed = await confirmProfileAction(
         t("Log out?"),
         t("You will need to sign in again to access your account on this device."),
-        t("Log out"),
+        t("Exit"),
         "logout"
     );
     if (!confirmed) {

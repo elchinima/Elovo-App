@@ -2774,6 +2774,20 @@ html[data-theme] .profile-logout-button .button-icon {
     padding: 18px;
 }
 
+#avatarCropSave {
+    min-height: 48px;
+    border: 0;
+    border-radius: var(--radius);
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    font-weight: 900;
+}
+
+#avatarCropSave:disabled {
+    cursor: default;
+    opacity: 0.62;
+}
+
 .avatar-crop-stage {
     width: min(320px, calc(100vw - 72px));
     aspect-ratio: 1;
@@ -3120,11 +3134,15 @@ html[data-theme="light"] .modal-panel button img.button-icon[src$=".svg"] {
     filter: brightness(0) !important;
 }
 
-html[data-theme="default"] .call-modal-panel .call-control-button .button-icon {
+html[data-theme] .call-again-button img.button-icon[src$=".svg"] {
+    filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="default"] .call-modal-panel button img.button-icon[src$=".svg"] {
     filter: none !important;
 }
 
-html[data-theme] .call-again-button img.button-icon[src$=".svg"] {
+html[data-theme] .modal-panel .primary-icon-button img.button-icon[src$=".svg"] {
     filter: brightness(0) invert(1) !important;
 }
 

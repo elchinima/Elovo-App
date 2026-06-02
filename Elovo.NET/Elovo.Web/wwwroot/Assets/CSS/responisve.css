@@ -100,6 +100,10 @@
         padding-top: 100px;
     }
 
+    .app-shell.has-active-call .settings-frame-shell {
+        top: 50px;
+    }
+
     .app-shell.has-active-call::before,
     .app-shell.has-active-call::after {
         border-color: rgba(34, 197, 94, 0.82);
@@ -328,6 +332,15 @@
         transform: translateY(-10px);
     }
 
+    .call-no-answer-actions {
+        gap: 10px;
+        transform: translateY(-10px);
+    }
+
+    .call-result-button {
+        min-height: 54px;
+    }
+
     .call-control-button {
         width: 64px;
         height: 64px;
@@ -351,6 +364,7 @@
     }
 
     .restore-hidden-backdrop,
+    #avatarCropModal,
     #profileConfirmModal,
     #chatRetentionConfirmModal {
         align-items: end;
@@ -358,6 +372,7 @@
     }
 
     .restore-hidden-panel,
+    .avatar-crop-panel,
     .profile-confirm-panel {
         width: 100%;
         height: auto;
@@ -369,6 +384,14 @@
     .restore-hidden-panel .confirm-modal-body,
     .profile-confirm-panel .confirm-modal-body {
         padding: 18px;
+    }
+
+    .avatar-crop-body {
+        padding: 18px;
+    }
+
+    .avatar-crop-stage {
+        width: min(320px, calc(100vw - 62px));
     }
 
     .restore-hidden-actions {

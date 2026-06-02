@@ -273,6 +273,10 @@
                 url.pathname === window.location.pathname &&
                 url.search === window.location.search &&
                 url.hash;
+            const closesEmbeddedSettings = window.parent !== window &&
+                window.location.pathname.startsWith("/settings/") &&
+                url.origin === window.location.origin &&
+                url.pathname === "/chat";
 
             if (event.defaultPrevented ||
                 event.button !== 0 ||
@@ -284,6 +288,12 @@
                 link.hasAttribute("download") ||
                 url.origin !== window.location.origin ||
                 isSamePageHash) {
+                return;
+            }
+
+            if (closesEmbeddedSettings) {
+                event.preventDefault();
+                window.parent.postMessage({ type: "elovo:close-settings" }, window.location.origin);
                 return;
             }
 

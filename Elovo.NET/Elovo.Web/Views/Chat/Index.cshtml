@@ -6,7 +6,7 @@
     <section class="messenger-view is-active" id="messengerView" aria-label="Messenger">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="brand-mark">
+                <div class="brand-mark" id="currentUserAvatar">
                     @if (!string.IsNullOrWhiteSpace(ViewBag.CurrentUserProfileImageUrl as string))
                     {
                         <img class="profile-image" src="@ViewBag.CurrentUserProfileImageUrl" alt="">
@@ -85,6 +85,10 @@
                 </button>
             </form>
         </section>
+    </section>
+
+    <section class="settings-frame-shell" id="settingsFrameShell" aria-label="Settings" aria-hidden="true" hidden>
+        <iframe id="settingsFrame" title="Settings"></iframe>
     </section>
 
     <aside class="active-call-banner" id="activeCallBanner" aria-label="Active audio call" hidden>
@@ -227,6 +231,16 @@
                     <button class="call-control-button call-end-button" id="endCallButton" type="button" aria-label="End call" title="End call">
                         <img class="button-icon" src="~/Assets/Images/Icons/call-end.svg" alt="">
                         <span>End</span>
+                    </button>
+                </div>
+                <div class="call-no-answer-actions" aria-label="No answer actions" hidden>
+                    <button class="call-result-button call-exit-button" id="exitNoAnswerButton" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                        <span>Exit</span>
+                    </button>
+                    <button class="call-result-button call-again-button" id="retryCallButton" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/call-again.svg" alt="">
+                        <span>Call again</span>
                     </button>
                 </div>
             </div>

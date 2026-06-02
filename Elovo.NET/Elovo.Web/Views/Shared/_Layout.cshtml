@@ -5,9 +5,9 @@
     if (User.Identity?.IsAuthenticated == true &&
         Guid.TryParse(User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier), out var currentUserId))
     {
-        preferredLanguage = await LanguageDbContext.Users
-            .Where(user => user.Id == currentUserId)
-            .Select(user => user.PreferredLanguage)
+        preferredLanguage = await LanguageDbContext.UserSessions
+            .Where(session => session.UserId == currentUserId)
+            .Select(session => session.PreferredLanguage)
             .FirstOrDefaultAsync();
     }
 }

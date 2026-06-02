@@ -26,6 +26,7 @@ builder.Services.AddHttpClient<IImageStorageService, SupabaseImageStorageService
 builder.Services.AddHttpClient<RenderKeepAliveService>();
 builder.Services.AddHostedService<RenderKeepAliveService>();
 builder.Services.AddHostedService<PendingMessageNotificationJob>();
+builder.Services.AddHostedService<UnansweredCallTimeoutJob>();
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>

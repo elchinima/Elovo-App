@@ -89,6 +89,10 @@ function renderProfile(profile) {
         twoFactorToggle.disabled = true;
         setProfileStatus(twoFactorStatus, t("Temporarily unavailable."));
     }
+
+    if (window.parent !== window && window.location.pathname.startsWith("/settings/")) {
+        window.parent.postMessage({ type: "elovo:profile-updated", profile }, window.location.origin);
+    }
 }
 
 function closeProfileConfirm(result) {
@@ -453,6 +457,11 @@ async function logoutFromProfile() {
 
         if (!response.ok) {
             throw new Error(await readResponseText(response));
+        }
+
+        if (window.parent !== window && window.location.pathname.startsWith("/settings/")) {
+            window.parent.postMessage({ type: "elovo:logged-out" }, window.location.origin);
+            return;
         }
 
         navigateWithLoader("/auth/login");

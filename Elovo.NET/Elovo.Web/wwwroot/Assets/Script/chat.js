@@ -13,6 +13,7 @@ const logoutButton = document.querySelector("#logoutButton");
 const settingsButton = document.querySelector("#settingsButton");
 const restoreHiddenButton = document.querySelector("#restoreHiddenButton");
 const appShell = document.querySelector(".app-shell");
+const currentUserAvatar = document.querySelector("#currentUserAvatar");
 const messengerView = document.querySelector("#messengerView");
 const chatList = document.querySelector("#chatList");
 const searchInput = document.querySelector("#searchInput");
@@ -38,11 +39,16 @@ const muteCallButton = document.querySelector("#muteCallButton");
 const muteCallLabel = document.querySelector("#muteCallLabel");
 const speakerCallButton = document.querySelector("#speakerCallButton");
 const callSpeakerLabel = document.querySelector("#callSpeakerLabel");
+const noAnswerCallActions = document.querySelector(".call-no-answer-actions");
+const exitNoAnswerButton = document.querySelector("#exitNoAnswerButton");
+const retryCallButton = document.querySelector("#retryCallButton");
 const activeCallBanner = document.querySelector("#activeCallBanner");
 const activeCallBannerName = document.querySelector("#activeCallBannerName");
 const activeCallBannerDuration = document.querySelector("#activeCallBannerDuration");
 const activeCallBannerMuteButton = document.querySelector("#activeCallBannerMuteButton");
 const activeCallBannerEndButton = document.querySelector("#activeCallBannerEndButton");
+const settingsFrameShell = document.querySelector("#settingsFrameShell");
+const settingsFrame = document.querySelector("#settingsFrame");
 if (callDuration) {
     callDuration.style.color = "var(--muted)";
 }
@@ -89,14 +95,18 @@ let shouldStopVoiceWhenReady = false;
 let activeVoiceAudio = null;
 let activeCall = null;
 let callTimer = null;
+let unansweredCallTimer = null;
+let timedOutCall = null;
 let incomingCall = null;
 let incomingCallBanner = null;
 let remoteCallAudio = null;
 let browserSpeakerDeviceIndex = 0;
 let mobileBoundaryPulseTimer = null;
+let shouldReloadChatAfterSettings = false;
 const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
 const maxVoiceDurationMs = 60 * 1000;
+const maxUnansweredCallDurationMs = 60 * 1000;
 const voiceAudioBitRate = 64000;
 const minVoiceDurationMs = 450;
 const allowedVoiceTypes = ["audio/webm", "audio/ogg", "audio/mp4"];
@@ -890,6 +900,37 @@ function updateCallStatus(status) {
     }
 }
 
+function setCallNoAnswerMode(isVisible) {
+    callModal?.classList.toggle("is-no-answer", isVisible);
+    if (noAnswerCallActions) {
+        noAnswerCallActions.hidden = !isVisible;
+    }
+}
+
+function clearCallNoAnswerState() {
+    timedOutCall = null;
+    setCallNoAnswerMode(false);
+}
+
+function stopUnansweredCallTimer() {
+    if (unansweredCallTimer) {
+        window.clearTimeout(unansweredCallTimer);
+        unansweredCallTimer = null;
+    }
+}
+
+function startUnansweredCallTimer() {
+    stopUnansweredCallTimer();
+    unansweredCallTimer = window.setTimeout(() => {
+        unansweredCallTimer = null;
+        if (!activeCall || activeCall.isEstablished || !connection || connection.state !== signalR.HubConnectionState.Connected) {
+            return;
+        }
+
+        connection.invoke("TimeoutCall", activeCall.remoteUserId).catch(() => { });
+    }, maxUnansweredCallDurationMs);
+}
+
 function startCallTimer() {
     if (!activeCall || activeCall.startedAt) {
         return;
@@ -906,6 +947,7 @@ function markActiveCallEstablished() {
     }
 
     activeCall.isEstablished = true;
+    stopUnansweredCallTimer();
     startCallTimer();
     syncActiveCallBanner();
 }
@@ -994,6 +1036,7 @@ async function fetchTurnIceServers() {
 }
 
 function createCallState(remoteUserId, remoteUser, isEstablished = false) {
+    clearCallNoAnswerState();
     activeCall = {
         remoteUserId,
         remoteUser,
@@ -1113,7 +1156,11 @@ function parseIceCandidate(candidate) {
 }
 
 async function startOutgoingCall() {
-    if (!activeConversation || !callModal || !connection || connection.state !== signalR.HubConnectionState.Connected) {
+    await startOutgoingCallFor(activeConversation);
+}
+
+async function startOutgoingCallFor(conversation) {
+    if (!conversation || !callModal || !connection || connection.state !== signalR.HubConnectionState.Connected) {
         return;
     }
 
@@ -1127,7 +1174,7 @@ async function startOutgoingCall() {
         return;
     }
 
-    createCallState(activeConversation.userId, activeConversation);
+    createCallState(conversation.userId, conversation);
     if (window.AndroidBridge) {
         window.AndroidBridge.onCallStarted();
         // Сначала speaker (WebView уже там)
@@ -1144,13 +1191,14 @@ async function startOutgoingCall() {
     }
 
     try {
-        const peerConnection = await createPeerConnection(activeConversation.userId);
-        await connection.invoke("CallUser", activeConversation.userId);
+        const peerConnection = await createPeerConnection(conversation.userId);
+        await connection.invoke("CallUser", conversation.userId);
+        startUnansweredCallTimer();
         const offer = await peerConnection.createOffer({ offerToReceiveAudio: true });
         await peerConnection.setLocalDescription(offer);
-        await connection.invoke("CallOffer", activeConversation.userId, offer.sdp);
+        await connection.invoke("CallOffer", conversation.userId, offer.sdp);
     } catch {
-        endActiveCall(false);
+        endActiveCall(true);
     }
 }
 
@@ -1226,12 +1274,15 @@ function rejectIncomingCall() {
     }
 
     dismissIncomingCallBanner();
+    reloadChatWhenSafe();
 }
 
 function endActiveCall(notifyRemote = true) {
     const call = activeCall;
     stopCallTimer();
+    stopUnansweredCallTimer();
     activeCall = null;
+    clearCallNoAnswerState();
 
     if (call) {
         if (notifyRemote && connection && connection.state === signalR.HubConnectionState.Connected) {
@@ -1262,6 +1313,39 @@ function endActiveCall(notifyRemote = true) {
     closeModal(callModal);
     resetCallControls();
     syncActiveCallBanner();
+    reloadChatWhenSafe();
+}
+
+function showCallNoAnswerState() {
+    if (!activeCall || activeCall.isEstablished) {
+        return;
+    }
+
+    const call = {
+        remoteUserId: activeCall.remoteUserId,
+        remoteUser: activeCall.remoteUser
+    };
+    endActiveCall(false);
+    timedOutCall = call;
+    setCallModalUser(call.remoteUser);
+    updateCallStatus(t("No answer"));
+    setCallNoAnswerMode(true);
+    openModal(callModal);
+}
+
+function exitNoAnswerState() {
+    clearCallNoAnswerState();
+    closeModal(callModal);
+    reloadChatWhenSafe();
+}
+
+async function retryTimedOutCall() {
+    const call = timedOutCall;
+    clearCallNoAnswerState();
+    closeModal(callModal);
+    if (call) {
+        await startOutgoingCallFor(call.remoteUser);
+    }
 }
 
 function toggleCallMute() {
@@ -1435,6 +1519,50 @@ function positionIncomingCallBanner() {
     incomingCallBanner.style.transform = "";
 }
 
+function isSettingsFrameOpen() {
+    return Boolean(settingsFrameShell && !settingsFrameShell.hidden);
+}
+
+function reloadChatWhenSafe() {
+    if (shouldReloadChatAfterSettings && !activeCall && !incomingCall && !isSettingsFrameOpen()) {
+        window.location.reload();
+    }
+}
+
+function openSettingsFrame(url = "/settings/profile") {
+    if (!settingsFrameShell || !settingsFrame) {
+        navigateWithLoader(url);
+        return;
+    }
+
+    settingsFrameShell.hidden = false;
+    settingsFrameShell.setAttribute("aria-hidden", "false");
+    if (messengerView) {
+        messengerView.inert = true;
+        messengerView.setAttribute("aria-hidden", "true");
+    }
+
+    if (!settingsFrame.src || settingsFrame.src === "about:blank") {
+        settingsFrame.src = url;
+    }
+}
+
+function closeSettingsFrame() {
+    if (!settingsFrameShell || !settingsFrame) {
+        return;
+    }
+
+    settingsFrameShell.hidden = true;
+    settingsFrameShell.setAttribute("aria-hidden", "true");
+    settingsFrame.src = "about:blank";
+    if (messengerView) {
+        messengerView.inert = false;
+        messengerView.removeAttribute("aria-hidden");
+    }
+
+    reloadChatWhenSafe();
+}
+
 function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     const existingCall = incomingCall && sameId(incomingCall.callerId, callerId) ? incomingCall : null;
     dismissIncomingCallBanner();
@@ -1451,19 +1579,6 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     banner.className = "incoming-call-banner";
     banner.setAttribute("role", "dialog");
     banner.setAttribute("aria-label", t("Incoming call from {name}", { name: callerName }));
-    banner.style.position = "fixed";
-    banner.style.zIndex = "90";
-    banner.style.width = "min(360px, calc(100vw - 36px))";
-    banner.style.boxSizing = "border-box";
-    banner.style.display = "grid";
-    banner.style.gridTemplateColumns = "48px minmax(0, 1fr)";
-    banner.style.gap = "12px";
-    banner.style.padding = "14px";
-    banner.style.border = "1px solid rgba(255, 255, 255, 0.14)";
-    banner.style.borderRadius = "12px";
-    banner.style.background = "rgba(12, 18, 36, 0.96)";
-    banner.style.boxShadow = "0 18px 48px rgba(0, 0, 0, 0.35)";
-    banner.style.color = "#fff";
 
     const avatar = document.createElement("span");
     avatar.className = "avatar";
@@ -1474,50 +1589,25 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
 
     const content = document.createElement("div");
     content.className = "incoming-call-banner-copy";
-    content.style.minWidth = "0";
 
     const title = document.createElement("strong");
     title.className = "incoming-call-banner-title";
     title.textContent = callerName || t("Incoming call");
-    title.style.display = "block";
-    title.style.overflow = "hidden";
-    title.style.textOverflow = "ellipsis";
-    title.style.whiteSpace = "nowrap";
 
     const subtitle = document.createElement("span");
     subtitle.className = "incoming-call-banner-subtitle";
     subtitle.textContent = t("Incoming audio call");
-    subtitle.style.display = "block";
-    subtitle.style.marginTop = "2px";
-    subtitle.style.color = "rgba(255, 255, 255, 0.72)";
-    subtitle.style.fontSize = "0.88rem";
 
     const actions = document.createElement("div");
     actions.className = "incoming-call-banner-actions";
-    actions.style.display = "flex";
-    actions.style.gap = "8px";
-    actions.style.marginTop = "12px";
 
     const acceptButton = document.createElement("button");
     acceptButton.type = "button";
     acceptButton.className = "incoming-call-banner-button incoming-call-accept";
-    acceptButton.style.display = "inline-flex";
-    acceptButton.style.alignItems = "center";
-    acceptButton.style.justifyContent = "center";
-    acceptButton.style.gap = "8px";
-    acceptButton.style.flex = "1";
-    acceptButton.style.border = "0";
-    acceptButton.style.borderRadius = "8px";
-    acceptButton.style.padding = "10px 12px";
-    acceptButton.style.background = "#22c55e";
-    acceptButton.style.color = "#04120a";
-    acceptButton.style.fontWeight = "700";
     const acceptIcon = document.createElement("img");
+    acceptIcon.className = "button-icon";
     acceptIcon.src = "/Assets/Images/Icons/call.svg";
     acceptIcon.alt = "";
-    acceptIcon.style.width = "18px";
-    acceptIcon.style.height = "18px";
-    acceptIcon.style.filter = "brightness(0)";
     const acceptLabel = document.createElement("span");
     acceptLabel.textContent = t("Accept");
     acceptButton.append(acceptIcon, acceptLabel);
@@ -1526,23 +1616,10 @@ function showIncomingCallBanner(callerId, callerName, callerAvatar) {
     const rejectButton = document.createElement("button");
     rejectButton.type = "button";
     rejectButton.className = "incoming-call-banner-button incoming-call-reject";
-    rejectButton.style.display = "inline-flex";
-    rejectButton.style.alignItems = "center";
-    rejectButton.style.justifyContent = "center";
-    rejectButton.style.gap = "8px";
-    rejectButton.style.flex = "1";
-    rejectButton.style.border = "0";
-    rejectButton.style.borderRadius = "8px";
-    rejectButton.style.padding = "10px 12px";
-    rejectButton.style.background = "#ef4444";
-    rejectButton.style.color = "#111";
-    rejectButton.style.fontWeight = "700";
     const rejectIcon = document.createElement("img");
+    rejectIcon.className = "button-icon";
     rejectIcon.src = "/Assets/Images/Icons/call-end.svg";
     rejectIcon.alt = "";
-    rejectIcon.style.width = "18px";
-    rejectIcon.style.height = "18px";
-    rejectIcon.style.filter = "brightness(0)";
     const rejectLabel = document.createElement("span");
     rejectLabel.textContent = t("Reject");
     rejectButton.append(rejectIcon, rejectLabel);
@@ -2987,10 +3064,8 @@ async function startSignalR() {
 
     connection.on("ReceiveMessage", async (message) => {
         latestMessageId = message.id;
-        const isIncomingFromAnotherChat =
-            !sameId(message.senderId, getCurrentUserId()) &&
-            !messageBelongsToActiveConversation(message);
-        if (isIncomingFromAnotherChat) {
+        const isIncomingMessage = !sameId(message.senderId, getCurrentUserId());
+        if (isIncomingMessage && (isSettingsFrameOpen() || !messageBelongsToActiveConversation(message))) {
             triggerMobileBoundaryPulse();
         }
 
@@ -3122,6 +3197,11 @@ async function startSignalR() {
     connection.on("CallCancelled", () => {
         dismissIncomingCallBanner();
         endActiveCall(false);
+    });
+
+    connection.on("CallTimedOut", () => {
+        dismissIncomingCallBanner();
+        showCallNoAnswerState();
     });
 
     connection.on("FriendRemoved", async (friendId) => {
@@ -3654,6 +3734,44 @@ window.addEventListener("pagehide", () => {
 });
 
 window.addEventListener("resize", positionIncomingCallBanner);
+window.addEventListener("message", (event) => {
+    if (event.origin !== window.location.origin || !event.data) {
+        return;
+    }
+
+    if (event.data.type === "elovo:close-settings") {
+        closeSettingsFrame();
+        return;
+    }
+
+    if (event.data.type === "elovo:theme-changed" && window.ElovoTheme) {
+        window.ElovoTheme.setTheme(event.data.theme);
+        return;
+    }
+
+    if (event.data.type === "elovo:language-changed") {
+        shouldReloadChatAfterSettings = true;
+        reloadChatWhenSafe();
+        return;
+    }
+
+    if (event.data.type === "elovo:profile-updated" && currentUserAvatar) {
+        const profile = event.data.profile || {};
+        setAvatarElement(currentUserAvatar, profile, profile.initial || "?");
+        const image = currentUserAvatar.querySelector("img");
+        if (image) {
+            image.classList.add("profile-image");
+        }
+        window.elovoCurrentUserProfileImageUrl = profile.profileImageUrl || "";
+        return;
+    }
+
+    if (event.data.type === "elovo:logged-out") {
+        showPageLoader();
+        stopSignalRForExit()
+            .finally(() => navigateWithLoader("/auth/login"));
+    }
+});
 
 if (messengerView && chatList && messageStream) {
     requestPersistentStorage();
@@ -3671,7 +3789,7 @@ if (logoutButton) {
 }
 
 if (settingsButton) {
-    settingsButton.addEventListener("click", () => navigateWithLoader("/settings/profile"));
+    settingsButton.addEventListener("click", () => openSettingsFrame());
 }
 
 if (callButton) {
@@ -3680,6 +3798,14 @@ if (callButton) {
 
 if (endCallButton) {
     endCallButton.addEventListener("click", () => endActiveCall(true));
+}
+
+if (exitNoAnswerButton) {
+    exitNoAnswerButton.addEventListener("click", exitNoAnswerState);
+}
+
+if (retryCallButton) {
+    retryCallButton.addEventListener("click", retryTimedOutCall);
 }
 
 if (collapseCallButton) {

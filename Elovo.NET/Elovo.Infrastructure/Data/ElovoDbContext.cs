@@ -27,7 +27,6 @@ public class ElovoDbContext : DbContext
             entity.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
             entity.Property(x => x.Email).HasMaxLength(256);
             entity.Property(x => x.ProfileImagePath).HasMaxLength(512);
-            entity.Property(x => x.PreferredLanguage).HasMaxLength(2).HasDefaultValue("en");
             entity.HasIndex(x => x.Username).IsUnique();
             entity.HasIndex(x => x.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");
         });
@@ -39,6 +38,7 @@ public class ElovoDbContext : DbContext
             entity.Property(x => x.LastLoginIp).HasMaxLength(45);
             entity.Property(x => x.RegistrationIp).HasMaxLength(45);
             entity.Property(x => x.FcmToken).HasMaxLength(4096);
+            entity.Property(x => x.PreferredLanguage).HasMaxLength(2).HasDefaultValue("en");
             entity.HasIndex(x => x.IsOnline);
 
             entity.HasOne(x => x.User)

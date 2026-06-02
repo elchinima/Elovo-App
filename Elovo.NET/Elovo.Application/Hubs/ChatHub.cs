@@ -448,6 +448,32 @@ public class ChatHub : Hub
         }
     }
 
+    public async Task TimeoutCall(string targetUserId)
+    {
+        var callerId = GetCurrentUserId();
+        var targetId = ParseUserId(targetUserId);
+        var activeCalls = await _unitOfWork.ActiveCalls.GetBetweenUsersAsync(callerId, targetId, Context.ConnectionAborted);
+        var activeCall = activeCalls
+            .Where(x => x.CallerId == callerId && x.ReceiverId == targetId && !x.AnsweredAt.HasValue)
+            .OrderByDescending(x => x.StartedAt)
+            .FirstOrDefault();
+        if (activeCall is null)
+        {
+            return;
+        }
+
+        var message = await _callHistoryService.CompleteAsync(activeCall, CallStatuses.Missed, Context.ConnectionAborted);
+        await PublishCallHistoryAsync(message);
+        await Clients.Group(UserGroup(callerId)).SendAsync("CallTimedOut", Context.ConnectionAborted);
+        await Clients.Group(UserGroup(targetId)).SendAsync("CallCancelled", Context.ConnectionAborted);
+
+        var fcmToken = await _unitOfWork.Users.GetFcmTokenByUserIdAsync(targetId, Context.ConnectionAborted);
+        if (!string.IsNullOrWhiteSpace(fcmToken))
+        {
+            await _pushNotificationService.SendCallCancelPushAsync(fcmToken);
+        }
+    }
+
     private Guid GetCurrentUserId()
     {
         var value = Context.User?.FindFirstValue(ClaimTypes.NameIdentifier);

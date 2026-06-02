@@ -86,6 +86,9 @@
         if (window.AndroidBridge && window.AndroidBridge.setLanguage) {
             window.AndroidBridge.setLanguage(normalizedLanguage);
         }
+        if (window.parent !== window && window.location.pathname.startsWith("/settings/")) {
+            window.parent.postMessage({ type: "elovo:language-changed" }, window.location.origin);
+        }
         window.location.reload();
     }
 

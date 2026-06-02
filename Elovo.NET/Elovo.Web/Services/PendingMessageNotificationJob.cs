@@ -46,16 +46,11 @@ public sealed class PendingMessageNotificationJob : BackgroundService
                 dbContext.UserSessions,
                 message => message.ReceiverId,
                 session => session.UserId,
-                (message, session) => new { Message = message, ReceiverFcmToken = session.FcmToken })
-            .Join(
-                dbContext.Users,
-                notification => notification.Message.ReceiverId,
-                receiver => receiver.Id,
-                (notification, receiver) => new
+                (message, session) => new
                 {
-                    notification.Message,
-                    notification.ReceiverFcmToken,
-                    ReceiverPreferredLanguage = receiver.PreferredLanguage
+                    Message = message,
+                    ReceiverFcmToken = session.FcmToken,
+                    ReceiverPreferredLanguage = session.PreferredLanguage
                 })
             .Join(
                 dbContext.Users,

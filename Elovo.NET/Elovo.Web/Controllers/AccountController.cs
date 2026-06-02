@@ -28,13 +28,16 @@ public sealed class AccountController : ControllerBase
         }
 
         var userId = GetCurrentUserId();
-        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+        var user = await _context.Users
+            .Include(x => x.Session)
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
         if (user is null)
         {
             return NotFound();
         }
 
-        user.PreferredLanguage = language;
+        var session = user.Session ??= new UserSession { UserId = user.Id };
+        session.PreferredLanguage = language;
         await _context.SaveChangesAsync(cancellationToken);
         return NoContent();
     }

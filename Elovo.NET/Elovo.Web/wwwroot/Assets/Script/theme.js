@@ -13,6 +13,12 @@
     function applyTheme(theme) {
         const normalizedTheme = normalizeTheme(theme);
         document.documentElement.dataset.theme = normalizedTheme;
+        if (window.parent !== window && window.location.pathname.startsWith("/settings/")) {
+            window.parent.postMessage({
+                type: "elovo:theme-changed",
+                theme: normalizedTheme
+            }, window.location.origin);
+        }
         return normalizedTheme;
     }
 

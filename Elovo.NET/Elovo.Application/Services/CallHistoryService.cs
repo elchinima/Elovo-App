@@ -38,7 +38,7 @@ public class CallHistoryService : ICallHistoryService
             ConversationId = conversation.Id,
             SenderId = activeCall.CallerId,
             ReceiverId = activeCall.ReceiverId,
-            Content = BuildContent(status, durationSeconds, receiver?.PreferredLanguage),
+            Content = BuildContent(status, durationSeconds, receiver?.Session?.PreferredLanguage),
             SentAt = completedAt,
             IsPending = true,
             IsCall = true,

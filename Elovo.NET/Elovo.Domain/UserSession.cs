@@ -8,6 +8,7 @@ public class UserSession
     public string? LastLoginIp { get; set; }
     public string? RegistrationIp { get; set; }
     public string? FcmToken { get; set; }
+    public string? PreferredLanguage { get; set; } = "en";
 
     public User User { get; set; } = null!;
 }

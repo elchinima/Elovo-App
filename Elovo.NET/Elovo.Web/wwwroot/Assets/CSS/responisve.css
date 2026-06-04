@@ -64,35 +64,12 @@
         place-items: stretch;
     }
 
-    .app-shell::before,
-    .app-shell::after {
-        content: "";
-        position: fixed;
-        left: 0;
-        right: 0;
-        z-index: 60;
-        pointer-events: none;
-        background:
-            radial-gradient(circle at 18% 0%, rgba(109, 103, 255, 0.22), transparent 18rem),
-            rgba(17, 22, 46, 0.82);
-        backdrop-filter: blur(22px);
-    }
-
     .app-shell.has-active-call {
         padding-top: 50px;
     }
 
     .app-shell.has-active-call .settings-frame-shell {
         top: 50px;
-    }
-
-    .app-shell.has-active-call::before,
-    .app-shell.has-active-call::after {
-        border-color: rgba(34, 197, 94, 0.82);
-        background:
-            linear-gradient(180deg, rgba(34, 197, 94, 0.34), rgba(34, 197, 94, 0.18)),
-            rgba(8, 34, 24, 0.9);
-        box-shadow: 0 0 24px rgba(34, 197, 94, 0.28);
     }
 
     .active-call-banner:not([hidden]) {

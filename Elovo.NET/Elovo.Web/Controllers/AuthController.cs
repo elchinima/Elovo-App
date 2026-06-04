@@ -5,8 +5,12 @@ public class AuthController : Controller
 {
     private const string AuthCookieName = "ElovoAuthToken";
     private const string TwoFactorCookieName = "ElovoTwoFactorUser";
+    private const string GoogleStateCookieName = "ElovoGoogleOAuthState";
+    private const string GoogleAuthorizationEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+    private const string GoogleTokenEndpoint = "https://oauth2.googleapis.com/token";
     private readonly IAuthService _authService;
     private readonly IConfiguration _configuration;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IValidator<LoginDto> _loginValidator;
     private readonly IValidator<RegisterDto> _registerValidator;
     private readonly ILogger<AuthController> _logger;
@@ -14,12 +18,14 @@ public class AuthController : Controller
     public AuthController(
         IAuthService authService,
         IConfiguration configuration,
+        IHttpClientFactory httpClientFactory,
         IValidator<LoginDto> loginValidator,
         IValidator<RegisterDto> registerValidator,
         ILogger<AuthController> logger)
     {
         _authService = authService;
         _configuration = configuration;
+        _httpClientFactory = httpClientFactory;
         _loginValidator = loginValidator;
         _registerValidator = registerValidator;
         _logger = logger;
@@ -80,47 +86,52 @@ public class AuthController : Controller
 
     [HttpGet("~/google-login")]
     [AllowAnonymous]
-    public IActionResult GoogleLogin()
+    public async Task<IActionResult> GoogleLogin([FromQuery] string? code, [FromQuery] string? state, [FromQuery] string? error, CancellationToken cancellationToken)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
             return RedirectToAction("Index", "Chat");
         }
 
-        ViewBag.GoogleClientId = GetGoogleClientId();
-        var pathBase = Request.PathBase.HasValue ? Request.PathBase.Value : string.Empty;
-        ViewBag.GoogleLoginUri = $"{Request.Scheme}://{Request.Host}{pathBase}/google-login";
-        return View();
-    }
-
-    [HttpPost("~/google-login")]
-    [AllowAnonymous]
-    [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> GoogleLoginCallback([FromForm] string? credential, [FromForm(Name = "g_csrf_token")] string? csrfToken, CancellationToken cancellationToken)
-    {
-        if (!ValidateGoogleCsrfToken(csrfToken))
+        if (!string.IsNullOrWhiteSpace(error))
         {
-            TempData["AuthError"] = "Google sign-in could not be verified. Try again.";
+            TempData["AuthError"] = "Google sign-in was cancelled or denied.";
             return RedirectToAction(nameof(Login));
         }
 
         var clientId = GetGoogleClientId();
-        if (string.IsNullOrWhiteSpace(clientId))
+        var clientSecret = GetGoogleClientSecret();
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
         {
             TempData["AuthError"] = "Google sign-in is not configured.";
             return RedirectToAction(nameof(Login));
         }
 
-        if (string.IsNullOrWhiteSpace(credential))
+        var redirectUri = GetGoogleRedirectUri();
+        if (string.IsNullOrWhiteSpace(code))
         {
-            TempData["AuthError"] = "Google sign-in response is missing.";
+            return RedirectToGoogle(clientId, redirectUri);
+        }
+
+        if (!ValidateGoogleState(state))
+        {
+            TempData["AuthError"] = "Google sign-in could not be verified. Try again.";
             return RedirectToAction(nameof(Login));
         }
+
+        Response.Cookies.Delete(GoogleStateCookieName);
 
         GoogleJsonWebSignature.Payload payload;
         try
         {
-            payload = await GoogleJsonWebSignature.ValidateAsync(credential, new GoogleJsonWebSignature.ValidationSettings
+            var idToken = await ExchangeGoogleCodeForIdTokenAsync(code, clientId, clientSecret, redirectUri, cancellationToken);
+            if (string.IsNullOrWhiteSpace(idToken))
+            {
+                TempData["AuthError"] = "Google sign-in response is missing.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            payload = await GoogleJsonWebSignature.ValidateAsync(idToken, new GoogleJsonWebSignature.ValidationSettings
             {
                 Audience = new[] { clientId }
             });
@@ -270,11 +281,83 @@ public class AuthController : Controller
         return _configuration["GoogleAuth:ClientId"];
     }
 
-    private bool ValidateGoogleCsrfToken(string? csrfToken)
+    private string? GetGoogleClientSecret()
     {
-        return !string.IsNullOrWhiteSpace(csrfToken) &&
-            Request.Cookies.TryGetValue("g_csrf_token", out var csrfCookie) &&
-            csrfCookie == csrfToken;
+        return _configuration["GoogleAuth:ClientSecret"];
+    }
+
+    private IActionResult RedirectToGoogle(string clientId, string redirectUri)
+    {
+        var state = CreateGoogleState();
+        Response.Cookies.Append(GoogleStateCookieName, state, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddMinutes(10)
+        });
+
+        var query = new Dictionary<string, string>
+        {
+            ["client_id"] = clientId,
+            ["redirect_uri"] = redirectUri,
+            ["response_type"] = "code",
+            ["scope"] = "openid email profile",
+            ["state"] = state,
+            ["prompt"] = "select_account"
+        };
+
+        var authorizationUrl = GoogleAuthorizationEndpoint + "?" + string.Join("&", query.Select(item =>
+            $"{Uri.EscapeDataString(item.Key)}={Uri.EscapeDataString(item.Value)}"));
+
+        return Redirect(authorizationUrl);
+    }
+
+    private async Task<string?> ExchangeGoogleCodeForIdTokenAsync(string code, string clientId, string clientSecret, string redirectUri, CancellationToken cancellationToken)
+    {
+        using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["code"] = code,
+            ["client_id"] = clientId,
+            ["client_secret"] = clientSecret,
+            ["redirect_uri"] = redirectUri,
+            ["grant_type"] = "authorization_code"
+        });
+
+        using var response = await _httpClientFactory
+            .CreateClient()
+            .PostAsync(GoogleTokenEndpoint, content, cancellationToken);
+
+        var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("Google token exchange failed with status {StatusCode}: {Response}", response.StatusCode, responseJson);
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(responseJson);
+        return document.RootElement.TryGetProperty("id_token", out var idTokenElement)
+            ? idTokenElement.GetString()
+            : null;
+    }
+
+    private string GetGoogleRedirectUri()
+    {
+        var pathBase = Request.PathBase.HasValue ? Request.PathBase.Value : string.Empty;
+        return $"{Request.Scheme}://{Request.Host}{pathBase}/google-login";
+    }
+
+    private bool ValidateGoogleState(string? state)
+    {
+        return !string.IsNullOrWhiteSpace(state) &&
+            Request.Cookies.TryGetValue(GoogleStateCookieName, out var stateCookie) &&
+            stateCookie == state;
+    }
+
+    private static string CreateGoogleState()
+    {
+        var bytes = RandomNumberGenerator.GetBytes(32);
+        return Convert.ToHexString(bytes);
     }
 
     private static string MaskEmail(string? email)

@@ -353,9 +353,13 @@ input:disabled {
     place-items: center;
     padding: 0;
     border: 1px solid var(--line) !important;
+    border-radius: var(--radius);
     color: var(--text) !important;
     background: rgba(255, 255, 255, 0.04) !important;
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, opacity 180ms ease;
     text-decoration: none;
+    touch-action: manipulation;
+    user-select: none;
 }
 
 .google-auth-button:hover,
@@ -370,12 +374,6 @@ input:disabled {
     display: block;
     filter: brightness(0) invert(1);
     pointer-events: none;
-}
-
-.google-signin-shell {
-    min-height: 48px;
-    display: flex;
-    align-items: center;
 }
 
 .button-icon {

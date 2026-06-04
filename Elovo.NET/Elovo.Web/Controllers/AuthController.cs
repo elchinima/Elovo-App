@@ -81,6 +81,11 @@ public class AuthController : Controller
         }
 
         SetAuthCookie(result.Token);
+        var userAgent = Request.Headers["User-Agent"].ToString();
+        if (userAgent.Contains("wv") || userAgent.Contains("Android"))
+        {
+            return Redirect("elovo://auth-success");
+        }
         return RedirectToAction("Index", "Chat");
     }
 

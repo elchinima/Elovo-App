@@ -81,7 +81,7 @@ public class AuthController : Controller
         }
 
         SetAuthCookie(result.Token);
-        return Redirect("elovo://auth-success");
+        return Redirect($"https://elovo-app.onrender.com/auth/callback?token={result.Token}");
     }
 
     [HttpGet("~/google-login")]

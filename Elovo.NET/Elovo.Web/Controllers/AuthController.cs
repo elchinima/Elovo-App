@@ -163,7 +163,7 @@ public class AuthController : Controller
         }
 
         SetAuthCookie(result.Token);
-        return RedirectToAction("Index", "Chat");
+        return Redirect($"https://elovo-app.onrender.com/auth/callback?token={result.Token}");
     }
 
     [HttpGet("two-factor")]

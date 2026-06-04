@@ -794,22 +794,9 @@ function formatCallDuration(totalSeconds) {
 }
 
 function triggerMobileBoundaryPulse() {
-    if (!appShell || appShell.classList.contains("has-active-call")) {
-        return;
+    if (window.AndroidBridge) {
+        AndroidBridge.triggerBoundaryPulse();
     }
-
-    if (mobileBoundaryPulseTimer) {
-        window.clearTimeout(mobileBoundaryPulseTimer);
-    }
-
-    appShell.classList.remove("has-message-pulse");
-    window.requestAnimationFrame(() => {
-        appShell.classList.add("has-message-pulse");
-        mobileBoundaryPulseTimer = window.setTimeout(() => {
-            appShell.classList.remove("has-message-pulse");
-            mobileBoundaryPulseTimer = null;
-        }, 900);
-    });
 }
 
 function syncActiveCallBanner() {

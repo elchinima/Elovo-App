@@ -57,10 +57,12 @@
 
     .app-shell {
         position: relative;
+        width: 100vw;
         height: 100vh;
         height: 100dvh;
         min-height: 100dvh;
         overflow: hidden;
+        padding: 0;
         place-items: stretch;
     }
 
@@ -138,10 +140,14 @@
     }
 
     .messenger-view {
+        width: 100vw;
+        max-width: none;
         height: 100vh;
         height: 100dvh;
         grid-template-columns: 1fr;
+        border: 0 !important;
         border-radius: 0;
+        box-shadow: none !important;
     }
 
     .app-shell.has-active-call .messenger-view {
@@ -153,7 +159,27 @@
     .chat-panel {
         grid-column: 1;
         grid-row: 1;
-        border: none;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .sidebar-header,
+    .chat-header,
+    .composer,
+    .search-box,
+    .chat-list,
+    .chat-item,
+    .chat-swipe-shell {
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .chat-item::before,
+    .chat-item::after,
+    .chat-swipe-shell::before {
+        display: none;
     }
 
     .chat-panel {

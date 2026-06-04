@@ -82,6 +82,31 @@ public class AuthService : IAuthService
         return AuthResultDto.Success(_mapper.Map<UserDto>(user), CreateToken(user));
     }
 
+    public async Task<AuthResultDto> LoginWithGoogleAsync(string email, string? clientIp, CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = NormalizeEmail(email);
+        if (string.IsNullOrWhiteSpace(normalizedEmail))
+        {
+            return AuthResultDto.Failure("Google account email is missing.");
+        }
+
+        var user = await _unitOfWork.Users.GetByEmailAsync(normalizedEmail, cancellationToken);
+        if (user is null)
+        {
+            return AuthResultDto.Failure("No user account exists with this Google email.");
+        }
+
+        var twoFactor = EnsureTwoFactor(user);
+        var session = EnsureSession(user);
+        twoFactor.TwoFactorCodeHash = null;
+        twoFactor.TwoFactorCodeExpiredAt = null;
+        ApplyLoginIp(session, clientIp);
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return AuthResultDto.Success(_mapper.Map<UserDto>(user), CreateToken(user));
+    }
+
     public async Task<AuthResultDto> VerifyTwoFactorAsync(Guid userId, string code, string? clientIp, CancellationToken cancellationToken = default)
     {
         // Two-factor authentication is temporarily disabled.
@@ -164,6 +189,11 @@ public class AuthService : IAuthService
     private static string NormalizeTwoFactorCode(string code)
     {
         return new string((code ?? string.Empty).Where(char.IsDigit).ToArray());
+    }
+
+    private static string NormalizeEmail(string email)
+    {
+        return (email ?? string.Empty).Trim().ToLowerInvariant();
     }
 
     private static void ClearTwoFactorCode(UserTwoFactor twoFactor)

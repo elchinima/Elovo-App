@@ -23,6 +23,7 @@ global using Elovo.Web.Services;
 global using FirebaseAdmin;
 global using FirebaseAdmin.Messaging;
 global using FluentValidation;
+global using Google.Apis.Auth;
 global using Google.Apis.Auth.OAuth2;
 global using Microsoft.AspNetCore.Authentication.JwtBearer;
 global using Microsoft.AspNetCore.Authorization;

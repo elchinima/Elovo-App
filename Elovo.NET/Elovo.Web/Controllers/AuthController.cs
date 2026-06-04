@@ -6,17 +6,20 @@ public class AuthController : Controller
     private const string AuthCookieName = "ElovoAuthToken";
     private const string TwoFactorCookieName = "ElovoTwoFactorUser";
     private readonly IAuthService _authService;
+    private readonly IConfiguration _configuration;
     private readonly IValidator<LoginDto> _loginValidator;
     private readonly IValidator<RegisterDto> _registerValidator;
     private readonly ILogger<AuthController> _logger;
 
     public AuthController(
         IAuthService authService,
+        IConfiguration configuration,
         IValidator<LoginDto> loginValidator,
         IValidator<RegisterDto> registerValidator,
         ILogger<AuthController> logger)
     {
         _authService = authService;
+        _configuration = configuration;
         _loginValidator = loginValidator;
         _registerValidator = registerValidator;
         _logger = logger;
@@ -26,6 +29,11 @@ public class AuthController : Controller
     [AllowAnonymous]
     public IActionResult Login()
     {
+        if (TempData.TryGetValue("AuthError", out var authError))
+        {
+            ViewBag.Error = authError;
+        }
+
         return User.Identity?.IsAuthenticated == true ? RedirectToAction("Index", "Chat") : View();
     }
 
@@ -64,6 +72,83 @@ public class AuthController : Controller
         {
             ViewBag.Error = result.Error ?? "Invalid username or password.";
             return View(dto);
+        }
+
+        SetAuthCookie(result.Token);
+        return RedirectToAction("Index", "Chat");
+    }
+
+    [HttpGet("~/google-login")]
+    [AllowAnonymous]
+    public IActionResult GoogleLogin()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Chat");
+        }
+
+        ViewBag.GoogleClientId = GetGoogleClientId();
+        var pathBase = Request.PathBase.HasValue ? Request.PathBase.Value : string.Empty;
+        ViewBag.GoogleLoginUri = $"{Request.Scheme}://{Request.Host}{pathBase}/google-login";
+        return View();
+    }
+
+    [HttpPost("~/google-login")]
+    [AllowAnonymous]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> GoogleLoginCallback([FromForm] string? credential, [FromForm(Name = "g_csrf_token")] string? csrfToken, CancellationToken cancellationToken)
+    {
+        if (!ValidateGoogleCsrfToken(csrfToken))
+        {
+            TempData["AuthError"] = "Google sign-in could not be verified. Try again.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        var clientId = GetGoogleClientId();
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            TempData["AuthError"] = "Google sign-in is not configured.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (string.IsNullOrWhiteSpace(credential))
+        {
+            TempData["AuthError"] = "Google sign-in response is missing.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        GoogleJsonWebSignature.Payload payload;
+        try
+        {
+            payload = await GoogleJsonWebSignature.ValidateAsync(credential, new GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { clientId }
+            });
+        }
+        catch (InvalidJwtException ex)
+        {
+            _logger.LogWarning(ex, "Google sign-in token validation failed");
+            TempData["AuthError"] = "Google sign-in could not be verified. Try again.";
+            return RedirectToAction(nameof(Login));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Google sign-in validation error");
+            TempData["AuthError"] = "Google sign-in is unavailable. Try again later.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        if (payload.EmailVerified != true || string.IsNullOrWhiteSpace(payload.Email))
+        {
+            TempData["AuthError"] = "Google account email is not verified.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        var result = await _authService.LoginWithGoogleAsync(payload.Email, ClientIpAddressResolver.Resolve(HttpContext), cancellationToken);
+        if (!result.Succeeded || result.Token is null)
+        {
+            TempData["AuthError"] = result.Error ?? "No user account exists with this Google email.";
+            return RedirectToAction(nameof(Login));
         }
 
         SetAuthCookie(result.Token);
@@ -178,6 +263,18 @@ public class AuthController : Controller
         userId = Guid.Empty;
         return Request.Cookies.TryGetValue(TwoFactorCookieName, out var value) &&
             Guid.TryParse(value, out userId);
+    }
+
+    private string? GetGoogleClientId()
+    {
+        return _configuration["GoogleAuth:ClientId"];
+    }
+
+    private bool ValidateGoogleCsrfToken(string? csrfToken)
+    {
+        return !string.IsNullOrWhiteSpace(csrfToken) &&
+            Request.Cookies.TryGetValue("g_csrf_token", out var csrfCookie) &&
+            csrfCookie == csrfToken;
     }
 
     private static string MaskEmail(string? email)

@@ -355,6 +355,7 @@ input:disabled {
     border: 1px solid var(--line) !important;
     color: var(--text) !important;
     background: rgba(255, 255, 255, 0.04) !important;
+    text-decoration: none;
 }
 
 .google-auth-button:hover,
@@ -369,6 +370,12 @@ input:disabled {
     display: block;
     filter: brightness(0) invert(1);
     pointer-events: none;
+}
+
+.google-signin-shell {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
 }
 
 .button-icon {

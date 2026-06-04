@@ -32,9 +32,9 @@
                     <img class="button-icon" src="~/Assets/Images/Icons/login.svg" alt="">
                     <span>Log in</span>
                 </button>
-                <button class="google-auth-button" type="button" aria-label="Continue with Google" title="Continue with Google">
+                <a class="google-auth-button" href="/google-login" aria-label="Continue with Google" title="Continue with Google">
                     <img class="google-auth-icon" src="~/Assets/Images/Icons/google.svg" alt="">
-                </button>
+                </a>
             </div>
             <a asp-action="Register" asp-controller="Auth" class="secondary-button">Create a new account</a>
             <p class="error-message" id="loginError" style="color: red; display: @(hasError ? "block" : "none"); margin-top: 10px; font-size: 0.875rem;">@(ViewBag.Error ?? "Invalid username or password.")</p>

@@ -76,6 +76,15 @@
         border-top: 1px solid var(--line);
     }
 
+    .chat-item {
+        border: 1px solid rgba(125, 134, 255, 0.12);
+    }
+
+    .chat-item:hover,
+    .chat-item.is-active {
+        border-color: rgba(125, 134, 255, 0.28);
+    }
+
     .chat-panel {
         display: none;
     }

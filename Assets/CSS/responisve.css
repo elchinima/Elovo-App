@@ -66,6 +66,16 @@
         border: none;
     }
 
+    .sidebar-header,
+    .chat-header,
+    .search-box {
+        border-bottom: 1px solid var(--line);
+    }
+
+    .composer {
+        border-top: 1px solid var(--line);
+    }
+
     .chat-panel {
         display: none;
     }

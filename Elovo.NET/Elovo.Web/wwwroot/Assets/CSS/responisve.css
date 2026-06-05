@@ -168,18 +168,10 @@
     .chat-header,
     .composer,
     .search-box,
-    .chat-list,
-    .chat-item,
-    .chat-swipe-shell {
+    .chat-list {
         border: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
-    }
-
-    .chat-item::before,
-    .chat-item::after,
-    .chat-swipe-shell::before {
-        display: none;
     }
 
     .sidebar-header,
@@ -194,11 +186,16 @@
 
     .chat-item {
         border: 1px solid rgba(125, 134, 255, 0.12) !important;
+        border-radius: var(--radius) !important;
     }
 
     .chat-item:hover,
     .chat-item.is-active {
         border-color: rgba(125, 134, 255, 0.28) !important;
+    }
+
+    .chat-swipe-shell {
+        border-radius: var(--radius) !important;
     }
 
     .chat-panel {

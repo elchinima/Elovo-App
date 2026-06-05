@@ -95,6 +95,7 @@ let shouldStopVoiceWhenReady = false;
 let activeVoiceAudio = null;
 let activeCall = null;
 let callTimer = null;
+let activeCallBannerHideTimer = null;
 let unansweredCallTimer = null;
 let timedOutCall = null;
 let incomingCall = null;
@@ -802,9 +803,10 @@ function triggerMobileBoundaryPulse() {
 function syncActiveCallBanner() {
     const hasEstablishedCall = Boolean(activeCall && activeCall.isEstablished);
     const shouldShowBanner = hasEstablishedCall && !callModal?.classList.contains("is-open");
+    const isBannerExiting = Boolean(activeCallBanner && !activeCallBanner.hidden && !shouldShowBanner);
 
     if (appShell) {
-        appShell.classList.toggle("has-active-call", hasEstablishedCall);
+        appShell.classList.toggle("has-active-call", hasEstablishedCall || isBannerExiting);
         if (hasEstablishedCall) {
             appShell.classList.remove("has-message-pulse");
         }
@@ -814,10 +816,28 @@ function syncActiveCallBanner() {
         return;
     }
 
-    activeCallBanner.hidden = !shouldShowBanner;
     if (!shouldShowBanner) {
+        if (!activeCallBanner.hidden && !activeCallBanner.classList.contains("is-leaving")) {
+            activeCallBanner.classList.add("is-leaving");
+            activeCallBannerHideTimer = window.setTimeout(() => {
+                activeCallBanner.hidden = true;
+                activeCallBanner.classList.remove("is-leaving");
+                activeCallBannerHideTimer = null;
+                if (!activeCall?.isEstablished) {
+                    appShell?.classList.remove("has-active-call");
+                }
+            }, 210);
+        }
         return;
     }
+
+    if (activeCallBannerHideTimer) {
+        window.clearTimeout(activeCallBannerHideTimer);
+        activeCallBannerHideTimer = null;
+    }
+
+    activeCallBanner.hidden = false;
+    activeCallBanner.classList.remove("is-leaving");
 
     if (activeCallBannerName) {
         activeCallBannerName.textContent = activeCall.remoteUser.username || t("Audio call");

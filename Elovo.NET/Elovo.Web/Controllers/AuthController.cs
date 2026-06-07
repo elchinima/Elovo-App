@@ -81,7 +81,14 @@ public class AuthController : Controller
         }
 
         SetAuthCookie(result.Token);
-        return Redirect($"https://elovo-app.onrender.com/auth/callback?token={result.Token}");
+        return RedirectToAction("Index", "Chat");
+    }
+
+    [HttpGet("callback")]
+    [AllowAnonymous]
+    public IActionResult Callback()
+    {
+        return RedirectToAction("Index", "Chat");
     }
 
     [HttpGet("~/google-login")]

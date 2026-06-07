@@ -76,6 +76,10 @@
     animation: activeCallBannerIn 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.active-call-banner.is-leaving {
+    animation: activeCallBannerOut 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
 .incoming-call-banner {
     animation: incomingCallBannerIn 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -305,6 +309,18 @@
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes activeCallBannerOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-12px);
     }
 }
 

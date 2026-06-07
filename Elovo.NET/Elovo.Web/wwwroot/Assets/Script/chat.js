@@ -826,7 +826,7 @@ function syncActiveCallBanner() {
                 if (!activeCall?.isEstablished) {
                     appShell?.classList.remove("has-active-call");
                 }
-            }, 210);
+            }, 240);
         }
         return;
     }

@@ -464,6 +464,9 @@ async function logoutFromProfile() {
             return;
         }
 
+        if (window.AndroidBridge) {
+            window.AndroidBridge.clearCookies();
+        }
         navigateWithLoader("/auth/login");
     } catch (error) {
         profileLogoutButton.disabled = false;

@@ -3728,6 +3728,9 @@ async function logout() {
             "RequestVerificationToken": getAntiForgeryToken()
         }
     });
+    if (window.AndroidBridge) {
+        window.AndroidBridge.clearCookies();
+    }
 
     navigateWithLoader("/auth/login");
 }

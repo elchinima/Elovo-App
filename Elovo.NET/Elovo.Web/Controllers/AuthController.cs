@@ -249,8 +249,17 @@ public class AuthController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult Logout()
     {
-        Response.Cookies.Delete(AuthCookieName);
-        Response.Cookies.Delete(TwoFactorCookieName);
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = Request.IsHttps,
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddDays(-1)
+        };
+
+        Response.Cookies.Append(AuthCookieName, "", cookieOptions);
+        Response.Cookies.Append(TwoFactorCookieName, "", cookieOptions);
+
         return RedirectToAction(nameof(Login));
     }
 

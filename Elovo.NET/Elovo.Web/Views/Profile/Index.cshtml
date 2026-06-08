@@ -99,7 +99,7 @@
                         <span>A 7-digit code will be sent to your email each time you sign in.</span>
                     </div>
                     <label class="switch">
-                        <input type="checkbox" id="twoFactorToggle">
+                        <input type="checkbox" id="twoFactorToggle" @(Model.IsTwoFactorEnabled ? "checked" : "")>
                         <span></span>
                     </label>
                 </div>
@@ -212,7 +212,8 @@
         username: "@Model.Username",
         initial: "@Model.Initial",
         profileImageUrl: "@Model.ProfileImageUrl",
-        hasEmail: @Json.Serialize(!string.IsNullOrWhiteSpace(Model.Email))
+        hasEmail: @Json.Serialize(!string.IsNullOrWhiteSpace(Model.Email)),
+        isTwoFactorEnabled: @Json.Serialize(Model.IsTwoFactorEnabled)
     };
 </script>
 

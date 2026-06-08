@@ -449,11 +449,11 @@ async function setTwoFactorEnabled() {
 
     const nextState = twoFactorToggle.checked;
     const confirmed = await confirmProfileAction(
-        nextState ? "Enable 2FA?" : "Disable 2FA?",
+        t(nextState ? "Enable 2FA?" : "Disable 2FA?"),
         nextState
-            ? "A verification code will be required on every sign in."
-            : "Your account will no longer ask for a verification code on sign in.",
-        nextState ? "Enable 2FA" : "Disable 2FA",
+            ? t("A verification code will be required on every sign in.")
+            : t("Your account will no longer ask for a verification code on sign in."),
+        t(nextState ? "Enable 2FA" : "Disable 2FA"),
         "security"
     );
     if (!confirmed) {
@@ -462,7 +462,7 @@ async function setTwoFactorEnabled() {
     }
 
     twoFactorToggle.disabled = true;
-    setProfileStatus(twoFactorStatus, "Saving setting...");
+    setProfileStatus(twoFactorStatus, t("Saving setting..."));
 
     const response = await fetch("/api/profile/two-factor", {
         method: "POST",
@@ -475,7 +475,7 @@ async function setTwoFactorEnabled() {
 
     if (response.ok) {
         renderProfile(await response.json());
-        setProfileStatus(twoFactorStatus, nextState ? "Two-factor authentication enabled." : "Two-factor authentication disabled.", "success");
+        setProfileStatus(twoFactorStatus, t(nextState ? "Two-factor authentication enabled." : "Two-factor authentication disabled."), "success");
         return;
     }
 

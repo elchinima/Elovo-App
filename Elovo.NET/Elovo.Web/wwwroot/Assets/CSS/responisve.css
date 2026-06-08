@@ -199,6 +199,7 @@
         border-color: rgba(125, 134, 255, 0.28) !important;
     }
 
+    .chat-swipe-row,
     .chat-swipe-shell {
         border-radius: var(--radius) !important;
     }

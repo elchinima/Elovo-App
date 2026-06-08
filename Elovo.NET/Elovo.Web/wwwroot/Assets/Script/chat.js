@@ -1752,6 +1752,7 @@ function submitConversationSearch() {
 }
 
 function createChatSwipeShell(chat, button) {
+    const row = document.createElement("div");
     const shell = document.createElement("div");
     const action = document.createElement("button");
     const actionIcon = document.createElement("img");
@@ -1767,6 +1768,7 @@ function createChatSwipeShell(chat, button) {
     let moved = false;
     let suppressClick = false;
 
+    row.className = "chat-swipe-row";
     shell.className = "chat-swipe-shell";
     action.type = "button";
     action.className = "chat-hide-action";
@@ -1782,17 +1784,17 @@ function createChatSwipeShell(chat, button) {
     const setSwipeState = (offset) => {
         const width = getSwipeWidth();
         const progress = Math.min(1, Math.abs(offset) / width);
-        shell.style.setProperty("--swipe-progress", progress.toFixed(3));
-        button.style.transform = `translateX(${offset}px)`;
-        shell.classList.toggle("is-confirming", progress >= revealThreshold);
+        row.style.setProperty("--swipe-progress", progress.toFixed(3));
+        shell.style.transform = `translateX(${offset}px)`;
+        row.classList.toggle("is-confirming", progress >= revealThreshold);
     };
 
     const reset = () => {
-        shell.classList.remove("is-revealed");
-        shell.classList.remove("is-dragging");
-        shell.classList.remove("is-confirming");
-        shell.style.removeProperty("--swipe-progress");
-        button.style.transform = "";
+        row.classList.remove("is-revealed");
+        row.classList.remove("is-dragging");
+        row.classList.remove("is-confirming");
+        row.style.removeProperty("--swipe-progress");
+        shell.style.transform = "";
     };
 
     button.addEventListener("pointerdown", (event) => {
@@ -1801,13 +1803,14 @@ function createChatSwipeShell(chat, button) {
         }
 
         startX = event.clientX;
-        startOffset = shell.classList.contains("is-revealed") ? getHalfSwipeOffset() : 0;
+        startOffset = row.classList.contains("is-revealed") ? getHalfSwipeOffset() : 0;
         currentX = startOffset;
         dragging = true;
         moved = false;
         button.setPointerCapture(event.pointerId);
         button.classList.add("is-swiping");
-        shell.classList.add("is-dragging");
+        shell.classList.add("is-swiping");
+        row.classList.add("is-dragging");
     });
 
     button.addEventListener("pointermove", (event) => {
@@ -1831,19 +1834,20 @@ function createChatSwipeShell(chat, button) {
 
         dragging = false;
         button.classList.remove("is-swiping");
-        shell.classList.remove("is-dragging");
+        shell.classList.remove("is-swiping");
+        row.classList.remove("is-dragging");
 
         const progress = Math.abs(currentX) / getSwipeWidth();
         if (progress >= hideThreshold) {
-            hideConversation(chat.userId, shell, button);
+            hideConversation(chat.userId, row, shell);
             return;
         }
 
         if (progress >= revealThreshold) {
-            shell.classList.add("is-revealed");
-            shell.classList.add("is-confirming");
-            shell.style.setProperty("--swipe-progress", "1");
-            button.style.transform = `translateX(${getHalfSwipeOffset()}px)`;
+            row.classList.add("is-revealed");
+            row.classList.add("is-confirming");
+            row.style.setProperty("--swipe-progress", "1");
+            shell.style.transform = `translateX(${getHalfSwipeOffset()}px)`;
         } else {
             reset();
         }
@@ -1866,11 +1870,12 @@ function createChatSwipeShell(chat, button) {
         }
     }, true);
 
-    shell.append(action, button);
-    return shell;
+    shell.appendChild(button);
+    row.append(action, shell);
+    return row;
 }
 
-function hideConversation(userId, shell = null, button = null) {
+function hideConversation(userId, row = null, card = null) {
     const id = normalizeId(userId);
     if (!id) {
         return;
@@ -1894,25 +1899,25 @@ function hideConversation(userId, shell = null, button = null) {
         renderChatList(getFilteredConversations());
     };
 
-    if (shell && button) {
-        shell.classList.add("is-hiding");
-        shell.style.setProperty("--swipe-progress", "1");
-        button.style.transform = `translateX(-${Math.ceil(window.innerWidth || document.documentElement.clientWidth || 360)}px)`;
+    if (row && card) {
+        row.classList.add("is-hiding");
+        row.style.setProperty("--swipe-progress", "1");
+        card.style.transform = `translateX(-${Math.ceil(window.innerWidth || document.documentElement.clientWidth || 360)}px)`;
         window.setTimeout(completeHide, 300);
         return;
     }
 
-    const currentShell = chatList ? [...chatList.querySelectorAll(".chat-swipe-shell")].find((item) => {
+    const currentRow = chatList ? [...chatList.querySelectorAll(".chat-swipe-row")].find((item) => {
         return item.querySelector(".chat-item") && item.querySelector(".chat-item").dataset.userId === id;
     }) : null;
 
-    if (currentShell) {
-        const currentButton = currentShell.querySelector(".chat-item");
-        if (currentButton) {
-            hideConversation(id, currentShell, currentButton);
+    if (currentRow) {
+        const currentCard = currentRow.querySelector(".chat-swipe-shell");
+        if (currentCard) {
+            hideConversation(id, currentRow, currentCard);
             return;
         } else {
-            currentShell.classList.add("is-hiding");
+            currentRow.classList.add("is-hiding");
             window.setTimeout(completeHide, 260);
             return;
         }

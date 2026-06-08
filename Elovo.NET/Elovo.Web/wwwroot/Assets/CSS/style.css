@@ -662,7 +662,7 @@ input:disabled {
     transition: none;
 }
 
-.chat-swipe-shell {
+.chat-swipe-row {
     position: relative;
     border-radius: var(--radius);
     overflow: hidden;
@@ -675,7 +675,7 @@ input:disabled {
     transition: opacity 240ms ease, max-height 300ms ease, margin 300ms ease, transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.chat-swipe-shell::before {
+.chat-swipe-row::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -685,11 +685,19 @@ input:disabled {
     pointer-events: none;
 }
 
-.chat-swipe-shell.is-revealed .chat-item:not(.is-swiping) {
-    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+.chat-swipe-shell {
+    position: relative;
+    z-index: 2;
+    border-radius: var(--radius);
+    will-change: transform;
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.chat-swipe-shell.is-hiding {
+.chat-swipe-shell.is-swiping {
+    transition: none;
+}
+
+.chat-swipe-row.is-hiding {
     opacity: 0;
     max-height: 0;
     margin-bottom: 0;
@@ -737,8 +745,8 @@ input:disabled {
     transition: opacity 180ms ease, transform 180ms ease;
 }
 
-.chat-swipe-shell.is-confirming .chat-hide-label,
-.chat-swipe-shell.is-revealed .chat-hide-label {
+.chat-swipe-row.is-confirming .chat-hide-label,
+.chat-swipe-row.is-revealed .chat-hide-label {
     opacity: 1;
     transform: translateX(0);
 }

@@ -1757,7 +1757,16 @@ function createChatSwipeShell(chat, button) {
     const action = document.createElement("button");
     const actionIcon = document.createElement("img");
     const actionText = document.createElement("span");
-    const getSwipeWidth = () => Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+    const useDesktopSwipeWidth = () => window.matchMedia("(min-width: 821px) and (pointer: fine)").matches;
+    const getSwipeWidth = () => {
+        if (useDesktopSwipeWidth()) {
+            const rowRect = row.getBoundingClientRect();
+            const buttonRect = button.getBoundingClientRect();
+            return Math.max(1, rowRect.width || buttonRect.width || 1);
+        }
+
+        return Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+    };
     const getHalfSwipeOffset = () => -(getSwipeWidth() * 0.5);
     const hideThreshold = 0.75;
     const revealThreshold = 0.5;

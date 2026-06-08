@@ -3336,6 +3336,15 @@ html[data-theme="light"] .message.them {
     background: rgba(0, 0, 0, 0.07);
 }
 
+html[data-theme="light"] .message .voice-wave::before {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+html[data-theme="light"] .message .voice-wave span,
+html[data-theme="light"] .message.them .voice-wave span {
+    background: rgba(0, 0, 0, 0.72);
+}
+
 html[data-theme="dark"] input,
 html[data-theme="dark"] .language-selector-toggle,
 html[data-theme="dark"] .language-selector-option,

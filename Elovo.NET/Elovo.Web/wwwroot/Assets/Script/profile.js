@@ -93,9 +93,8 @@ function renderProfile(profile) {
     }
 
     if (twoFactorToggle) {
-        twoFactorToggle.checked = false;
-        twoFactorToggle.disabled = true;
-        setProfileStatus(twoFactorStatus, t("Temporarily unavailable."));
+        twoFactorToggle.checked = !!profile.isTwoFactorEnabled;
+        twoFactorToggle.disabled = false;
     }
 
     if (window.parent !== window && window.location.pathname.startsWith("/settings/")) {
@@ -448,12 +447,6 @@ async function setTwoFactorEnabled() {
         return;
     }
 
-    twoFactorToggle.checked = false;
-    twoFactorToggle.disabled = true;
-    setProfileStatus(twoFactorStatus, t("Temporarily unavailable."), "error");
-    return;
-
-    /*
     const nextState = twoFactorToggle.checked;
     const confirmed = await confirmProfileAction(
         nextState ? "Enable 2FA?" : "Disable 2FA?",
@@ -489,7 +482,6 @@ async function setTwoFactorEnabled() {
     twoFactorToggle.checked = !nextState;
     twoFactorToggle.disabled = false;
     setProfileStatus(twoFactorStatus, await readResponseText(response), "error");
-    */
 }
 
 async function logoutFromProfile() {
@@ -591,9 +583,6 @@ if (profilePasswordModal) {
 }
 
 if (twoFactorToggle) {
-    twoFactorToggle.checked = false;
-    twoFactorToggle.disabled = true;
-    setProfileStatus(twoFactorStatus, t("Temporarily unavailable."));
     twoFactorToggle.addEventListener("change", setTwoFactorEnabled);
 }
 

@@ -3270,6 +3270,11 @@ html[data-theme] .modal-panel .primary-icon-button img.button-icon[src$=".svg"] 
     filter: brightness(0) invert(1) !important;
 }
 
+html[data-theme="light"] #avatarCropSave img.button-icon[src$=".svg"],
+html[data-theme="light"] #profilePasswordModal .profile-password-actions .primary-icon-button img.button-icon[src$=".svg"] {
+    filter: brightness(0) !important;
+}
+
 html[data-theme] .active-call-banner,
 html[data-theme] .active-call-banner * {
     color: #04120a !important;

@@ -97,7 +97,7 @@
         min-height: auto;
         padding: 24px;
         border-radius: 0;
-        justify-content: flex-start;
+        justify-content: center;
     }
 
     .login-card {

@@ -56,6 +56,8 @@ public class AuthService : IAuthService
         }
 
         var twoFactor = EnsureTwoFactor(user);
+        var session = EnsureSession(user);
+        ApplyPreferredLanguage(session, dto.PreferredLanguage);
         if (twoFactor.IsTwoFactorEnabled && !string.IsNullOrWhiteSpace(user.Email))
         {
             var code = GenerateTwoFactorCode();
@@ -63,10 +65,9 @@ public class AuthService : IAuthService
             twoFactor.TwoFactorCodeExpiredAt = DateTime.UtcNow.Add(TwoFactorCodeLifetime);
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _emailSender.SendTwoFactorCodeAsync(user.Email, user.Username, code, cancellationToken);
+            await _emailSender.SendTwoFactorCodeAsync(user.Email, user.Username, code, dto.PreferredLanguage, cancellationToken);
             return AuthResultDto.TwoFactorRequired(user);
         }
-        var session = EnsureSession(user);
         twoFactor.TwoFactorCodeHash = null;
         twoFactor.TwoFactorCodeExpiredAt = null;
         ApplyLoginIp(session, clientIp);
@@ -201,6 +202,15 @@ public class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(session.RegistrationIp))
         {
             session.RegistrationIp = session.LastLoginIp;
+        }
+    }
+
+    private static void ApplyPreferredLanguage(UserSession session, string? language)
+    {
+        var normalized = (language ?? string.Empty).Trim().ToLowerInvariant().Split('-')[0];
+        if (normalized is "en" or "ru" or "az")
+        {
+            session.PreferredLanguage = normalized;
         }
     }
 

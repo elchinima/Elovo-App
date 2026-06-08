@@ -175,6 +175,7 @@ window.ElovoTranslations = {
         "Accept": "Qəbul et",
         "Reject": "Rədd et",
         "Remove conversation from list": "Söhbəti siyahıdan çıxar",
+        "Hide chat?": "Çat gizlənsin?",
         "{name} will be removed from your friends and the entire chat history will be permanently deleted.": "{name} dostlarınızdan silinəcək və bütün çat tarixçəsi həmişəlik silinəcək.",
         "Friend could not be deleted. Try again.": "Dostu silmək mümkün olmadı. Yenidən cəhd edin.",
         "Send voice message": "Səsli mesaj göndər",

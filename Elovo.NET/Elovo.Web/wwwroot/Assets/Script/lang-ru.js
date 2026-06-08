@@ -175,6 +175,7 @@ window.ElovoTranslations = {
         "Accept": "Принять",
         "Reject": "Отклонить",
         "Remove conversation from list": "Убрать диалог из списка",
+        "Hide chat?": "Скрыть чат?",
         "{name} will be removed from your friends and the entire chat history will be permanently deleted.": "{name} будет удалён из друзей, а вся история чата будет удалена без возможности восстановления.",
         "Friend could not be deleted. Try again.": "Не удалось удалить друга. Попробуйте ещё раз.",
         "Send voice message": "Отправить голосовое сообщение",

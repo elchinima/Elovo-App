@@ -1755,8 +1755,14 @@ function createChatSwipeShell(chat, button) {
     const shell = document.createElement("div");
     const action = document.createElement("button");
     const actionIcon = document.createElement("img");
+    const actionText = document.createElement("span");
+    const getSwipeWidth = () => Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+    const getHalfSwipeOffset = () => -(getSwipeWidth() * 0.5);
+    const hideThreshold = 0.75;
+    const revealThreshold = 0.5;
     let startX = 0;
     let currentX = 0;
+    let startOffset = 0;
     let dragging = false;
     let moved = false;
     let suppressClick = false;
@@ -1768,12 +1774,23 @@ function createChatSwipeShell(chat, button) {
     actionIcon.src = "/Assets/Images/Icons/hidden-chats.svg";
     actionIcon.alt = "";
     actionIcon.className = "chat-hide-icon";
-    action.appendChild(actionIcon);
+    actionText.className = "chat-hide-label";
+    actionText.textContent = t("Hide chat?");
+    action.append(actionIcon, actionText);
     action.addEventListener("click", () => hideConversation(chat.userId));
+
+    const setSwipeState = (offset) => {
+        const width = getSwipeWidth();
+        const progress = Math.min(1, Math.abs(offset) / width);
+        shell.style.setProperty("--swipe-progress", progress.toFixed(3));
+        button.style.transform = `translateX(${offset}px)`;
+        shell.classList.toggle("is-confirming", progress >= revealThreshold);
+    };
 
     const reset = () => {
         shell.classList.remove("is-revealed");
         shell.classList.remove("is-dragging");
+        shell.classList.remove("is-confirming");
         shell.style.removeProperty("--swipe-progress");
         button.style.transform = "";
     };
@@ -1784,7 +1801,8 @@ function createChatSwipeShell(chat, button) {
         }
 
         startX = event.clientX;
-        currentX = 0;
+        startOffset = shell.classList.contains("is-revealed") ? getHalfSwipeOffset() : 0;
+        currentX = startOffset;
         dragging = true;
         moved = false;
         button.setPointerCapture(event.pointerId);
@@ -1797,12 +1815,12 @@ function createChatSwipeShell(chat, button) {
             return;
         }
 
-        currentX = Math.min(0, Math.max(-116, event.clientX - startX));
-        moved = Math.abs(currentX) > 8;
+        const width = getSwipeWidth();
+        currentX = Math.min(0, Math.max(-width, startOffset + event.clientX - startX));
+        moved = Math.abs(currentX - startOffset) > 8;
         if (moved) {
             event.preventDefault();
-            shell.style.setProperty("--swipe-progress", Math.min(1, Math.abs(currentX) / 92).toString());
-            button.style.transform = `translateX(${currentX}px)`;
+            setSwipeState(currentX);
         }
     });
 
@@ -1815,15 +1833,17 @@ function createChatSwipeShell(chat, button) {
         button.classList.remove("is-swiping");
         shell.classList.remove("is-dragging");
 
-        if (currentX <= -92) {
+        const progress = Math.abs(currentX) / getSwipeWidth();
+        if (progress >= hideThreshold) {
             hideConversation(chat.userId, shell, button);
             return;
         }
 
-        if (currentX <= -46) {
+        if (progress >= revealThreshold) {
             shell.classList.add("is-revealed");
+            shell.classList.add("is-confirming");
             shell.style.setProperty("--swipe-progress", "1");
-            button.style.transform = "";
+            button.style.transform = `translateX(${getHalfSwipeOffset()}px)`;
         } else {
             reset();
         }
@@ -1877,8 +1897,8 @@ function hideConversation(userId, shell = null, button = null) {
     if (shell && button) {
         shell.classList.add("is-hiding");
         shell.style.setProperty("--swipe-progress", "1");
-        button.style.transform = "translateX(-118%)";
-        window.setTimeout(completeHide, 260);
+        button.style.transform = `translateX(-${Math.ceil(window.innerWidth || document.documentElement.clientWidth || 360)}px)`;
+        window.setTimeout(completeHide, 300);
         return;
     }
 

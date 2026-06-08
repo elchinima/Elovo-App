@@ -67,6 +67,7 @@ window.ElovoTranslations = {
         "Delete": "Удалить",
         "Email": "Электронная почта",
         "Email address": "Адрес электронной почты",
+        "Edit email": "Редактировать email",
         "Save email": "Сохранить почту",
         "Current password": "Текущий пароль",
         "New password": "Новый пароль",

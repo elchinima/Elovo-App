@@ -14,11 +14,17 @@ const deleteProfileImageButton = document.querySelector("#deleteProfileImageButt
 const profileImageStatus = document.querySelector("#profileImageStatus");
 const profileEmailForm = document.querySelector("#profileEmailForm");
 const profileEmail = document.querySelector("#profileEmail");
+const profileEmailActionButton = document.querySelector("#profileEmailActionButton");
+const profileEmailActionIcon = document.querySelector("#profileEmailActionIcon");
 const profileEmailStatus = document.querySelector("#profileEmailStatus");
+const profilePasswordOpen = document.querySelector("#profilePasswordOpen");
+const profilePasswordModal = document.querySelector("#profilePasswordModal");
 const profilePasswordForm = document.querySelector("#profilePasswordForm");
 const currentPassword = document.querySelector("#currentPassword");
 const newPassword = document.querySelector("#newPassword");
 const profilePasswordStatus = document.querySelector("#profilePasswordStatus");
+const profilePasswordClose = document.querySelector("#profilePasswordClose");
+const profilePasswordCancel = document.querySelector("#profilePasswordCancel");
 const twoFactorToggle = document.querySelector("#twoFactorToggle");
 const twoFactorStatus = document.querySelector("#twoFactorStatus");
 const profileLogoutButton = document.querySelector("#profileLogoutButton");
@@ -49,6 +55,7 @@ const profileConfirmIcons = {
 };
 const allowedProfileImageTypes = ["image/png", "image/jpeg", "image/jpg"];
 const maxImageSize = 10 * 1024 * 1024;
+let isProfileEmailEditing = false;
 function setProfileStatus(element, message, kind = "") {
     if (!element) {
         return;
@@ -79,6 +86,7 @@ function renderProfile(profile) {
     if (profileEmail) {
         profileEmail.value = profile.email || "";
     }
+    setProfileEmailEditing(false);
 
     if (deleteProfileImageButton) {
         deleteProfileImageButton.disabled = !profile.profileImageUrl;
@@ -127,6 +135,54 @@ function confirmProfileAction(title, message, confirmText = t("Confirm"), icon =
         profileConfirmResolve = resolve;
     });
 }
+
+function setProfileEmailEditing(editing, shouldFocus = false) {
+    isProfileEmailEditing = editing;
+
+    if (profileEmail) {
+        profileEmail.readOnly = !editing;
+    }
+
+    if (profileEmailActionButton) {
+        const label = editing ? t("Save email") : t("Edit email");
+        profileEmailActionButton.classList.toggle("is-save", editing);
+        profileEmailActionButton.setAttribute("aria-label", label);
+        profileEmailActionButton.setAttribute("title", label);
+    }
+
+    if (profileEmailActionIcon) {
+        profileEmailActionIcon.src = editing
+            ? "/Assets/Images/Icons/profile-email-save.svg"
+            : "/Assets/Images/Icons/profile-email-edit.svg";
+    }
+
+    if (editing && shouldFocus && profileEmail) {
+        profileEmail.focus();
+        profileEmail.select();
+    }
+}
+
+function openPasswordModal() {
+    if (!profilePasswordModal) {
+        return;
+    }
+
+    if (profilePasswordForm) {
+        profilePasswordForm.reset();
+    }
+    setProfileStatus(profilePasswordStatus, "");
+    openModal(profilePasswordModal);
+    window.setTimeout(() => currentPassword?.focus(), 80);
+}
+
+function closePasswordModal() {
+    closeModal(profilePasswordModal);
+    if (profilePasswordForm) {
+        profilePasswordForm.reset();
+    }
+    setProfileStatus(profilePasswordStatus, "");
+}
+
 function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
@@ -311,6 +367,12 @@ async function deleteProfileAvatar() {
 
 async function saveProfileEmail(event) {
     event.preventDefault();
+    if (!isProfileEmailEditing) {
+        setProfileEmailEditing(true, true);
+        setProfileStatus(profileEmailStatus, "");
+        return;
+    }
+
     const confirmed = await confirmProfileAction(
         t("Save email?"),
         t("This email will be used for account security and two-factor authentication."),
@@ -374,6 +436,7 @@ async function saveProfilePassword(event) {
         }
 
         setProfileStatus(profilePasswordStatus, t("Password changed."), "success");
+        window.setTimeout(closePasswordModal, 650);
         return;
     }
 
@@ -501,8 +564,30 @@ if (profileEmailForm) {
     profileEmailForm.addEventListener("submit", saveProfileEmail);
 }
 
+setProfileEmailEditing(false);
+
+if (profilePasswordOpen) {
+    profilePasswordOpen.addEventListener("click", openPasswordModal);
+}
+
 if (profilePasswordForm) {
     profilePasswordForm.addEventListener("submit", saveProfilePassword);
+}
+
+if (profilePasswordClose) {
+    profilePasswordClose.addEventListener("click", closePasswordModal);
+}
+
+if (profilePasswordCancel) {
+    profilePasswordCancel.addEventListener("click", closePasswordModal);
+}
+
+if (profilePasswordModal) {
+    profilePasswordModal.addEventListener("click", (event) => {
+        if (event.target === profilePasswordModal) {
+            closePasswordModal();
+        }
+    });
 }
 
 if (twoFactorToggle) {

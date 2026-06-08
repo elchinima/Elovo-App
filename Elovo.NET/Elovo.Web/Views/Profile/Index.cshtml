@@ -64,14 +64,15 @@
                     <h2>Email</h2>
                 </div>
                 <form class="profile-form" id="profileEmailForm">
-                    <label>
-                        Email address
-                        <input type="email" id="profileEmail" value="@Model.Email" placeholder="name@example.com" required>
-                    </label>
-                    <button class="primary-icon-button" type="submit">
-                        <img class="button-icon" src="~/Assets/Images/Icons/sent-action.svg" alt="">
-                        <span>Save email</span>
-                    </button>
+                    <div class="profile-email-row">
+                        <label>
+                            Email address
+                            <input type="email" id="profileEmail" value="@Model.Email" placeholder="name@example.com" required readonly>
+                        </label>
+                        <button class="profile-field-action" id="profileEmailActionButton" type="submit" aria-label="Edit email" title="Edit email">
+                            <img class="button-icon" id="profileEmailActionIcon" src="~/Assets/Images/Icons/profile-email-edit.svg" alt="">
+                        </button>
+                    </div>
                     <p class="profile-status" id="profileEmailStatus"></p>
                 </form>
             </section>
@@ -81,21 +82,10 @@
                     <img src="~/Assets/Images/Icons/password.svg" alt="">
                     <h2>Password</h2>
                 </div>
-                <form class="profile-form" id="profilePasswordForm">
-                    <label>
-                        Current password
-                        <input type="password" id="currentPassword" autocomplete="current-password" required>
-                    </label>
-                    <label>
-                        New password
-                        <input type="password" id="newPassword" autocomplete="new-password" minlength="8" maxlength="128" required>
-                    </label>
-                    <button class="primary-icon-button" type="submit">
-                        <img class="button-icon" src="~/Assets/Images/Icons/password.svg" alt="">
-                        <span>Change password</span>
-                    </button>
-                    <p class="profile-status" id="profilePasswordStatus"></p>
-                </form>
+                <button class="primary-icon-button" id="profilePasswordOpen" type="button">
+                    <img class="button-icon" src="~/Assets/Images/Icons/password.svg" alt="">
+                    <span>Change password</span>
+                </button>
             </section>
 
             <section class="profile-panel">
@@ -152,6 +142,38 @@
                     <span>Save</span>
                 </button>
             </div>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="profilePasswordModal" aria-hidden="true">
+        <section class="modal-panel profile-password-panel" role="dialog" aria-modal="true" aria-labelledby="profilePasswordTitle">
+            <header class="modal-header">
+                <h2 id="profilePasswordTitle">Change password</h2>
+                <button class="icon-button" type="button" id="profilePasswordClose" aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <form class="profile-form profile-password-form" id="profilePasswordForm">
+                <label>
+                    Current password
+                    <input type="password" id="currentPassword" autocomplete="current-password" required>
+                </label>
+                <label>
+                    New password
+                    <input type="password" id="newPassword" autocomplete="new-password" minlength="8" maxlength="128" required>
+                </label>
+                <p class="profile-status" id="profilePasswordStatus"></p>
+                <div class="profile-password-actions">
+                    <button class="secondary-icon-button" id="profilePasswordCancel" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                        <span>Cancel</span>
+                    </button>
+                    <button class="primary-icon-button" type="submit">
+                        <img class="button-icon" src="~/Assets/Images/Icons/profile-email-save.svg" alt="">
+                        <span>Save</span>
+                    </button>
+                </div>
+            </form>
         </section>
     </div>
 

@@ -162,6 +162,11 @@
         border: 0 !important;
         border-radius: 0 !important;
         box-shadow: none !important;
+        will-change: transform, opacity;
+        transition:
+            transform 340ms cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 260ms ease,
+            filter 340ms ease;
     }
 
     .sidebar-header,
@@ -198,17 +203,35 @@
         border-radius: var(--radius) !important;
     }
 
+    .sidebar {
+        z-index: 1;
+        transform: translateX(0);
+        opacity: 1;
+        filter: blur(0);
+        pointer-events: auto;
+    }
+
     .chat-panel {
-        display: none;
+        z-index: 2;
+        display: grid;
+        transform: translateX(100%);
+        opacity: 0;
+        filter: blur(10px);
+        pointer-events: none;
     }
 
     .messenger-view.chat-open .sidebar {
-        display: none;
+        transform: translateX(-24px) scale(0.985);
+        opacity: 0;
+        filter: blur(10px);
+        pointer-events: none;
     }
 
     .messenger-view.chat-open .chat-panel {
-        display: grid;
-        animation: mobilePanelIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        transform: translateX(0);
+        opacity: 1;
+        filter: blur(0);
+        pointer-events: auto;
     }
 
     .mobile-back {
@@ -233,7 +256,8 @@
     }
 
     .messenger-view.chat-open .friend-action-dock {
-        display: none;
+        opacity: 0;
+        pointer-events: none;
     }
 
     .message {
@@ -389,6 +413,7 @@
 
     .restore-hidden-backdrop,
     #avatarCropModal,
+    #profilePasswordModal,
     #profileConfirmModal,
     #chatRetentionConfirmModal {
         align-items: center;
@@ -403,6 +428,26 @@
         max-height: calc(100dvh - 99px);
         border: 1px solid rgba(139, 124, 255, 0.28);
         border-radius: var(--radius);
+    }
+
+    #profilePasswordModal {
+        padding: 0;
+        align-items: stretch;
+        justify-items: stretch;
+    }
+
+    #profilePasswordModal .profile-password-panel {
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .profile-password-form {
+        align-content: start;
+        padding: 18px;
     }
 
     .restore-hidden-panel .confirm-modal-body,

@@ -368,6 +368,12 @@ input:disabled {
     background: rgba(255, 255, 255, 0.08) !important;
 }
 
+.google-auth-button:active {
+    transform: scale(0.95);
+    opacity: 0.85;
+    transition: transform 50ms ease, opacity 50ms ease;
+}
+
 .google-auth-icon {
     width: 25px;
     height: 25px;
@@ -2498,6 +2504,47 @@ html[data-theme] .profile-logout-button .button-icon {
     grid-template-columns: 1fr 1fr;
 }
 
+.profile-email-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    align-items: end;
+    gap: 10px;
+}
+
+.profile-field-action {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, opacity 180ms ease;
+}
+
+.profile-field-action.is-save {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.profile-field-action:hover,
+.profile-field-action:focus-visible {
+    border-color: rgba(125, 134, 255, 0.35);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-field-action.is-save:hover,
+.profile-field-action.is-save:focus-visible {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.profile-email-row input[readonly] {
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.035);
+}
+
 .secondary-icon-button,
 .profile-form .primary-icon-button,
 .profile-actions .primary-icon-button {
@@ -2542,6 +2589,33 @@ html[data-theme] .profile-logout-button .button-icon {
 
 .profile-status.is-success {
     color: var(--success);
+}
+
+.profile-password-panel {
+    width: min(440px, 100%);
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.profile-password-form {
+    padding: 18px;
+    overflow: auto;
+}
+
+.profile-password-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.profile-password-actions .primary-icon-button,
+.profile-password-actions .secondary-icon-button {
+    min-height: 48px;
+}
+
+.profile-password-actions .primary-icon-button {
+    border: 0;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
 }
 
 .profile-toggle-row {

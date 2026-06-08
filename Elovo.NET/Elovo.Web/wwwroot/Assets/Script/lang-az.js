@@ -67,6 +67,7 @@ window.ElovoTranslations = {
         "Delete": "Sil",
         "Email": "E-poçt",
         "Email address": "E-poçt ünvanı",
+        "Edit email": "E-poçtu redaktə et",
         "Save email": "E-poçtu saxla",
         "Current password": "Cari şifrə",
         "New password": "Yeni şifrə",

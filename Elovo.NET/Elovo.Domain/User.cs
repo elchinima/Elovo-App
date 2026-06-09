@@ -6,6 +6,10 @@ public class User
     public string Username { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string? Email { get; set; }
+    public bool IsEmailConfirmed { get; set; }
+    public string? EmailConfirmationCodeHash { get; set; }
+    public DateTime? EmailConfirmationCodeExpiredAt { get; set; }
+    public DateTime? LastEmailSentAt { get; set; }
     public string? ProfileImagePath { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -3,6 +3,7 @@
     ViewData["Title"] = "Elovo Verification";
     var hasError = !string.IsNullOrWhiteSpace(ViewBag.Error as string);
     var email = ViewBag.Email as string;
+    var emailCooldownEndsAt = ViewBag.EmailCooldownEndsAt as string;
 }
 
 <main class="app-shell">
@@ -11,7 +12,7 @@
             <img class="brand-logo" src="~/Assets/Images/Logo/Elovo-Logo.png" alt="Elovo logo">
             <p class="eyebrow">Two-factor authentication</p>
             <h1>Check your email to continue.</h1>
-            <p class="support-copy">Enter the 7 digit sign-in code. It is active for 15 minutes.</p>
+            <p class="support-copy">Enter the 7 digit sign-in code. It is active for 1 hour.</p>
         </div>
 
         <form class="login-card" id="twoFactorForm" asp-action="TwoFactor" asp-controller="Auth" method="post">
@@ -24,6 +25,7 @@
             {
                 <p class="fine-print"><span>Code sent to</span> @email</p>
             }
+            <p class="fine-print two-factor-email-timer" id="twoFactorEmailTimer" data-cooldown-ends-at="@emailCooldownEndsAt"></p>
             <label>
                 Code
                 <input type="text" id="twoFactorCode" name="Code" value="@Model?.Code" inputmode="numeric" pattern="[0-9]{7}" maxlength="7" autocomplete="one-time-code" required>

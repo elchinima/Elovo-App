@@ -14,6 +14,16 @@ public class SmtpEmailSender : IEmailSender
 
     public async Task SendTwoFactorCodeAsync(string email, string username, string code, string? language, CancellationToken cancellationToken = default)
     {
+        await SendCodeEmailAsync(email, username, code, GetTwoFactorCopy(language), cancellationToken);
+    }
+
+    public async Task SendEmailConfirmationCodeAsync(string email, string username, string code, string? language, CancellationToken cancellationToken = default)
+    {
+        await SendCodeEmailAsync(email, username, code, GetEmailConfirmationCopy(language), cancellationToken);
+    }
+
+    private async Task SendCodeEmailAsync(string email, string username, string code, CodeEmailCopy copy, CancellationToken cancellationToken)
+    {
         cancellationToken.ThrowIfCancellationRequested();
 
         var host = GetRequiredConfigurationValue("Email:SmtpHost");
@@ -32,8 +42,8 @@ public class SmtpEmailSender : IEmailSender
         using var message = new MailMessage
         {
             From = new MailAddress(from),
-            Subject = GetTwoFactorCopy(language).Subject,
-            Body = BuildTwoFactorBody(username, code, language),
+            Subject = copy.Subject,
+            Body = BuildCodeBody(username, code, copy),
             IsBodyHtml = true
         };
 
@@ -42,9 +52,8 @@ public class SmtpEmailSender : IEmailSender
         await client.SendMailAsync(message, CancellationToken.None);
     }
 
-    private static string BuildTwoFactorBody(string username, string code, string? language)
+    private static string BuildCodeBody(string username, string code, CodeEmailCopy copy)
     {
-        var copy = GetTwoFactorCopy(language);
         var safeCode = WebUtility.HtmlEncode(code);
         var safeTitle = WebUtility.HtmlEncode(copy.Title);
         var safeGreeting = WebUtility.HtmlEncode(string.Format(copy.Greeting, username));
@@ -82,28 +91,53 @@ public class SmtpEmailSender : IEmailSender
         """;
     }
 
-    private static TwoFactorEmailCopy GetTwoFactorCopy(string? language)
+    private static CodeEmailCopy GetTwoFactorCopy(string? language)
     {
         return NormalizeLanguage(language) switch
         {
-            "ru" => new TwoFactorEmailCopy(
+            "ru" => new CodeEmailCopy(
                 "ru",
-                "Ваш код подтверждения Elovo",
-                "Безопасный вход",
-                "Здравствуйте, {0}. Введите этот 7-значный код, чтобы завершить вход. Код действует 15 минут.",
-                "Если вы не пытались войти, как можно скорее измените пароль в профиле."),
-            "az" => new TwoFactorEmailCopy(
+                "\u0412\u0430\u0448 \u043a\u043e\u0434 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u044f Elovo",
+                "\u0411\u0435\u0437\u043e\u043f\u0430\u0441\u043d\u044b\u0439 \u0432\u0445\u043e\u0434",
+                "\u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435, {0}. \u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u044d\u0442\u043e\u0442 7-\u0437\u043d\u0430\u0447\u043d\u044b\u0439 \u043a\u043e\u0434, \u0447\u0442\u043e\u0431\u044b \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u044c \u0432\u0445\u043e\u0434. \u041a\u043e\u0434 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 1 \u0447\u0430\u0441.",
+                "\u0415\u0441\u043b\u0438 \u0432\u044b \u043d\u0435 \u043f\u044b\u0442\u0430\u043b\u0438\u0441\u044c \u0432\u043e\u0439\u0442\u0438, \u043a\u0430\u043a \u043c\u043e\u0436\u043d\u043e \u0441\u043a\u043e\u0440\u0435\u0435 \u0438\u0437\u043c\u0435\u043d\u0438\u0442\u0435 \u043f\u0430\u0440\u043e\u043b\u044c \u0432 \u043f\u0440\u043e\u0444\u0438\u043b\u0435."),
+            "az" => new CodeEmailCopy(
                 "az",
-                "Elovo təsdiq kodunuz",
-                "Təhlükəsiz giriş",
-                "Salam, {0}. Girişi tamamlamaq üçün bu 7 rəqəmli kodu daxil edin. Kod 15 dəqiqə qüvvədədir.",
-                "Giriş etməyə cəhd etməmisinizsə, mümkün qədər tez profilinizdən parolunuzu dəyişin."),
-            _ => new TwoFactorEmailCopy(
+                "Elovo t\u0259sdiq kodunuz",
+                "T\u0259hl\u00fck\u0259siz giri\u015f",
+                "Salam, {0}. Giri\u015fi tamamlamaq \u00fc\u00e7\u00fcn bu 7 r\u0259q\u0259mli kodu daxil edin. Kod 1 saat q\u00fcvv\u0259d\u0259dir.",
+                "Giri\u015f etm\u0259y\u0259 c\u0259hd etm\u0259misinizs\u0259, m\u00fcmk\u00fcn q\u0259d\u0259r tez profilinizd\u0259n parolunuzu d\u0259yi\u015fin."),
+            _ => new CodeEmailCopy(
                 "en",
                 "Your Elovo verification code",
                 "Secure sign in",
-                "Hi {0}, enter this 7 digit code to finish logging in. It expires in 15 minutes.",
+                "Hi {0}, enter this 7 digit code to finish logging in. It expires in 1 hour.",
                 "If you did not try to sign in, change your password from your profile as soon as possible.")
+        };
+    }
+
+    private static CodeEmailCopy GetEmailConfirmationCopy(string? language)
+    {
+        return NormalizeLanguage(language) switch
+        {
+            "ru" => new CodeEmailCopy(
+                "ru",
+                "\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0435 \u043f\u043e\u0447\u0442\u0443 Elovo",
+                "\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u043f\u043e\u0447\u0442\u044b",
+                "\u0417\u0434\u0440\u0430\u0432\u0441\u0442\u0432\u0443\u0439\u0442\u0435, {0}. \u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u044d\u0442\u043e\u0442 7-\u0437\u043d\u0430\u0447\u043d\u044b\u0439 \u043a\u043e\u0434, \u0447\u0442\u043e\u0431\u044b \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044c \u043f\u043e\u0447\u0442\u0443. \u041a\u043e\u0434 \u0434\u0435\u0439\u0441\u0442\u0432\u0443\u0435\u0442 1 \u0447\u0430\u0441.",
+                "\u0415\u0441\u043b\u0438 \u0432\u044b \u043d\u0435 \u0434\u043e\u0431\u0430\u0432\u043b\u044f\u043b\u0438 \u044d\u0442\u0443 \u043f\u043e\u0447\u0442\u0443, \u0441\u043c\u0435\u043d\u0438\u0442\u0435 \u043f\u0430\u0440\u043e\u043b\u044c \u0432 \u043f\u0440\u043e\u0444\u0438\u043b\u0435."),
+            "az" => new CodeEmailCopy(
+                "az",
+                "Elovo e-po\u00e7tunuzu t\u0259sdiql\u0259yin",
+                "E-po\u00e7t t\u0259sdiqi",
+                "Salam, {0}. E-po\u00e7tunuzu t\u0259sdiql\u0259m\u0259k \u00fc\u00e7\u00fcn bu 7 r\u0259q\u0259mli kodu daxil edin. Kod 1 saat q\u00fcvv\u0259d\u0259dir.",
+                "Bu e-po\u00e7tu siz \u0259lav\u0259 etm\u0259misinizs\u0259, profilinizd\u0259 parolunuzu d\u0259yi\u015fin."),
+            _ => new CodeEmailCopy(
+                "en",
+                "Confirm your Elovo email",
+                "Email verification",
+                "Hi {0}, enter this 7 digit code to verify your email. It expires in 1 hour.",
+                "If you did not add this email, change your password from your profile.")
         };
     }
 
@@ -113,7 +147,7 @@ public class SmtpEmailSender : IEmailSender
         return normalized is "ru" or "az" ? normalized : "en";
     }
 
-    private sealed record TwoFactorEmailCopy(string Language, string Subject, string Title, string Greeting, string Warning);
+    private sealed record CodeEmailCopy(string Language, string Subject, string Title, string Greeting, string Warning);
 
     private string GetRequiredConfigurationValue(string key)
     {

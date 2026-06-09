@@ -5,7 +5,10 @@ public class UserService : IUserService
 {
     private const int MinimumPasswordLength = 8;
     private const string HiddenProfileImageUrl = "/Assets/Images/Icons/profile-hidden.svg";
+    private static readonly TimeSpan EmailCodeLifetime = TimeSpan.FromHours(1);
+    private static readonly TimeSpan EmailSendCooldown = TimeSpan.FromHours(1);
 
+    private readonly IEmailSender _emailSender;
     private readonly IImageStorageService _imageStorageService;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
@@ -15,12 +18,14 @@ public class UserService : IUserService
         IUnitOfWork unitOfWork,
         IMapper mapper,
         IImageStorageService imageStorageService,
-        IUserPresenceTracker presenceTracker)
+        IUserPresenceTracker presenceTracker,
+        IEmailSender emailSender)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _imageStorageService = imageStorageService;
         _presenceTracker = presenceTracker;
+        _emailSender = emailSender;
     }
 
     public async Task<ProfileDto> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -142,7 +147,71 @@ public class UserService : IUserService
         }
 
         var user = await GetRequiredUserAsync(userId, cancellationToken);
+        var emailChanged = !string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase);
         user.Email = normalizedEmail;
+        if (emailChanged)
+        {
+            ClearEmailConfirmationCode(user);
+            user.IsEmailConfirmed = false;
+        }
+
+        if (!user.IsEmailConfirmed)
+        {
+            await SendEmailConfirmationCodeForUserAsync(user, cancellationToken);
+        }
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+    }
+
+    public async Task<ProfileDto> SendEmailConfirmationCodeAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(user.Email))
+        {
+            throw new InvalidOperationException("Add an email before requesting a verification code.");
+        }
+
+        if (user.IsEmailConfirmed)
+        {
+            return ToProfileDto(user);
+        }
+
+        await SendEmailConfirmationCodeForUserAsync(user, cancellationToken);
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+    }
+
+    public async Task<ProfileDto> VerifyEmailAsync(Guid userId, string code, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        if (string.IsNullOrWhiteSpace(user.Email) ||
+            string.IsNullOrWhiteSpace(user.EmailConfirmationCodeHash) ||
+            user.EmailConfirmationCodeExpiredAt is null)
+        {
+            throw new InvalidOperationException("Verification code is invalid.");
+        }
+
+        if (user.EmailConfirmationCodeExpiredAt <= DateTime.UtcNow)
+        {
+            ClearEmailConfirmationCode(user);
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            throw new InvalidOperationException("Verification code expired.");
+        }
+
+        var normalizedCode = NormalizeVerificationCode(code);
+        if (normalizedCode.Length != 7 || !BCrypt.Net.BCrypt.Verify(normalizedCode, user.EmailConfirmationCodeHash))
+        {
+            throw new InvalidOperationException("Verification code is invalid.");
+        }
+
+        user.IsEmailConfirmed = true;
+        ClearEmailConfirmationCode(user);
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -175,6 +244,11 @@ public class UserService : IUserService
         if (enabled && string.IsNullOrWhiteSpace(user.Email))
         {
             throw new InvalidOperationException("Add an email before enabling two-factor authentication.");
+        }
+
+        if (enabled && !user.IsEmailConfirmed)
+        {
+            throw new InvalidOperationException("Need to verify email.");
         }
 
         twoFactor.IsTwoFactorEnabled = enabled;
@@ -373,6 +447,8 @@ public class UserService : IUserService
             Id = user.Id,
             Username = user.Username,
             Email = user.Email,
+            IsEmailConfirmed = user.IsEmailConfirmed,
+            EmailCooldownEndsAt = GetEmailCooldownEndsAt(user),
             ProfileImagePath = user.ProfileImagePath,
             ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
             IsTwoFactorEnabled = user.TwoFactor?.IsTwoFactorEnabled ?? false
@@ -412,6 +488,70 @@ public class UserService : IUserService
         {
             return false;
         }
+    }
+
+    private async Task SendEmailConfirmationCodeForUserAsync(User user, CancellationToken cancellationToken)
+    {
+        var cooldownEndsAt = GetEmailCooldownEndsAt(user);
+        if (cooldownEndsAt is not null)
+        {
+            throw new InvalidOperationException(BuildEmailCooldownMessage(cooldownEndsAt.Value));
+        }
+
+        var code = GenerateVerificationCode();
+        await _emailSender.SendEmailConfirmationCodeAsync(
+            user.Email!,
+            user.Username,
+            code,
+            user.Session?.PreferredLanguage,
+            cancellationToken);
+
+        user.EmailConfirmationCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
+        user.EmailConfirmationCodeExpiredAt = DateTime.UtcNow.Add(EmailCodeLifetime);
+        user.LastEmailSentAt = DateTime.UtcNow;
+    }
+
+    private static DateTime? GetEmailCooldownEndsAt(User user)
+    {
+        if (user.LastEmailSentAt is null)
+        {
+            return null;
+        }
+
+        var endsAt = user.LastEmailSentAt.Value.Add(EmailSendCooldown);
+        return endsAt > DateTime.UtcNow ? endsAt : null;
+    }
+
+    private static string GenerateVerificationCode()
+    {
+        return System.Security.Cryptography.RandomNumberGenerator
+            .GetInt32(1_000_000, 10_000_000)
+            .ToString();
+    }
+
+    private static string NormalizeVerificationCode(string code)
+    {
+        return new string((code ?? string.Empty).Where(char.IsDigit).ToArray());
+    }
+
+    private static void ClearEmailConfirmationCode(User user)
+    {
+        user.EmailConfirmationCodeHash = null;
+        user.EmailConfirmationCodeExpiredAt = null;
+    }
+
+    private static string BuildEmailCooldownMessage(DateTime cooldownEndsAt)
+    {
+        var remaining = cooldownEndsAt - DateTime.UtcNow;
+        if (remaining < TimeSpan.Zero)
+        {
+            remaining = TimeSpan.Zero;
+        }
+
+        var totalSeconds = Math.Max(0, (int)Math.Ceiling(remaining.TotalSeconds));
+        var minutes = totalSeconds / 60;
+        var seconds = totalSeconds % 60;
+        return $"You can request another email in {minutes:D2}:{seconds:D2}.";
     }
 
     private static void ApplyLoginIp(UserSession session, string? clientIp)

@@ -17,6 +17,13 @@ const profileEmail = document.querySelector("#profileEmail");
 const profileEmailActionButton = document.querySelector("#profileEmailActionButton");
 const profileEmailActionIcon = document.querySelector("#profileEmailActionIcon");
 const profileEmailStatus = document.querySelector("#profileEmailStatus");
+const profileEmailVerificationWarning = document.querySelector("#profileEmailVerificationWarning");
+const profileEmailVerifyModal = document.querySelector("#profileEmailVerifyModal");
+const profileEmailVerifyForm = document.querySelector("#profileEmailVerifyForm");
+const profileEmailVerifyCode = document.querySelector("#profileEmailVerifyCode");
+const profileEmailVerifyStatus = document.querySelector("#profileEmailVerifyStatus");
+const profileEmailVerifyClose = document.querySelector("#profileEmailVerifyClose");
+const profileEmailVerifyResend = document.querySelector("#profileEmailVerifyResend");
 const profilePasswordOpen = document.querySelector("#profilePasswordOpen");
 const profilePasswordModal = document.querySelector("#profilePasswordModal");
 const profilePasswordForm = document.querySelector("#profilePasswordForm");
@@ -44,6 +51,7 @@ const profileConfirmCancel = document.querySelector("#profileConfirmCancel");
 const profileConfirmClose = document.querySelector("#profileConfirmClose");
 let avatarCropState = null;
 let profileConfirmResolve = null;
+let emailVerificationTimer = null;
 
 const profileConfirmIcons = {
     delete: "/Assets/Images/Icons/confirm-delete.svg",
@@ -66,8 +74,67 @@ function setProfileStatus(element, message, kind = "") {
     element.classList.toggle("is-success", kind === "success");
 }
 
+function getEmailCooldownEndsAt() {
+    const value = window.elovoProfile && window.elovoProfile.emailCooldownEndsAt;
+    const time = new Date(value || "").getTime();
+    return Number.isNaN(time) ? null : time;
+}
+
+function formatRemaining(milliseconds) {
+    const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+    const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
+}
+
+function getCooldownMessage() {
+    const endsAt = getEmailCooldownEndsAt();
+    if (!endsAt) {
+        return "";
+    }
+
+    const remaining = endsAt - Date.now();
+    if (remaining <= 0) {
+        return "";
+    }
+
+    return t("Next email available in {time}", { time: formatRemaining(remaining) });
+}
+
+function updateEmailVerificationUi() {
+    const hasEmail = !!(window.elovoProfile && (window.elovoProfile.email || window.elovoProfile.hasEmail));
+    const isConfirmed = !!(window.elovoProfile && window.elovoProfile.isEmailConfirmed);
+    const needsVerification = hasEmail && !isConfirmed;
+
+    if (profileEmailVerificationWarning) {
+        profileEmailVerificationWarning.hidden = !needsVerification;
+        profileEmailVerificationWarning.textContent = t("Need to verify email");
+    }
+
+    if (profileEmailVerifyResend) {
+        const cooldownMessage = getCooldownMessage();
+        const text = profileEmailVerifyResend.querySelector("span");
+        profileEmailVerifyResend.disabled = !!cooldownMessage || !needsVerification;
+        if (text) {
+            text.textContent = cooldownMessage || t("Send code");
+        }
+    }
+
+    if (profileEmailVerifyModal?.classList.contains("is-open")) {
+        const cooldownMessage = getCooldownMessage();
+        if (cooldownMessage && profileEmailVerifyStatus && !profileEmailVerifyStatus.classList.contains("is-error")) {
+            setProfileStatus(profileEmailVerifyStatus, cooldownMessage);
+        }
+    }
+}
+
 async function readResponseText(response) {
     const text = await response.text();
+    const cooldownMatch = text.match(/^You can request another email in ([0-9]{2,}:[0-9]{2})\.$/);
+    if (cooldownMatch) {
+        return t("Next email available in {time}", { time: cooldownMatch[1] });
+    }
+
     return t(text || "Request failed.");
 }
 
@@ -96,6 +163,8 @@ function renderProfile(profile) {
         twoFactorToggle.checked = !!profile.isTwoFactorEnabled;
         twoFactorToggle.disabled = false;
     }
+
+    updateEmailVerificationUi();
 
     if (window.parent !== window && window.location.pathname.startsWith("/settings/")) {
         window.parent.postMessage({ type: "elovo:profile-updated", profile }, window.location.origin);
@@ -180,6 +249,29 @@ function closePasswordModal() {
         profilePasswordForm.reset();
     }
     setProfileStatus(profilePasswordStatus, "");
+}
+
+function openEmailVerificationModal(message = "") {
+    if (!profileEmailVerifyModal) {
+        return;
+    }
+
+    if (profileEmailVerifyForm) {
+        profileEmailVerifyForm.reset();
+    }
+
+    setProfileStatus(profileEmailVerifyStatus, message || getCooldownMessage());
+    openModal(profileEmailVerifyModal);
+    window.setTimeout(() => profileEmailVerifyCode?.focus(), 80);
+    updateEmailVerificationUi();
+}
+
+function closeEmailVerificationModal() {
+    closeModal(profileEmailVerifyModal);
+    if (profileEmailVerifyForm) {
+        profileEmailVerifyForm.reset();
+    }
+    setProfileStatus(profileEmailVerifyStatus, "");
 }
 
 function clamp(value, min, max) {
@@ -394,13 +486,67 @@ async function saveProfileEmail(event) {
     });
 
     if (response.ok) {
-        renderProfile(await response.json());
-        setProfileStatus(profileEmailStatus, t("Email saved."), "success");
+        const profile = await response.json();
+        renderProfile(profile);
+        if (profile.isEmailConfirmed) {
+            setProfileStatus(profileEmailStatus, t("Email saved."), "success");
+        } else {
+            setProfileStatus(profileEmailStatus, t("Email saved. Please verify email."), "success");
+            openEmailVerificationModal(t("Confirmation code sent."));
+        }
         setProfileStatus(twoFactorStatus, "");
         return;
     }
 
     setProfileStatus(profileEmailStatus, await readResponseText(response), "error");
+}
+
+async function resendEmailVerificationCode() {
+    if (!profileEmailVerifyResend) {
+        return;
+    }
+
+    profileEmailVerifyResend.disabled = true;
+    setProfileStatus(profileEmailVerifyStatus, t("Sending code..."));
+
+    const response = await fetch("/api/profile/email/verification-code", {
+        method: "POST",
+        headers: {
+            "RequestVerificationToken": getAntiForgeryToken()
+        }
+    });
+
+    if (response.ok) {
+        renderProfile(await response.json());
+        setProfileStatus(profileEmailVerifyStatus, t("Confirmation code sent."), "success");
+        return;
+    }
+
+    setProfileStatus(profileEmailVerifyStatus, await readResponseText(response), "error");
+    updateEmailVerificationUi();
+}
+
+async function verifyProfileEmail(event) {
+    event.preventDefault();
+    setProfileStatus(profileEmailVerifyStatus, t("Verifying email..."));
+
+    const response = await fetch("/api/profile/email/verify", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "RequestVerificationToken": getAntiForgeryToken()
+        },
+        body: JSON.stringify({ code: profileEmailVerifyCode ? profileEmailVerifyCode.value : "" })
+    });
+
+    if (response.ok) {
+        renderProfile(await response.json());
+        closeEmailVerificationModal();
+        setProfileStatus(profileEmailStatus, t("Email verified."), "success");
+        return;
+    }
+
+    setProfileStatus(profileEmailVerifyStatus, await readResponseText(response), "error");
 }
 
 async function saveProfilePassword(event) {
@@ -557,6 +703,8 @@ if (profileEmailForm) {
 }
 
 setProfileEmailEditing(false);
+updateEmailVerificationUi();
+emailVerificationTimer = window.setInterval(updateEmailVerificationUi, 1000);
 
 if (profilePasswordOpen) {
     profilePasswordOpen.addEventListener("click", openPasswordModal);
@@ -564,6 +712,26 @@ if (profilePasswordOpen) {
 
 if (profilePasswordForm) {
     profilePasswordForm.addEventListener("submit", saveProfilePassword);
+}
+
+if (profileEmailVerifyForm) {
+    profileEmailVerifyForm.addEventListener("submit", verifyProfileEmail);
+}
+
+if (profileEmailVerifyClose) {
+    profileEmailVerifyClose.addEventListener("click", closeEmailVerificationModal);
+}
+
+if (profileEmailVerifyResend) {
+    profileEmailVerifyResend.addEventListener("click", resendEmailVerificationCode);
+}
+
+if (profileEmailVerifyModal) {
+    profileEmailVerifyModal.addEventListener("click", (event) => {
+        if (event.target === profileEmailVerifyModal) {
+            closeEmailVerificationModal();
+        }
+    });
 }
 
 if (profilePasswordClose) {

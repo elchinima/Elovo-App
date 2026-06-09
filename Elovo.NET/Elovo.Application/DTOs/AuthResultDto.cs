@@ -9,6 +9,7 @@ public class AuthResultDto
     public bool RequiresTwoFactor { get; set; }
     public Guid? TwoFactorUserId { get; set; }
     public string? TwoFactorEmail { get; set; }
+    public DateTime? EmailCooldownEndsAt { get; set; }
 
     public static AuthResultDto Success(UserDto user, string token)
     {
@@ -29,13 +30,14 @@ public class AuthResultDto
         };
     }
 
-    public static AuthResultDto TwoFactorRequired(User user)
+    public static AuthResultDto TwoFactorRequired(User user, DateTime? emailCooldownEndsAt = null)
     {
         return new AuthResultDto
         {
             RequiresTwoFactor = true,
             TwoFactorUserId = user.Id,
-            TwoFactorEmail = user.Email
+            TwoFactorEmail = user.Email,
+            EmailCooldownEndsAt = emailCooldownEndsAt
         };
     }
 }

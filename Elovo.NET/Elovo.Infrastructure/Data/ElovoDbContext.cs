@@ -26,6 +26,8 @@ public class ElovoDbContext : DbContext
             entity.Property(x => x.Username).HasMaxLength(32).IsRequired();
             entity.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
             entity.Property(x => x.Email).HasMaxLength(256);
+            entity.Property(x => x.IsEmailConfirmed).HasDefaultValue(false);
+            entity.Property(x => x.EmailConfirmationCodeHash).HasMaxLength(256);
             entity.Property(x => x.ProfileImagePath).HasMaxLength(512);
             entity.HasIndex(x => x.Username).IsUnique();
             entity.HasIndex(x => x.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");

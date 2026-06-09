@@ -3,7 +3,8 @@ namespace Elovo.Application.Services;
 
 public class AuthService : IAuthService
 {
-    private static readonly TimeSpan TwoFactorCodeLifetime = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan TwoFactorCodeLifetime = TimeSpan.FromHours(1);
+    private static readonly TimeSpan EmailSendCooldown = TimeSpan.FromHours(1);
 
     private readonly IConfiguration _configuration;
     private readonly IEmailSender _emailSender;
@@ -60,13 +61,27 @@ public class AuthService : IAuthService
         ApplyPreferredLanguage(session, dto.PreferredLanguage);
         if (twoFactor.IsTwoFactorEnabled && !string.IsNullOrWhiteSpace(user.Email))
         {
-            var code = GenerateTwoFactorCode();
-            twoFactor.TwoFactorCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
-            twoFactor.TwoFactorCodeExpiredAt = DateTime.UtcNow.Add(TwoFactorCodeLifetime);
+            var cooldownEndsAt = GetEmailCooldownEndsAt(user);
+            var hasValidCode = !string.IsNullOrWhiteSpace(twoFactor.TwoFactorCodeHash) &&
+                twoFactor.TwoFactorCodeExpiredAt > DateTime.UtcNow;
+
+            if (cooldownEndsAt is not null && !hasValidCode)
+            {
+                return AuthResultDto.Failure(BuildEmailCooldownMessage(cooldownEndsAt.Value));
+            }
+
+            if (cooldownEndsAt is null)
+            {
+                var code = GenerateTwoFactorCode();
+                await _emailSender.SendTwoFactorCodeAsync(user.Email, user.Username, code, dto.PreferredLanguage, cancellationToken);
+                twoFactor.TwoFactorCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
+                twoFactor.TwoFactorCodeExpiredAt = DateTime.UtcNow.Add(TwoFactorCodeLifetime);
+                user.LastEmailSentAt = DateTime.UtcNow;
+            }
+
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _emailSender.SendTwoFactorCodeAsync(user.Email, user.Username, code, dto.PreferredLanguage, cancellationToken);
-            return AuthResultDto.TwoFactorRequired(user);
+            return AuthResultDto.TwoFactorRequired(user, GetEmailCooldownEndsAt(user));
         }
         twoFactor.TwoFactorCodeHash = null;
         twoFactor.TwoFactorCodeExpiredAt = null;
@@ -93,6 +108,8 @@ public class AuthService : IAuthService
 
         var twoFactor = EnsureTwoFactor(user);
         var session = EnsureSession(user);
+        user.IsEmailConfirmed = true;
+        ClearEmailConfirmationCode(user);
         twoFactor.TwoFactorCodeHash = null;
         twoFactor.TwoFactorCodeExpiredAt = null;
         ApplyLoginIp(session, clientIp);
@@ -126,6 +143,8 @@ public class AuthService : IAuthService
         }
 
         var session = EnsureSession(user);
+        user.IsEmailConfirmed = true;
+        ClearEmailConfirmationCode(user);
         ClearTwoFactorCode(twoFactor);
         session.IsOnline = true;
         session.LastSeenAt = null;
@@ -190,6 +209,37 @@ public class AuthService : IAuthService
     {
         twoFactor.TwoFactorCodeHash = null;
         twoFactor.TwoFactorCodeExpiredAt = null;
+    }
+
+    private static void ClearEmailConfirmationCode(User user)
+    {
+        user.EmailConfirmationCodeHash = null;
+        user.EmailConfirmationCodeExpiredAt = null;
+    }
+
+    private static DateTime? GetEmailCooldownEndsAt(User user)
+    {
+        if (user.LastEmailSentAt is null)
+        {
+            return null;
+        }
+
+        var endsAt = user.LastEmailSentAt.Value.Add(EmailSendCooldown);
+        return endsAt > DateTime.UtcNow ? endsAt : null;
+    }
+
+    private static string BuildEmailCooldownMessage(DateTime cooldownEndsAt)
+    {
+        var remaining = cooldownEndsAt - DateTime.UtcNow;
+        if (remaining < TimeSpan.Zero)
+        {
+            remaining = TimeSpan.Zero;
+        }
+
+        var totalSeconds = Math.Max(0, (int)Math.Ceiling(remaining.TotalSeconds));
+        var minutes = totalSeconds / 60;
+        var seconds = totalSeconds % 60;
+        return $"You can request another email in {minutes:D2}:{seconds:D2}.";
     }
 
     private static void ApplyLoginIp(UserSession session, string? clientIp)

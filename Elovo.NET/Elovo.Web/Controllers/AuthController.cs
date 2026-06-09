@@ -71,6 +71,10 @@ public class AuthController : Controller
         {
             SetTwoFactorCookie(result.TwoFactorUserId.Value);
             TempData["TwoFactorEmail"] = MaskEmail(result.TwoFactorEmail);
+            if (result.EmailCooldownEndsAt is not null)
+            {
+                TempData["EmailCooldownEndsAt"] = result.EmailCooldownEndsAt.Value.ToString("O");
+            }
             return RedirectToAction(nameof(TwoFactor));
         }
 
@@ -188,6 +192,7 @@ public class AuthController : Controller
         }
 
         ViewBag.Email = TempData.Peek("TwoFactorEmail");
+        ViewBag.EmailCooldownEndsAt = TempData.Peek("EmailCooldownEndsAt");
         return View(new VerifyTwoFactorDto());
     }
 
@@ -206,6 +211,7 @@ public class AuthController : Controller
         {
             ViewBag.Error = result.Error ?? "Verification failed.";
             ViewBag.Email = TempData.Peek("TwoFactorEmail");
+            ViewBag.EmailCooldownEndsAt = TempData.Peek("EmailCooldownEndsAt");
             return View(dto);
         }
 

@@ -63,6 +63,32 @@ public class ProfileController : Controller
         }
     }
 
+    [HttpPost("/api/profile/email/verification-code")]
+    public async Task<IActionResult> SendEmailVerificationCode(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _userService.SendEmailConfirmationCodeAsync(GetCurrentUserId(), cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("/api/profile/email/verify")]
+    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _userService.VerifyEmailAsync(GetCurrentUserId(), dto.Code, cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("/api/profile/password")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken cancellationToken)
     {

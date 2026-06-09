@@ -66,6 +66,11 @@
 
     async function readResponseText(response) {
         const text = await response.text();
+        const cooldownMatch = text.match(/^You can request another email in ([0-9]{2,}:[0-9]{2})\.$/);
+        if (cooldownMatch) {
+            return t("Next email available in {time}", { time: cooldownMatch[1] });
+        }
+
         return t(text || "Request failed.");
     }
 

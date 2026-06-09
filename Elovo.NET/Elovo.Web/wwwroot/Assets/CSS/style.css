@@ -2578,6 +2578,18 @@ html[data-theme] .profile-logout-button .button-icon {
     background: rgba(255, 255, 255, 0.035);
 }
 
+.profile-email-warning {
+    min-height: 20px;
+    margin: -2px 0 0;
+    color: #ff8f9c;
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.profile-email-warning[hidden] {
+    display: none;
+}
+
 .secondary-icon-button,
 .profile-form .primary-icon-button,
 .profile-actions .primary-icon-button,
@@ -2645,6 +2657,8 @@ html[data-theme] .profile-logout-button .button-icon {
 .profile-password-actions .primary-icon-button,
 .profile-password-actions .secondary-icon-button {
     min-height: 48px;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .profile-password-actions .primary-icon-button {

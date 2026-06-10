@@ -1,5 +1,6 @@
-using System.Net;
-using System.Net.Mail;
+using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
 
 namespace Elovo.Web.Services;
 
@@ -31,35 +32,26 @@ public class SmtpEmailSender : IEmailSender
         var smtpUsername = GetRequiredConfigurationValue("Email:SmtpUsername");
         var smtpPassword = GetRequiredConfigurationValue("Email:SmtpPassword");
         var from = GetRequiredConfigurationValue("Email:From");
-        var enableSsl = bool.Parse(GetRequiredConfigurationValue("Email:EnableSsl"));
 
-        Console.WriteLine($"SMTP: host={host} port={port} user={smtpUsername} passLen={smtpPassword?.Length} ssl={enableSsl}");
+        var message = new MimeMessage();
+        message.From.Add(MailboxAddress.Parse(from));
+        message.To.Add(MailboxAddress.Parse(email));
+        message.Subject = copy.Subject;
+        message.Body = new TextPart("html") { Text = BuildCodeBody(username, code, copy) };
 
-        using var client = new SmtpClient(host, port)
-        {
-            Credentials = new NetworkCredential(smtpUsername, smtpPassword),
-            EnableSsl = enableSsl
-        };
-
-        using var message = new MailMessage
-        {
-            From = new MailAddress(from),
-            Subject = copy.Subject,
-            Body = BuildCodeBody(username, code, copy),
-            IsBodyHtml = true
-        };
-
-        message.To.Add(new MailAddress(email));
-
-        await client.SendMailAsync(message, CancellationToken.None);
+        using var client = new SmtpClient();
+        await client.ConnectAsync(host, port, SecureSocketOptions.StartTls, cancellationToken);
+        await client.AuthenticateAsync(smtpUsername, smtpPassword, cancellationToken);
+        await client.SendAsync(message, cancellationToken);
+        await client.DisconnectAsync(true, cancellationToken);
     }
 
     private static string BuildCodeBody(string username, string code, CodeEmailCopy copy)
     {
-        var safeCode = WebUtility.HtmlEncode(code);
-        var safeTitle = WebUtility.HtmlEncode(copy.Title);
-        var safeGreeting = WebUtility.HtmlEncode(string.Format(copy.Greeting, username));
-        var safeWarning = WebUtility.HtmlEncode(copy.Warning);
+        var safeCode = System.Net.WebUtility.HtmlEncode(code);
+        var safeTitle = System.Net.WebUtility.HtmlEncode(copy.Title);
+        var safeGreeting = System.Net.WebUtility.HtmlEncode(string.Format(copy.Greeting, username));
+        var safeWarning = System.Net.WebUtility.HtmlEncode(copy.Warning);
 
         return $"""
         <!doctype html>

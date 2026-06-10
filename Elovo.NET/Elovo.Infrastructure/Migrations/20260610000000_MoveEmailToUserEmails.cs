@@ -1,10 +1,14 @@
 using System;
+using Elovo.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Elovo.Infrastructure.Migrations;
 
+[DbContext(typeof(ElovoDbContext))]
+[Migration("20260610000000_MoveEmailToUserEmails")]
 public partial class MoveEmailToUserEmails : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

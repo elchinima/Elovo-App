@@ -33,6 +33,8 @@ public class SmtpEmailSender : IEmailSender
         var from = GetRequiredConfigurationValue("Email:From");
         var enableSsl = bool.Parse(GetRequiredConfigurationValue("Email:EnableSsl"));
 
+        Console.WriteLine($"SMTP: host={host} port={port} user={smtpUsername} passLen={smtpPassword?.Length} ssl={enableSsl}");
+
         using var client = new SmtpClient(host, port)
         {
             Credentials = new NetworkCredential(smtpUsername, smtpPassword),

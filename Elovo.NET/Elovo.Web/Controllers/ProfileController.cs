@@ -9,6 +9,7 @@ namespace Elovo.Web.Controllers;
 public class ProfileController : Controller
 {
     private const long MaxImageBytes = 10 * 1024 * 1024;
+    private const string EmailCodeSendFailureMessage = "Could not send the verification code. Try again later.";
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".png",
@@ -17,12 +18,17 @@ public class ProfileController : Controller
     };
 
     private readonly IImageStorageService _imageStorageService;
+    private readonly ILogger<ProfileController> _logger;
     private readonly IUserService _userService;
 
-    public ProfileController(IUserService userService, IImageStorageService imageStorageService)
+    public ProfileController(
+        IUserService userService,
+        IImageStorageService imageStorageService,
+        ILogger<ProfileController> logger)
     {
         _userService = userService;
         _imageStorageService = imageStorageService;
+        _logger = logger;
     }
 
     [HttpGet("profile")]
@@ -61,6 +67,11 @@ public class ProfileController : Controller
         {
             return BadRequest(ex.Message);
         }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Profile email update failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, EmailCodeSendFailureMessage);
+        }
     }
 
     [HttpPost("/api/profile/email/verification-code")]
@@ -73,6 +84,11 @@ public class ProfileController : Controller
         catch (InvalidOperationException ex)
         {
             return BadRequest(ex.Message);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogError(ex, "Profile email verification code send failed");
+            return StatusCode(StatusCodes.Status500InternalServerError, EmailCodeSendFailureMessage);
         }
     }
 

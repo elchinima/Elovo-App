@@ -129,7 +129,23 @@ function updateEmailVerificationUi() {
 }
 
 async function readResponseText(response) {
-    const text = await response.text();
+    const contentType = (response.headers.get("content-type") || "").toLowerCase();
+    const text = (await response.text()).trim();
+
+    if (contentType.includes("json")) {
+        try {
+            const payload = JSON.parse(text);
+            const message = payload.detail || payload.title || payload.message || "";
+            return t(message || "Request failed.");
+        } catch {
+            return t("Request failed.");
+        }
+    }
+
+    if (contentType.includes("html") || /^<!doctype html/i.test(text) || /<html[\s>]/i.test(text)) {
+        return t("Request failed.");
+    }
+
     const cooldownMatch = text.match(/^You can request another email in ([0-9]{2,}:[0-9]{2})\.$/);
     if (cooldownMatch) {
         return t("Next email available in {time}", { time: cooldownMatch[1] });
@@ -700,6 +716,12 @@ if (deleteProfileImageButton) {
 
 if (profileEmailForm) {
     profileEmailForm.addEventListener("submit", saveProfileEmail);
+}
+
+if (profileEmailVerificationWarning) {
+    profileEmailVerificationWarning.addEventListener("click", () => {
+        openEmailVerificationModal();
+    });
 }
 
 setProfileEmailEditing(false);

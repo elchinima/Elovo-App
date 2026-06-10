@@ -2579,15 +2579,29 @@ html[data-theme] .profile-logout-button .button-icon {
 }
 
 .profile-email-warning {
+    width: fit-content;
     min-height: 20px;
+    padding: 0;
+    border: 0;
     margin: -2px 0 0;
     color: #ff8f9c;
+    background: transparent;
     font-size: 0.84rem;
     font-weight: 800;
+    text-align: left;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
 }
 
 .profile-email-warning[hidden] {
     display: none;
+}
+
+.profile-email-warning:hover,
+.profile-email-warning:focus-visible {
+    color: #ffb3bc;
+    outline: none;
 }
 
 .secondary-icon-button,

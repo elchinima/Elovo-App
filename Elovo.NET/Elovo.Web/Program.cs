@@ -19,7 +19,7 @@ builder.Services.AddScoped<ICallHistoryService, CallHistoryService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddSingleton<IUserPresenceTracker, UserPresenceTracker>();
 builder.Services.AddOptions();
-builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddHttpClient<IEmailSender, SmtpEmailSender>();
 builder.Services.AddSingleton<PushNotificationService>();
 builder.Services.AddSingleton<IPushNotificationService>(serviceProvider => serviceProvider.GetRequiredService<PushNotificationService>());
 builder.Services.AddHttpClient<IImageStorageService, SupabaseImageStorageService>();

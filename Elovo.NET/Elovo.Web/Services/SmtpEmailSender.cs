@@ -1,16 +1,17 @@
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace Elovo.Web.Services;
 
 public class SmtpEmailSender : IEmailSender
 {
     private readonly IConfiguration _config;
+    private readonly HttpClient _httpClient;
 
-    public SmtpEmailSender(IConfiguration config)
+    public SmtpEmailSender(IConfiguration config, HttpClient httpClient)
     {
         _config = config;
+        _httpClient = httpClient;
     }
 
     public async Task SendTwoFactorCodeAsync(string email, string username, string code, string? language, CancellationToken cancellationToken = default)
@@ -27,23 +28,28 @@ public class SmtpEmailSender : IEmailSender
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var host = GetRequiredConfigurationValue("Email:SmtpHost");
-        var port = int.Parse(GetRequiredConfigurationValue("Email:SmtpPort"));
-        var smtpUsername = GetRequiredConfigurationValue("Email:SmtpUsername");
-        var smtpPassword = GetRequiredConfigurationValue("Email:SmtpPassword");
+        var apiKey = GetRequiredConfigurationValue("Email:ApiKey");
         var from = GetRequiredConfigurationValue("Email:From");
 
-        var message = new MimeMessage();
-        message.From.Add(MailboxAddress.Parse(from));
-        message.To.Add(MailboxAddress.Parse(email));
-        message.Subject = copy.Subject;
-        message.Body = new TextPart("html") { Text = BuildCodeBody(username, code, copy) };
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.brevo.com/v3/smtp/email");
+        request.Headers.Add("api-key", apiKey);
+        request.Content = new StringContent(
+            JsonSerializer.Serialize(new
+            {
+                sender = new { email = from },
+                to = new[] { new { email } },
+                subject = copy.Subject,
+                htmlContent = BuildCodeBody(username, code, copy)
+            }),
+            Encoding.UTF8,
+            "application/json");
 
-        using var client = new SmtpClient();
-        await client.ConnectAsync(host, port, SecureSocketOptions.StartTls, cancellationToken);
-        await client.AuthenticateAsync(smtpUsername, smtpPassword, cancellationToken);
-        await client.SendAsync(message, cancellationToken);
-        await client.DisconnectAsync(true, cancellationToken);
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var responseText = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new InvalidOperationException($"Brevo email send failed: {(int)response.StatusCode} {responseText}");
+        }
     }
 
     private static string BuildCodeBody(string username, string code, CodeEmailCopy copy)

@@ -23,7 +23,10 @@ public class UserRepository : IUserRepository
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = email.Trim().ToLower();
-        return UsersWithDetails().FirstOrDefaultAsync(x => x.Email != null && x.Email.ToLower() == normalizedEmail, cancellationToken);
+        return UsersWithDetails()
+            .FirstOrDefaultAsync(x => x.EmailSettings != null &&
+                x.EmailSettings.Email != null &&
+                x.EmailSettings.Email.ToLower() == normalizedEmail, cancellationToken);
     }
 
     public Task<string?> GetFcmTokenByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -56,6 +59,7 @@ public class UserRepository : IUserRepository
     {
         return _context.Users
             .Include(x => x.Session)
-            .Include(x => x.TwoFactor);
+            .Include(x => x.TwoFactor)
+            .Include(x => x.EmailSettings);
     }
 }

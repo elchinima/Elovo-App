@@ -11,6 +11,7 @@ public class ElovoDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<UserTwoFactor> UserTwoFactor => Set<UserTwoFactor>();
+    public DbSet<UserEmail> UserEmails => Set<UserEmail>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
     public DbSet<PendingMessage> PendingMessages => Set<PendingMessage>();
@@ -25,12 +26,8 @@ public class ElovoDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Username).HasMaxLength(32).IsRequired();
             entity.Property(x => x.PasswordHash).HasMaxLength(256).IsRequired();
-            entity.Property(x => x.Email).HasMaxLength(256);
-            entity.Property(x => x.IsEmailConfirmed).HasDefaultValue(false);
-            entity.Property(x => x.EmailConfirmationCodeHash).HasMaxLength(256);
             entity.Property(x => x.ProfileImagePath).HasMaxLength(512);
             entity.HasIndex(x => x.Username).IsUnique();
-            entity.HasIndex(x => x.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");
         });
 
         modelBuilder.Entity<UserSession>(entity =>
@@ -59,6 +56,20 @@ public class ElovoDbContext : DbContext
             entity.HasOne(x => x.User)
                 .WithOne(x => x.TwoFactor)
                 .HasForeignKey<UserTwoFactor>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserEmail>(entity =>
+        {
+            entity.HasKey(x => x.UserId);
+            entity.Property(x => x.Email).HasMaxLength(256);
+            entity.Property(x => x.IsEmailConfirmed).HasDefaultValue(false);
+            entity.Property(x => x.EmailConfirmationCodeHash).HasMaxLength(256);
+            entity.HasIndex(x => x.Email).IsUnique().HasFilter("\"Email\" IS NOT NULL");
+
+            entity.HasOne(x => x.User)
+                .WithOne(x => x.EmailSettings)
+                .HasForeignKey<UserEmail>(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

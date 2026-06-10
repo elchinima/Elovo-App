@@ -64,6 +64,11 @@ const profileConfirmIcons = {
 const allowedProfileImageTypes = ["image/png", "image/jpeg", "image/jpg"];
 const maxImageSize = 10 * 1024 * 1024;
 let isProfileEmailEditing = false;
+
+function isProfileEmailLocked() {
+    return !!(window.elovoProfile && window.elovoProfile.hasEmail && window.elovoProfile.isEmailConfirmed);
+}
+
 function setProfileStatus(element, message, kind = "") {
     if (!element) {
         return;
@@ -221,26 +226,28 @@ function confirmProfileAction(title, message, confirmText = t("Confirm"), icon =
 }
 
 function setProfileEmailEditing(editing, shouldFocus = false) {
-    isProfileEmailEditing = editing;
+    const locked = isProfileEmailLocked();
+    isProfileEmailEditing = locked ? false : editing;
 
     if (profileEmail) {
-        profileEmail.readOnly = !editing;
+        profileEmail.readOnly = locked || !isProfileEmailEditing;
     }
 
     if (profileEmailActionButton) {
-        const label = editing ? t("Save email") : t("Edit email");
-        profileEmailActionButton.classList.toggle("is-save", editing);
+        const label = locked ? t("Email linked") : isProfileEmailEditing ? t("Save email") : t("Edit email");
+        profileEmailActionButton.disabled = locked;
+        profileEmailActionButton.classList.toggle("is-save", isProfileEmailEditing);
         profileEmailActionButton.setAttribute("aria-label", label);
         profileEmailActionButton.setAttribute("title", label);
     }
 
     if (profileEmailActionIcon) {
-        profileEmailActionIcon.src = editing
+        profileEmailActionIcon.src = isProfileEmailEditing
             ? "/Assets/Images/Icons/profile-email-save.svg"
             : "/Assets/Images/Icons/profile-email-edit.svg";
     }
 
-    if (editing && shouldFocus && profileEmail) {
+    if (isProfileEmailEditing && shouldFocus && profileEmail) {
         profileEmail.focus();
         profileEmail.select();
     }
@@ -482,7 +489,7 @@ async function saveProfileEmail(event) {
 
     const confirmed = await confirmProfileAction(
         t("Save email?"),
-        t("This email will be used for account security and two-factor authentication."),
+        t("A confirmation code will be sent to this address. After verification, this email cannot be removed or changed."),
         t("Save"),
         "email"
     );

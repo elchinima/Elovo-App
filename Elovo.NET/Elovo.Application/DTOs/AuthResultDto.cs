@@ -36,7 +36,7 @@ public class AuthResultDto
         {
             RequiresTwoFactor = true,
             TwoFactorUserId = user.Id,
-            TwoFactorEmail = user.Email,
+            TwoFactorEmail = user.EmailSettings?.Email,
             EmailCooldownEndsAt = emailCooldownEndsAt
         };
     }

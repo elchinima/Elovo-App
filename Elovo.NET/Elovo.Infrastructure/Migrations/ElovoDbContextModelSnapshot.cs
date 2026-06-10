@@ -192,6 +192,33 @@ namespace Elovo.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ProfileImagePath")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Elovo.Domain.UserEmail", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -211,30 +238,13 @@ namespace Elovo.Infrastructure.Migrations
                     b.Property<DateTime?>("LastEmailSentAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<string>("ProfileImagePath")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
 
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasFilter("\"Email\" IS NOT NULL");
 
-                    b.HasIndex("Username")
-                        .IsUnique();
-
-                    b.ToTable("Users");
+                    b.ToTable("UserEmails");
                 });
 
             modelBuilder.Entity("Elovo.Domain.UserSession", b =>
@@ -376,6 +386,17 @@ namespace Elovo.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Elovo.Domain.UserEmail", b =>
+                {
+                    b.HasOne("Elovo.Domain.User", "User")
+                        .WithOne("EmailSettings")
+                        .HasForeignKey("Elovo.Domain.UserEmail", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Elovo.Domain.UserTwoFactor", b =>
                 {
                     b.HasOne("Elovo.Domain.User", "User")
@@ -396,6 +417,8 @@ namespace Elovo.Infrastructure.Migrations
                     b.Navigation("ReceivedFriendRequests");
 
                     b.Navigation("SentFriendRequests");
+
+                    b.Navigation("EmailSettings");
 
                     b.Navigation("Session");
 

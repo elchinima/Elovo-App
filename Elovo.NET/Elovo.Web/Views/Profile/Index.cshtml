@@ -188,6 +188,7 @@
             </header>
             <form class="profile-form profile-password-form" id="profileEmailVerifyForm">
                 <p class="chat-settings-copy">Enter the 7 digit code sent to your email.</p>
+                <p class="chat-settings-copy">After verification, this email cannot be removed or changed.</p>
                 <label>
                     Code
                     <input type="text" id="profileEmailVerifyCode" inputmode="numeric" pattern="[0-9]{7}" maxlength="7" autocomplete="one-time-code" required>
@@ -240,6 +241,7 @@
     window.elovoCurrentUserId = "@Model.Id";
     window.elovoProfile = {
         username: "@Model.Username",
+        email: @Json.Serialize(Model.Email),
         initial: "@Model.Initial",
         profileImageUrl: "@Model.ProfileImageUrl",
         hasEmail: @Json.Serialize(!string.IsNullOrWhiteSpace(Model.Email)),

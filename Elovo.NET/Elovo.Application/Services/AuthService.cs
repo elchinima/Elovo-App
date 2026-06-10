@@ -39,7 +39,8 @@ public class AuthService : IAuthService
                 RegistrationIp = clientIp,
                 LastLoginIp = clientIp
             },
-            TwoFactor = new UserTwoFactor()
+            TwoFactor = new UserTwoFactor(),
+            EmailSettings = new UserEmail()
         };
 
         await _unitOfWork.Users.AddAsync(user, cancellationToken);
@@ -58,10 +59,11 @@ public class AuthService : IAuthService
 
         var twoFactor = EnsureTwoFactor(user);
         var session = EnsureSession(user);
+        var emailSettings = user.EmailSettings;
         ApplyPreferredLanguage(session, dto.PreferredLanguage);
-        if (twoFactor.IsTwoFactorEnabled && !string.IsNullOrWhiteSpace(user.Email))
+        if (twoFactor.IsTwoFactorEnabled && !string.IsNullOrWhiteSpace(emailSettings?.Email))
         {
-            var cooldownEndsAt = GetEmailCooldownEndsAt(user);
+            var cooldownEndsAt = GetEmailCooldownEndsAt(emailSettings);
             var hasValidCode = !string.IsNullOrWhiteSpace(twoFactor.TwoFactorCodeHash) &&
                 twoFactor.TwoFactorCodeExpiredAt > DateTime.UtcNow;
 
@@ -73,15 +75,15 @@ public class AuthService : IAuthService
             if (cooldownEndsAt is null)
             {
                 var code = GenerateTwoFactorCode();
-                await _emailSender.SendTwoFactorCodeAsync(user.Email, user.Username, code, dto.PreferredLanguage, cancellationToken);
+                await _emailSender.SendTwoFactorCodeAsync(emailSettings.Email, user.Username, code, dto.PreferredLanguage, cancellationToken);
                 twoFactor.TwoFactorCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
                 twoFactor.TwoFactorCodeExpiredAt = DateTime.UtcNow.Add(TwoFactorCodeLifetime);
-                user.LastEmailSentAt = DateTime.UtcNow;
+                emailSettings.LastEmailSentAt = DateTime.UtcNow;
             }
 
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return AuthResultDto.TwoFactorRequired(user, GetEmailCooldownEndsAt(user));
+            return AuthResultDto.TwoFactorRequired(user, GetEmailCooldownEndsAt(emailSettings));
         }
         twoFactor.TwoFactorCodeHash = null;
         twoFactor.TwoFactorCodeExpiredAt = null;
@@ -108,8 +110,9 @@ public class AuthService : IAuthService
 
         var twoFactor = EnsureTwoFactor(user);
         var session = EnsureSession(user);
-        user.IsEmailConfirmed = true;
-        ClearEmailConfirmationCode(user);
+        var emailSettings = EnsureEmailSettings(user);
+        emailSettings.IsEmailConfirmed = true;
+        ClearEmailConfirmationCode(emailSettings);
         twoFactor.TwoFactorCodeHash = null;
         twoFactor.TwoFactorCodeExpiredAt = null;
         ApplyLoginIp(session, clientIp);
@@ -143,8 +146,11 @@ public class AuthService : IAuthService
         }
 
         var session = EnsureSession(user);
-        user.IsEmailConfirmed = true;
-        ClearEmailConfirmationCode(user);
+        if (user.EmailSettings is not null)
+        {
+            user.EmailSettings.IsEmailConfirmed = true;
+            ClearEmailConfirmationCode(user.EmailSettings);
+        }
         ClearTwoFactorCode(twoFactor);
         session.IsOnline = true;
         session.LastSeenAt = null;
@@ -211,20 +217,20 @@ public class AuthService : IAuthService
         twoFactor.TwoFactorCodeExpiredAt = null;
     }
 
-    private static void ClearEmailConfirmationCode(User user)
+    private static void ClearEmailConfirmationCode(UserEmail emailSettings)
     {
-        user.EmailConfirmationCodeHash = null;
-        user.EmailConfirmationCodeExpiredAt = null;
+        emailSettings.EmailConfirmationCodeHash = null;
+        emailSettings.EmailConfirmationCodeExpiredAt = null;
     }
 
-    private static DateTime? GetEmailCooldownEndsAt(User user)
+    private static DateTime? GetEmailCooldownEndsAt(UserEmail emailSettings)
     {
-        if (user.LastEmailSentAt is null)
+        if (emailSettings.LastEmailSentAt is null)
         {
             return null;
         }
 
-        var endsAt = user.LastEmailSentAt.Value.Add(EmailSendCooldown);
+        var endsAt = emailSettings.LastEmailSentAt.Value.Add(EmailSendCooldown);
         return endsAt > DateTime.UtcNow ? endsAt : null;
     }
 
@@ -272,5 +278,10 @@ public class AuthService : IAuthService
     private static UserTwoFactor EnsureTwoFactor(User user)
     {
         return user.TwoFactor ??= new UserTwoFactor { UserId = user.Id };
+    }
+
+    private static UserEmail EnsureEmailSettings(User user)
+    {
+        return user.EmailSettings ??= new UserEmail { UserId = user.Id };
     }
 }

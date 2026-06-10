@@ -147,17 +147,23 @@ public class UserService : IUserService
         }
 
         var user = await GetRequiredUserAsync(userId, cancellationToken);
-        var emailChanged = !string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase);
-        user.Email = normalizedEmail;
-        if (emailChanged)
+        var emailSettings = EnsureEmailSettings(user);
+        var emailChanged = !string.Equals(emailSettings.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase);
+        if (emailSettings.IsEmailConfirmed && emailChanged)
         {
-            ClearEmailConfirmationCode(user);
-            user.IsEmailConfirmed = false;
+            throw new InvalidOperationException("Email is already linked and cannot be changed.");
         }
 
-        if (!user.IsEmailConfirmed)
+        emailSettings.Email = normalizedEmail;
+        if (emailChanged)
         {
-            await SendEmailConfirmationCodeForUserAsync(user, cancellationToken);
+            ClearEmailConfirmationCode(emailSettings);
+            emailSettings.IsEmailConfirmed = false;
+        }
+
+        if (!emailSettings.IsEmailConfirmed)
+        {
+            await SendEmailConfirmationCodeForUserAsync(user, emailSettings, cancellationToken);
         }
 
         _unitOfWork.Users.Update(user);
@@ -169,17 +175,18 @@ public class UserService : IUserService
     public async Task<ProfileDto> SendEmailConfirmationCodeAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await GetRequiredUserAsync(userId, cancellationToken);
-        if (string.IsNullOrWhiteSpace(user.Email))
+        var emailSettings = EnsureEmailSettings(user);
+        if (string.IsNullOrWhiteSpace(emailSettings.Email))
         {
             throw new InvalidOperationException("Add an email before requesting a verification code.");
         }
 
-        if (user.IsEmailConfirmed)
+        if (emailSettings.IsEmailConfirmed)
         {
             return ToProfileDto(user);
         }
 
-        await SendEmailConfirmationCodeForUserAsync(user, cancellationToken);
+        await SendEmailConfirmationCodeForUserAsync(user, emailSettings, cancellationToken);
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -189,29 +196,30 @@ public class UserService : IUserService
     public async Task<ProfileDto> VerifyEmailAsync(Guid userId, string code, CancellationToken cancellationToken = default)
     {
         var user = await GetRequiredUserAsync(userId, cancellationToken);
-        if (string.IsNullOrWhiteSpace(user.Email) ||
-            string.IsNullOrWhiteSpace(user.EmailConfirmationCodeHash) ||
-            user.EmailConfirmationCodeExpiredAt is null)
+        var emailSettings = user.EmailSettings;
+        if (string.IsNullOrWhiteSpace(emailSettings?.Email) ||
+            string.IsNullOrWhiteSpace(emailSettings.EmailConfirmationCodeHash) ||
+            emailSettings.EmailConfirmationCodeExpiredAt is null)
         {
             throw new InvalidOperationException("Verification code is invalid.");
         }
 
-        if (user.EmailConfirmationCodeExpiredAt <= DateTime.UtcNow)
+        if (emailSettings.EmailConfirmationCodeExpiredAt <= DateTime.UtcNow)
         {
-            ClearEmailConfirmationCode(user);
+            ClearEmailConfirmationCode(emailSettings);
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             throw new InvalidOperationException("Verification code expired.");
         }
 
         var normalizedCode = NormalizeVerificationCode(code);
-        if (normalizedCode.Length != 7 || !BCrypt.Net.BCrypt.Verify(normalizedCode, user.EmailConfirmationCodeHash))
+        if (normalizedCode.Length != 7 || !BCrypt.Net.BCrypt.Verify(normalizedCode, emailSettings.EmailConfirmationCodeHash))
         {
             throw new InvalidOperationException("Verification code is invalid.");
         }
 
-        user.IsEmailConfirmed = true;
-        ClearEmailConfirmationCode(user);
+        emailSettings.IsEmailConfirmed = true;
+        ClearEmailConfirmationCode(emailSettings);
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -240,15 +248,19 @@ public class UserService : IUserService
     {
         var user = await GetRequiredUserAsync(userId, cancellationToken);
         var twoFactor = EnsureTwoFactor(user);
+        var emailSettings = user.EmailSettings;
 
-        if (enabled && string.IsNullOrWhiteSpace(user.Email))
+        if (enabled)
         {
-            throw new InvalidOperationException("Add an email before enabling two-factor authentication.");
-        }
+            if (string.IsNullOrWhiteSpace(emailSettings?.Email))
+            {
+                throw new InvalidOperationException("Add an email before enabling two-factor authentication.");
+            }
 
-        if (enabled && !user.IsEmailConfirmed)
-        {
-            throw new InvalidOperationException("Need to verify email.");
+            if (!emailSettings.IsEmailConfirmed)
+            {
+                throw new InvalidOperationException("Need to verify email.");
+            }
         }
 
         twoFactor.IsTwoFactorEnabled = enabled;
@@ -446,9 +458,9 @@ public class UserService : IUserService
         {
             Id = user.Id,
             Username = user.Username,
-            Email = user.Email,
-            IsEmailConfirmed = user.IsEmailConfirmed,
-            EmailCooldownEndsAt = GetEmailCooldownEndsAt(user),
+            Email = user.EmailSettings?.Email,
+            IsEmailConfirmed = user.EmailSettings?.IsEmailConfirmed ?? false,
+            EmailCooldownEndsAt = user.EmailSettings is null ? null : GetEmailCooldownEndsAt(user.EmailSettings),
             ProfileImagePath = user.ProfileImagePath,
             ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
             IsTwoFactorEnabled = user.TwoFactor?.IsTwoFactorEnabled ?? false
@@ -490,9 +502,9 @@ public class UserService : IUserService
         }
     }
 
-    private async Task SendEmailConfirmationCodeForUserAsync(User user, CancellationToken cancellationToken)
+    private async Task SendEmailConfirmationCodeForUserAsync(User user, UserEmail emailSettings, CancellationToken cancellationToken)
     {
-        var cooldownEndsAt = GetEmailCooldownEndsAt(user);
+        var cooldownEndsAt = GetEmailCooldownEndsAt(emailSettings);
         if (cooldownEndsAt is not null)
         {
             throw new InvalidOperationException(BuildEmailCooldownMessage(cooldownEndsAt.Value));
@@ -500,25 +512,25 @@ public class UserService : IUserService
 
         var code = GenerateVerificationCode();
         await _emailSender.SendEmailConfirmationCodeAsync(
-            user.Email!,
+            emailSettings.Email!,
             user.Username,
             code,
             user.Session?.PreferredLanguage,
             cancellationToken);
 
-        user.EmailConfirmationCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
-        user.EmailConfirmationCodeExpiredAt = DateTime.UtcNow.Add(EmailCodeLifetime);
-        user.LastEmailSentAt = DateTime.UtcNow;
+        emailSettings.EmailConfirmationCodeHash = BCrypt.Net.BCrypt.HashPassword(code);
+        emailSettings.EmailConfirmationCodeExpiredAt = DateTime.UtcNow.Add(EmailCodeLifetime);
+        emailSettings.LastEmailSentAt = DateTime.UtcNow;
     }
 
-    private static DateTime? GetEmailCooldownEndsAt(User user)
+    private static DateTime? GetEmailCooldownEndsAt(UserEmail emailSettings)
     {
-        if (user.LastEmailSentAt is null)
+        if (emailSettings.LastEmailSentAt is null)
         {
             return null;
         }
 
-        var endsAt = user.LastEmailSentAt.Value.Add(EmailSendCooldown);
+        var endsAt = emailSettings.LastEmailSentAt.Value.Add(EmailSendCooldown);
         return endsAt > DateTime.UtcNow ? endsAt : null;
     }
 
@@ -534,10 +546,10 @@ public class UserService : IUserService
         return new string((code ?? string.Empty).Where(char.IsDigit).ToArray());
     }
 
-    private static void ClearEmailConfirmationCode(User user)
+    private static void ClearEmailConfirmationCode(UserEmail emailSettings)
     {
-        user.EmailConfirmationCodeHash = null;
-        user.EmailConfirmationCodeExpiredAt = null;
+        emailSettings.EmailConfirmationCodeHash = null;
+        emailSettings.EmailConfirmationCodeExpiredAt = null;
     }
 
     private static string BuildEmailCooldownMessage(DateTime cooldownEndsAt)
@@ -588,5 +600,10 @@ public class UserService : IUserService
     private static UserTwoFactor EnsureTwoFactor(User user)
     {
         return user.TwoFactor ??= new UserTwoFactor { UserId = user.Id };
+    }
+
+    private static UserEmail EnsureEmailSettings(User user)
+    {
+        return user.EmailSettings ??= new UserEmail { UserId = user.Id };
     }
 }

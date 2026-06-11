@@ -239,10 +239,6 @@
         display: grid;
     }
 
-    #logoutButton {
-        display: none;
-    }
-
     .friend-action-dock {
         position: fixed;
         left: 0;

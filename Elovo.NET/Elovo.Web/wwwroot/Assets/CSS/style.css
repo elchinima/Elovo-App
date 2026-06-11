@@ -386,10 +386,6 @@ input:disabled {
     color: var(--muted);
 }
 
-.google-cooldown-button {
-    gap: 10px;
-}
-
 .button-icon {
     width: 26px;
     height: 26px;
@@ -993,10 +989,6 @@ input:disabled {
     cursor: default;
     opacity: 0.48;
     transform: none;
-}
-
-#logoutButton {
-    margin-left: 0;
 }
 
 #callButton {
@@ -2636,6 +2628,19 @@ html[data-theme] .profile-logout-button .button-icon {
 
 .profile-email-input-wrap input.is-email-confirmed {
     padding-right: 48px;
+    border-color: var(--line);
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.035);
+    cursor: default;
+    pointer-events: none;
+    transition: none;
+}
+
+.profile-email-input-wrap input.is-email-confirmed:focus,
+.profile-email-input-wrap input.is-email-confirmed:active {
+    border-color: var(--line);
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.035);
 }
 
 .profile-email-confirmed-icon {
@@ -3398,6 +3403,12 @@ html[data-theme] .google-auth-icon[src$=".svg"] {
 html[data-theme] .profile-email-confirmed-icon,
 html[data-theme] .profile-email-confirmed-icon * {
     color: var(--success) !important;
+}
+
+html[data-theme] .profile-email-input-wrap input.is-email-confirmed,
+html[data-theme] .profile-email-input-wrap input.is-email-confirmed:focus,
+html[data-theme] .profile-email-input-wrap input.is-email-confirmed:active {
+    color: var(--muted) !important;
 }
 
 html[data-theme="dark"] .code-box-cell {

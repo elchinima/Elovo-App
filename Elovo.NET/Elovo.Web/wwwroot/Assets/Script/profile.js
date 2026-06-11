@@ -234,6 +234,11 @@ function setProfileEmailEditing(editing, shouldFocus = false) {
     if (profileEmail) {
         profileEmail.readOnly = locked || !isProfileEmailEditing;
         profileEmail.classList.toggle("is-email-confirmed", locked);
+        if (locked) {
+            profileEmail.setAttribute("tabindex", "-1");
+        } else {
+            profileEmail.removeAttribute("tabindex");
+        }
     }
 
     if (profileEmailRow) {

@@ -42,10 +42,6 @@
             @if (hasEmailCooldown)
             {
                 <p class="fine-print auth-google-cooldown-copy">Email code is on cooldown. Google sign-in has no email cooldown.</p>
-                <a class="secondary-button google-cooldown-button" href="/google-login" aria-label="Continue with Google instead" title="Continue with Google instead">
-                    <img class="google-auth-icon" src="~/Assets/Images/Icons/google.svg" alt="">
-                    <span>Continue with Google instead</span>
-                </a>
             }
             <p class="error-message" id="loginError" style="color: red; display: @(hasError ? "block" : "none"); margin-top: 10px; font-size: 0.875rem;">@(ViewBag.Error ?? "Invalid username or password.")</p>
         </form>

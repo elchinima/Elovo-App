@@ -68,7 +68,7 @@
                         <label class="profile-email-field">
                             Email address
                             <span class="profile-email-input-wrap">
-                                <input class="@(Model.IsEmailConfirmed ? "is-email-confirmed" : "")" type="email" id="profileEmail" value="@Model.Email" placeholder="name@example.com" required readonly>
+                                <input class="@(Model.IsEmailConfirmed ? "is-email-confirmed" : "")" type="email" id="profileEmail" value="@Model.Email" placeholder="name@example.com" required readonly @(Model.IsEmailConfirmed ? "tabindex=\"-1\"" : "")>
                                 <span class="profile-email-confirmed-icon" id="profileEmailConfirmedIcon" aria-label="Email verified" title="Email verified" @(Model.IsEmailConfirmed ? "" : "hidden")>
                                     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                                         <path d="m5 12.4 4.2 4.1L19 6.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" />

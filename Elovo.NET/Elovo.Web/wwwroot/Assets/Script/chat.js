@@ -9,7 +9,6 @@
         syncModalScrollLock,
         t
     } = window.Elovo;
-const logoutButton = document.querySelector("#logoutButton");
 const settingsButton = document.querySelector("#settingsButton");
 const restoreHiddenButton = document.querySelector("#restoreHiddenButton");
 const appShell = document.querySelector(".app-shell");
@@ -3752,23 +3751,6 @@ async function sendVoiceBlob(blob, durationSeconds) {
         }
     }
 }
-async function logout() {
-    showPageLoader();
-    await stopSignalRForExit();
-
-    await fetch("/auth/logout", {
-        method: "POST",
-        headers: {
-            "RequestVerificationToken": getAntiForgeryToken()
-        }
-    });
-    if (window.AndroidBridge) {
-        window.AndroidBridge.clearCookies();
-    }
-
-    navigateWithLoader("/auth/login");
-}
-
 window.addEventListener("pagehide", () => {
     if (!connection || isLeavingChatPage) {
         return;
@@ -3826,10 +3808,6 @@ if (messengerView && chatList && messageStream) {
         .catch(() => {
             navigateWithLoader("/auth/login");
         });
-}
-
-if (logoutButton) {
-    logoutButton.addEventListener("click", logout);
 }
 
 if (settingsButton) {

@@ -17,8 +17,14 @@ public class MessagesApiController : ControllerBase
     [HttpGet("/api/conversations")]
     public async Task<IActionResult> GetConversations(CancellationToken cancellationToken)
     {
-        var conversations = await _userService.GetConversationsAsync(GetCurrentUserId(), cancellationToken);
-        return Ok(conversations);
+        var currentUserId = GetCurrentUserId();
+        var profile = await _userService.GetProfileAsync(currentUserId, cancellationToken);
+        var conversations = await _userService.GetConversationsAsync(currentUserId, cancellationToken);
+        return Ok(new
+        {
+            activityVisibility = profile.ActivityVisibility,
+            conversations
+        });
     }
 
     [HttpGet("/api/users")]

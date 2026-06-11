@@ -768,6 +768,30 @@ function getCurrentUserActivityVisibility() {
     return normalizeActivityVisibility(window.elovoCurrentUserActivityVisibility);
 }
 
+function readActivityVisibilityFromProfile(profile) {
+    if (!profile) {
+        return getCurrentUserActivityVisibility();
+    }
+
+    return normalizeActivityVisibility(profile.activityVisibility ?? profile.ActivityVisibility ?? window.elovoCurrentUserActivityVisibility);
+}
+
+function readConversationsPayload(payload) {
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+
+    window.elovoCurrentUserActivityVisibility = normalizeActivityVisibility(
+        payload?.activityVisibility ?? payload?.ActivityVisibility ?? window.elovoCurrentUserActivityVisibility
+    );
+
+    return Array.isArray(payload?.conversations)
+        ? payload.conversations
+        : Array.isArray(payload?.Conversations)
+            ? payload.Conversations
+            : [];
+}
+
 function applyCurrentUserActivityVisibility(chat) {
     if (!chat) {
         return chat;
@@ -2784,7 +2808,8 @@ async function loadConversations() {
         return;
     }
 
-    conversations = applyLocalConversationHistory(await response.json()).map(applyCurrentUserActivityVisibility);
+    const payload = await response.json();
+    conversations = applyLocalConversationHistory(readConversationsPayload(payload)).map(applyCurrentUserActivityVisibility);
     hiddenConversationIds = readHiddenConversationIds();
     await purgeRemovedLocalConversations(conversations.map((chat) => chat.userId));
     updateRestoreHiddenButton();
@@ -3838,7 +3863,7 @@ window.addEventListener("message", (event) => {
         }
         window.elovoCurrentUserProfileImageUrl = profile.profileImageUrl || "";
         const previousActivityVisibility = getCurrentUserActivityVisibility();
-        window.elovoCurrentUserActivityVisibility = normalizeActivityVisibility(profile.activityVisibility || window.elovoCurrentUserActivityVisibility);
+        window.elovoCurrentUserActivityVisibility = readActivityVisibilityFromProfile(profile);
         if (previousActivityVisibility !== getCurrentUserActivityVisibility()) {
             loadConversations().catch(() => { });
             return;

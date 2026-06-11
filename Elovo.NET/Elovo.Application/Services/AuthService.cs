@@ -69,7 +69,9 @@ public class AuthService : IAuthService
 
             if (cooldownEndsAt is not null && !hasValidCode)
             {
-                return AuthResultDto.Failure(BuildEmailCooldownMessage(cooldownEndsAt.Value));
+                return AuthResultDto.Failure(
+                    BuildEmailCooldownMessage(cooldownEndsAt.Value, dto.PreferredLanguage),
+                    cooldownEndsAt.Value);
             }
 
             if (cooldownEndsAt is null)
@@ -234,7 +236,7 @@ public class AuthService : IAuthService
         return endsAt > DateTime.UtcNow ? endsAt : null;
     }
 
-    private static string BuildEmailCooldownMessage(DateTime cooldownEndsAt)
+    private static string BuildEmailCooldownMessage(DateTime cooldownEndsAt, string? language)
     {
         var remaining = cooldownEndsAt - DateTime.UtcNow;
         if (remaining < TimeSpan.Zero)
@@ -245,7 +247,14 @@ public class AuthService : IAuthService
         var totalSeconds = Math.Max(0, (int)Math.Ceiling(remaining.TotalSeconds));
         var minutes = totalSeconds / 60;
         var seconds = totalSeconds % 60;
-        return $"You can request another email in {minutes:D2}:{seconds:D2}.";
+        var time = $"{minutes:D2}:{seconds:D2}";
+
+        return NormalizeLanguage(language) switch
+        {
+            "ru" => $"\u0421\u043b\u0435\u0434\u0443\u044e\u0449\u0435\u0435 \u043f\u0438\u0441\u044c\u043c\u043e \u043c\u043e\u0436\u043d\u043e \u0437\u0430\u043f\u0440\u043e\u0441\u0438\u0442\u044c \u0447\u0435\u0440\u0435\u0437 {time}.",
+            "az" => $"N\u00f6vb\u0259ti e-po\u00e7tu {time} sonra ist\u0259y\u0259 bil\u0259rsiniz.",
+            _ => $"You can request another email in {time}."
+        };
     }
 
     private static void ApplyLoginIp(UserSession session, string? clientIp)
@@ -263,11 +272,16 @@ public class AuthService : IAuthService
 
     private static void ApplyPreferredLanguage(UserSession session, string? language)
     {
-        var normalized = (language ?? string.Empty).Trim().ToLowerInvariant().Split('-')[0];
+        var normalized = NormalizeLanguage(language);
         if (normalized is "en" or "ru" or "az")
         {
             session.PreferredLanguage = normalized;
         }
+    }
+
+    private static string NormalizeLanguage(string? language)
+    {
+        return (language ?? string.Empty).Trim().ToLowerInvariant().Split('-')[0];
     }
 
     private static UserSession EnsureSession(User user)

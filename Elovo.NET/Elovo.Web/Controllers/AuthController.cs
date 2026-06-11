@@ -81,6 +81,7 @@ public class AuthController : Controller
         if (!result.Succeeded || result.Token is null)
         {
             ViewBag.Error = result.Error ?? "Invalid username or password.";
+            ViewBag.EmailCooldownEndsAt = result.EmailCooldownEndsAt?.ToString("O");
             return View(dto);
         }
 

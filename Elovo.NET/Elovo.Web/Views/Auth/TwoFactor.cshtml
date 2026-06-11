@@ -26,10 +26,16 @@
                 <p class="fine-print"><span>Code sent to</span> @email</p>
             }
             <p class="fine-print two-factor-email-timer" id="twoFactorEmailTimer" data-cooldown-ends-at="@emailCooldownEndsAt"></p>
-            <label>
-                Code
-                <input type="text" id="twoFactorCode" name="Code" value="@Model?.Code" inputmode="numeric" pattern="[0-9]{7}" maxlength="7" autocomplete="one-time-code" required>
-            </label>
+            <label class="code-box-label" for="twoFactorCode">Code</label>
+            <div class="verification-code-input" id="twoFactorCodeInput">
+                <input class="code-box-native" type="text" id="twoFactorCode" name="Code" value="@Model?.Code" inputmode="numeric" pattern="[0-9]{7}" maxlength="7" autocomplete="one-time-code" aria-label="Code" required>
+                <div class="code-box-cells" aria-hidden="true">
+                    @for (var i = 0; i < 7; i++)
+                    {
+                        <span class="code-box-cell" data-code-cell></span>
+                    }
+                </div>
+            </div>
             <button class="primary-icon-button" type="submit" aria-label="Verify code" title="Verify code">
                 <img class="button-icon" src="~/Assets/Images/Icons/two-factor.svg" alt="">
                 <span>Verify</span>

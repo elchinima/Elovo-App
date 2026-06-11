@@ -64,12 +64,19 @@
                     <h2>Email</h2>
                 </div>
                 <form class="profile-form" id="profileEmailForm">
-                    <div class="profile-email-row">
-                        <label>
+                    <div class="profile-email-row @(Model.IsEmailConfirmed ? "is-email-confirmed" : "")" id="profileEmailRow">
+                        <label class="profile-email-field">
                             Email address
-                            <input type="email" id="profileEmail" value="@Model.Email" placeholder="name@example.com" required readonly>
+                            <span class="profile-email-input-wrap">
+                                <input class="@(Model.IsEmailConfirmed ? "is-email-confirmed" : "")" type="email" id="profileEmail" value="@Model.Email" placeholder="name@example.com" required readonly>
+                                <span class="profile-email-confirmed-icon" id="profileEmailConfirmedIcon" aria-label="Email verified" title="Email verified" @(Model.IsEmailConfirmed ? "" : "hidden")>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                        <path d="m5 12.4 4.2 4.1L19 6.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </span>
+                            </span>
                         </label>
-                        <button class="profile-field-action" id="profileEmailActionButton" type="submit" aria-label="Edit email" title="Edit email">
+                        <button class="profile-field-action" id="profileEmailActionButton" type="submit" aria-label="Edit email" title="Edit email" @(Model.IsEmailConfirmed ? "hidden" : "")>
                             <img class="button-icon" id="profileEmailActionIcon" src="~/Assets/Images/Icons/profile-email-edit.svg" alt="">
                         </button>
                     </div>

@@ -13,9 +13,11 @@ const profileImageButton = document.querySelector("#profileImageButton");
 const deleteProfileImageButton = document.querySelector("#deleteProfileImageButton");
 const profileImageStatus = document.querySelector("#profileImageStatus");
 const profileEmailForm = document.querySelector("#profileEmailForm");
+const profileEmailRow = document.querySelector("#profileEmailRow");
 const profileEmail = document.querySelector("#profileEmail");
 const profileEmailActionButton = document.querySelector("#profileEmailActionButton");
 const profileEmailActionIcon = document.querySelector("#profileEmailActionIcon");
+const profileEmailConfirmedIcon = document.querySelector("#profileEmailConfirmedIcon");
 const profileEmailStatus = document.querySelector("#profileEmailStatus");
 const profileEmailVerificationWarning = document.querySelector("#profileEmailVerificationWarning");
 const profileEmailVerifyModal = document.querySelector("#profileEmailVerifyModal");
@@ -231,11 +233,21 @@ function setProfileEmailEditing(editing, shouldFocus = false) {
 
     if (profileEmail) {
         profileEmail.readOnly = locked || !isProfileEmailEditing;
+        profileEmail.classList.toggle("is-email-confirmed", locked);
+    }
+
+    if (profileEmailRow) {
+        profileEmailRow.classList.toggle("is-email-confirmed", locked);
+    }
+
+    if (profileEmailConfirmedIcon) {
+        profileEmailConfirmedIcon.hidden = !locked;
     }
 
     if (profileEmailActionButton) {
         const label = locked ? t("Email linked") : isProfileEmailEditing ? t("Save email") : t("Edit email");
         profileEmailActionButton.disabled = locked;
+        profileEmailActionButton.hidden = locked;
         profileEmailActionButton.classList.toggle("is-save", isProfileEmailEditing);
         profileEmailActionButton.setAttribute("aria-label", label);
         profileEmailActionButton.setAttribute("title", label);

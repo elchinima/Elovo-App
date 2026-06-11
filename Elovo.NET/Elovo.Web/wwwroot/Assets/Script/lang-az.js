@@ -2,6 +2,8 @@ window.ElovoTranslations = {
     ...(window.ElovoTranslations || {}),
     az: {
         "Continue with Google": "Google il\u0259 daxil ol",
+        "Continue with Google instead": "Bunun \u0259v\u0259zin\u0259 Google il\u0259 daxil ol",
+        "Email code is on cooldown. Google sign-in has no email cooldown.": "E-po\u00e7t kodu \u00fc\u00e7\u00fcn h\u0259l\u0259 g\u00f6zl\u0259m\u0259 var. Google giri\u015find\u0259 g\u00f6zl\u0259m\u0259 yoxdur.",
         "App theme": "T\u0259tbiq temas\u0131",
         "Choose the theme used across Elovo on this device.": "Bu cihazda Elovo interfeysi \u00fc\u00e7\u00fcn teman\u0131 se\u00e7in.",
         "Dark": "T\u00fcnd",
@@ -110,6 +112,7 @@ window.ElovoTranslations = {
         "Email linked": "E-poçt bağlanıb",
         "Saving email...": "E-poçt saxlanılır...",
         "Email saved.": "E-poçt saxlanıldı.",
+        "Email verified": "E-po\u00e7t t\u0259sdiql\u0259ndi",
         "Need to verify email": "E-po\u00e7tu t\u0259sdiql\u0259m\u0259k laz\u0131md\u0131r",
         "Email verification": "E-po\u00e7t t\u0259sdiqi",
         "Enter the 7 digit code sent to your email.": "E-po\u00e7tunuza g\u00f6nd\u0259ril\u0259n 7 r\u0259q\u0259mli kodu daxil edin.",

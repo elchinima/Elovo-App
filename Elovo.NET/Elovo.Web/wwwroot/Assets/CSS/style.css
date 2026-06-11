@@ -382,6 +382,14 @@ input:disabled {
     pointer-events: none;
 }
 
+.auth-google-cooldown-copy {
+    color: var(--muted);
+}
+
+.google-cooldown-button {
+    gap: 10px;
+}
+
 .button-icon {
     width: 26px;
     height: 26px;
@@ -435,6 +443,71 @@ input:disabled {
 .fine-print a:focus-visible {
     color: var(--text);
     text-decoration-color: var(--text);
+}
+
+.code-box-label {
+    display: block;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 0.92rem;
+}
+
+.verification-code-input {
+    --code-cell-size: clamp(34px, 10vw, 44px);
+    --code-cell-gap: clamp(5px, 1.4vw, 8px);
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.code-box-native {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    opacity: 0.01;
+    color: transparent;
+    caret-color: transparent;
+    background: transparent !important;
+}
+
+.code-box-cells {
+    display: grid;
+    grid-template-columns: repeat(7, var(--code-cell-size));
+    gap: var(--code-cell-gap);
+}
+
+.code-box-cell {
+    width: var(--code-cell-size);
+    height: 54px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.045);
+    font-size: 1.35rem;
+    font-weight: 900;
+    line-height: 1;
+    transition: border-color 180ms ease, background 180ms ease;
+}
+
+.verification-code-input.is-focused .code-box-cell {
+    border-color: rgba(109, 103, 255, 0.42);
+}
+
+.verification-code-input.is-focused .code-box-cell.is-active {
+    border-color: var(--accent-2);
+    background: rgba(79, 140, 255, 0.12);
+}
+
+.code-box-cell.is-filled {
+    border-color: rgba(83, 214, 164, 0.45);
+    background: rgba(83, 214, 164, 0.1);
 }
 
 .messenger-view {
@@ -2544,6 +2617,46 @@ html[data-theme] .profile-logout-button .button-icon {
     gap: 10px;
 }
 
+.profile-email-row.is-email-confirmed {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.profile-email-field {
+    min-width: 0;
+}
+
+.profile-email-input-wrap {
+    position: relative;
+    display: block;
+}
+
+.profile-email-input-wrap input {
+    width: 100%;
+}
+
+.profile-email-input-wrap input.is-email-confirmed {
+    padding-right: 48px;
+}
+
+.profile-email-confirmed-icon {
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    display: grid;
+    place-items: center;
+    color: var(--success);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.profile-email-confirmed-icon[hidden] {
+    display: none;
+}
+
+.profile-email-confirmed-icon svg {
+    display: block;
+}
+
 .profile-field-action {
     width: 48px;
     height: 48px;
@@ -2571,6 +2684,10 @@ html[data-theme] .profile-logout-button .button-icon {
 .profile-field-action.is-save:focus-visible {
     border-color: transparent;
     background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.profile-field-action[hidden] {
+    display: none;
 }
 
 .profile-email-row input[readonly] {
@@ -3276,6 +3393,23 @@ html[data-theme="light"] img.profile-confirm-card[src$=".svg"] {
 
 html[data-theme] .google-auth-icon[src$=".svg"] {
     filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme] .profile-email-confirmed-icon,
+html[data-theme] .profile-email-confirmed-icon * {
+    color: var(--success) !important;
+}
+
+html[data-theme="dark"] .code-box-cell {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+html[data-theme="light"] .code-box-cell {
+    background: rgba(255, 255, 255, 0.82);
+}
+
+html[data-theme] .code-box-cell.is-filled {
+    color: var(--success) !important;
 }
 
 html[data-theme] .modal-panel button img.button-icon[src$=".svg"] {

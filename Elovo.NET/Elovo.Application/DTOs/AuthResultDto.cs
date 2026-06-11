@@ -21,12 +21,13 @@ public class AuthResultDto
         };
     }
 
-    public static AuthResultDto Failure(string error)
+    public static AuthResultDto Failure(string error, DateTime? emailCooldownEndsAt = null)
     {
         return new AuthResultDto
         {
             Succeeded = false,
-            Error = error
+            Error = error,
+            EmailCooldownEndsAt = emailCooldownEndsAt
         };
     }
 

@@ -9,6 +9,7 @@ public class UserSession
     public string? RegistrationIp { get; set; }
     public string? FcmToken { get; set; }
     public string? PreferredLanguage { get; set; } = "en";
+    public string ActivityVisibility { get; set; } = "full";
 
     public User User { get; set; } = null!;
 }

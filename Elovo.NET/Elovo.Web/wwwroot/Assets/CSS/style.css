@@ -2821,6 +2821,33 @@ html[data-theme] .profile-logout-button .button-icon {
     font-size: 0.88rem;
 }
 
+.profile-select-field {
+    display: grid;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.84rem;
+    font-weight: 800;
+}
+
+.profile-select-field select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    font: inherit;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.profile-select-field select:focus {
+    border-color: rgba(125, 134, 255, 0.42);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(125, 134, 255, 0.12);
+}
+
 .chat-retention-panel {
     width: 100%;
 }

@@ -36,6 +36,8 @@ const profilePasswordClose = document.querySelector("#profilePasswordClose");
 const profilePasswordCancel = document.querySelector("#profilePasswordCancel");
 const twoFactorToggle = document.querySelector("#twoFactorToggle");
 const twoFactorStatus = document.querySelector("#twoFactorStatus");
+const activityVisibilitySelect = document.querySelector("#activityVisibilitySelect");
+const activityVisibilityStatus = document.querySelector("#activityVisibilityStatus");
 const profileLogoutButton = document.querySelector("#profileLogoutButton");
 const profileLogoutStatus = document.querySelector("#profileLogoutStatus");
 const avatarCropModal = document.querySelector("#avatarCropModal");
@@ -185,6 +187,11 @@ function renderProfile(profile) {
     if (twoFactorToggle) {
         twoFactorToggle.checked = !!profile.isTwoFactorEnabled;
         twoFactorToggle.disabled = false;
+    }
+
+    if (activityVisibilitySelect) {
+        activityVisibilitySelect.value = profile.activityVisibility || "full";
+        activityVisibilitySelect.disabled = false;
     }
 
     updateEmailVerificationUi();
@@ -670,6 +677,35 @@ async function setTwoFactorEnabled() {
     setProfileStatus(twoFactorStatus, await readResponseText(response), "error");
 }
 
+async function saveActivityVisibility() {
+    if (!activityVisibilitySelect) {
+        return;
+    }
+
+    const visibility = activityVisibilitySelect.value;
+    activityVisibilitySelect.disabled = true;
+    setProfileStatus(activityVisibilityStatus, t("Saving setting..."));
+
+    const response = await fetch("/api/profile/activity-visibility", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "RequestVerificationToken": getAntiForgeryToken()
+        },
+        body: JSON.stringify({ visibility })
+    });
+
+    if (response.ok) {
+        renderProfile(await response.json());
+        setProfileStatus(activityVisibilityStatus, t("Activity visibility saved."), "success");
+        return;
+    }
+
+    activityVisibilitySelect.value = window.elovoProfile?.activityVisibility || "full";
+    activityVisibilitySelect.disabled = false;
+    setProfileStatus(activityVisibilityStatus, await readResponseText(response), "error");
+}
+
 async function logoutFromProfile() {
     if (!profileLogoutButton) {
         return;
@@ -798,6 +834,10 @@ if (profilePasswordModal) {
 
 if (twoFactorToggle) {
     twoFactorToggle.addEventListener("change", setTwoFactorEnabled);
+}
+
+if (activityVisibilitySelect) {
+    activityVisibilitySelect.addEventListener("change", saveActivityVisibility);
 }
 
 if (profileLogoutButton) {

@@ -38,6 +38,7 @@ public class ElovoDbContext : DbContext
             entity.Property(x => x.RegistrationIp).HasMaxLength(45);
             entity.Property(x => x.FcmToken).HasMaxLength(4096);
             entity.Property(x => x.PreferredLanguage).HasMaxLength(2).HasDefaultValue("en");
+            entity.Property(x => x.ActivityVisibility).HasMaxLength(32).HasDefaultValue("full");
             entity.HasIndex(x => x.IsOnline);
 
             entity.HasOne(x => x.User)

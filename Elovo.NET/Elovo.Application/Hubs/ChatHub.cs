@@ -35,14 +35,21 @@ public class ChatHub : Hub
         var userId = GetCurrentUserId();
         var becameOnline = _presenceTracker.Connect(userId, Context.ConnectionId);
         await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
-        var lastSeenAt = becameOnline
+        var presence = becameOnline
             ? await _userService.SetOnlineStatusAsync(userId, true, ClientIpAddressResolver.Resolve(Context.GetHttpContext()))
             : null;
         await SendPendingMessagesAsync(userId);
         await SendActiveCallAsync(userId);
         if (becameOnline)
         {
-            await Clients.Others.SendAsync("UserOnline", userId, lastSeenAt);
+            if (presence?.IsOnline == true)
+            {
+                await Clients.Others.SendAsync("UserOnline", userId, presence.LastSeenAt);
+            }
+            else
+            {
+                await Clients.Others.SendAsync("UserOffline", userId, null);
+            }
         }
 
         await base.OnConnectedAsync();
@@ -54,8 +61,8 @@ public class ChatHub : Hub
         var isOffline = _presenceTracker.Disconnect(userId, Context.ConnectionId);
         if (isOffline)
         {
-            var lastSeenAt = await _userService.SetOnlineStatusAsync(userId, false);
-            await Clients.Others.SendAsync("UserOffline", userId, lastSeenAt);
+            var presence = await _userService.SetOnlineStatusAsync(userId, false);
+            await Clients.Others.SendAsync("UserOffline", userId, presence.LastSeenAt);
         }
 
         await base.OnDisconnectedAsync(exception);

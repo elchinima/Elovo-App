@@ -5,8 +5,17 @@ public class UserService : IUserService
 {
     private const int MinimumPasswordLength = 8;
     private const string HiddenProfileImageUrl = "/Assets/Images/Icons/profile-hidden.svg";
+    private const string ActivityVisibilityFull = "full";
+    private const string ActivityVisibilityOnlineOnly = "online";
+    private const string ActivityVisibilityHidden = "hidden";
     private static readonly TimeSpan EmailCodeLifetime = TimeSpan.FromHours(1);
     private static readonly TimeSpan EmailSendCooldown = TimeSpan.FromHours(1);
+    private static readonly HashSet<string> SupportedActivityVisibilities = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ActivityVisibilityFull,
+        ActivityVisibilityOnlineOnly,
+        ActivityVisibilityHidden
+    };
 
     private readonly IEmailSender _emailSender;
     private readonly IImageStorageService _imageStorageService;
@@ -52,13 +61,15 @@ public class UserService : IUserService
                 ? conversation.SecondUser
                 : conversation.FirstUser;
 
+            var presence = GetVisiblePresence(user);
+
             return new ConversationDto
             {
                 Id = conversation.Id,
                 UserId = user.Id,
                 Username = user.Username,
-                IsOnline = _presenceTracker.IsOnline(user.Id),
-                LastSeenAt = user.Session?.LastSeenAt,
+                IsOnline = presence.IsOnline,
+                LastSeenAt = presence.LastSeenAt,
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 LastMessage = "Start a conversation.",
@@ -95,12 +106,14 @@ public class UserService : IUserService
             var request = await _unitOfWork.FriendRequests.GetBetweenUsersAsync(currentUserId, user.Id, cancellationToken);
             var isFriend = friendIds.Contains(user.Id);
 
+            var presence = GetVisiblePresence(user);
+
             items.Add(new FriendCandidateDto
             {
                 Id = user.Id,
                 Username = user.Username,
-                IsOnline = _presenceTracker.IsOnline(user.Id),
-                LastSeenAt = user.Session?.LastSeenAt,
+                IsOnline = presence.IsOnline,
+                LastSeenAt = presence.LastSeenAt,
                 ProfileImagePath = isFriend ? user.ProfileImagePath : null,
                 ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, isFriend),
                 Status = isFriend
@@ -276,6 +289,19 @@ public class UserService : IUserService
         return ToProfileDto(user);
     }
 
+    public async Task<ProfileDto> SetActivityVisibilityAsync(Guid userId, string? visibility, CancellationToken cancellationToken = default)
+    {
+        var normalizedVisibility = NormalizeActivityVisibility(visibility);
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        var session = EnsureSession(user);
+        session.ActivityVisibility = normalizedVisibility;
+
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+    }
+
     public async Task<ProfileDto> SetProfileImagePathAsync(Guid userId, string path, CancellationToken cancellationToken = default)
     {
         var user = await GetRequiredUserAsync(userId, cancellationToken);
@@ -392,12 +418,12 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<DateTime?> SetOnlineStatusAsync(Guid userId, bool isOnline, string? clientIp = null, CancellationToken cancellationToken = default)
+    public async Task<UserPresenceDto> SetOnlineStatusAsync(Guid userId, bool isOnline, string? clientIp = null, CancellationToken cancellationToken = default)
     {
         var user = await _unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
         if (user is null)
         {
-            return null;
+            return new UserPresenceDto();
         }
 
         var session = EnsureSession(user);
@@ -410,7 +436,7 @@ public class UserService : IUserService
 
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return session.LastSeenAt;
+        return GetVisiblePresence(user);
     }
 
     private static (Guid FirstUserId, Guid SecondUserId) SortUserIds(Guid firstUserId, Guid secondUserId)
@@ -429,7 +455,9 @@ public class UserService : IUserService
     private UserDto ToUserDto(User user, bool canSeeProfileImage)
     {
         var dto = _mapper.Map<UserDto>(user);
-        dto.IsOnline = _presenceTracker.IsOnline(user.Id);
+        var presence = GetVisiblePresence(user);
+        dto.IsOnline = presence.IsOnline;
+        dto.LastSeenAt = presence.LastSeenAt;
         dto.ProfileImagePath = canSeeProfileImage ? user.ProfileImagePath : null;
         dto.ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, canSeeProfileImage);
         return dto;
@@ -463,8 +491,32 @@ public class UserService : IUserService
             EmailCooldownEndsAt = user.EmailSettings is null ? null : GetEmailCooldownEndsAt(user.EmailSettings),
             ProfileImagePath = user.ProfileImagePath,
             ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
-            IsTwoFactorEnabled = user.TwoFactor?.IsTwoFactorEnabled ?? false
+            IsTwoFactorEnabled = user.TwoFactor?.IsTwoFactorEnabled ?? false,
+            ActivityVisibility = NormalizeActivityVisibility(user.Session?.ActivityVisibility)
         };
+    }
+
+    private UserPresenceDto GetVisiblePresence(User user)
+    {
+        var visibility = NormalizeActivityVisibility(user.Session?.ActivityVisibility);
+        var isOnline = _presenceTracker.IsOnline(user.Id);
+
+        return visibility switch
+        {
+            ActivityVisibilityHidden => new UserPresenceDto(),
+            ActivityVisibilityOnlineOnly => new UserPresenceDto { IsOnline = isOnline },
+            _ => new UserPresenceDto
+            {
+                IsOnline = isOnline,
+                LastSeenAt = isOnline ? null : user.Session?.LastSeenAt
+            }
+        };
+    }
+
+    private static string NormalizeActivityVisibility(string? visibility)
+    {
+        var normalized = (visibility ?? string.Empty).Trim().ToLowerInvariant();
+        return SupportedActivityVisibilities.Contains(normalized) ? normalized : ActivityVisibilityFull;
     }
 
     private string? GetImageUrl(string? path)

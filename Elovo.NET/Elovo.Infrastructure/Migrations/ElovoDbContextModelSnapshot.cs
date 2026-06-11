@@ -252,6 +252,13 @@ namespace Elovo.Infrastructure.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ActivityVisibility")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("full");
+
                     b.Property<string>("FcmToken")
                         .HasMaxLength(4096)
                         .HasColumnType("character varying(4096)");

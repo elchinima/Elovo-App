@@ -132,6 +132,19 @@ public class ProfileController : Controller
         }
     }
 
+    [HttpPost("/api/profile/activity-visibility")]
+    public async Task<IActionResult> SetActivityVisibility([FromBody] ActivityVisibilitySettingsDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _userService.SetActivityVisibilityAsync(GetCurrentUserId(), dto.Visibility, cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("/api/profile/image")]
     [RequestSizeLimit(MaxImageBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxImageBytes)]

@@ -41,7 +41,6 @@
                 </div>
                 <div class="profile-panel-copy">
                     <h2>Profile image</h2>
-                    <p>PNG, JPEG or JPG. The final image is saved as a 256 x 256 WebP file.</p>
                 </div>
                 <input class="visually-hidden-file" type="file" id="profileImageInput" accept="image/png,image/jpeg,image/jpg">
                 @Html.AntiForgeryToken()
@@ -112,6 +111,23 @@
                     </label>
                 </div>
                 <p class="profile-status" id="twoFactorStatus"></p>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel-heading">
+                    <img src="~/Assets/Images/Icons/user-profile.svg" alt="">
+                    <h2>Activity visibility</h2>
+                </div>
+                <label class="profile-select-field">
+                    Activity visibility
+                    <select id="activityVisibilitySelect">
+                        <option value="full" selected="@(Model.ActivityVisibility == "full" ? "selected" : null)">Show online status and last seen</option>
+                        <option value="online" selected="@(Model.ActivityVisibility == "online" ? "selected" : null)">Show only when online</option>
+                        <option value="hidden" selected="@(Model.ActivityVisibility == "hidden" ? "selected" : null)">Show nothing</option>
+                    </select>
+                </label>
+                <p class="chat-settings-copy">Note: this applies to both users in the chat.</p>
+                <p class="profile-status" id="activityVisibilityStatus"></p>
             </section>
 
             <section class="profile-panel profile-logout-panel">
@@ -254,7 +270,8 @@
         hasEmail: @Json.Serialize(!string.IsNullOrWhiteSpace(Model.Email)),
         isEmailConfirmed: @Json.Serialize(Model.IsEmailConfirmed),
         emailCooldownEndsAt: @Json.Serialize(Model.EmailCooldownEndsAt),
-        isTwoFactorEnabled: @Json.Serialize(Model.IsTwoFactorEnabled)
+        isTwoFactorEnabled: @Json.Serialize(Model.IsTwoFactorEnabled),
+        activityVisibility: @Json.Serialize(Model.ActivityVisibility)
     };
 </script>
 

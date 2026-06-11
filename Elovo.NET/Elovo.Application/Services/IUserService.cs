@@ -16,6 +16,7 @@ public interface IUserService
     Task<ProfileDto> SetActivityVisibilityAsync(Guid userId, string? visibility, CancellationToken cancellationToken = default);
     Task<ProfileDto> SetProfileImagePathAsync(Guid userId, string path, CancellationToken cancellationToken = default);
     Task<ProfileDto> RemoveProfileImagePathAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<UserPresenceDto> GetVisiblePresenceAsync(Guid targetUserId, Guid viewerUserId, CancellationToken cancellationToken = default);
     Task SendFriendRequestAsync(Guid currentUserId, Guid receiverId, CancellationToken cancellationToken = default);
     Task AcceptFriendRequestAsync(Guid currentUserId, Guid requestId, CancellationToken cancellationToken = default);
     Task RemoveFriendAsync(Guid currentUserId, Guid friendId, CancellationToken cancellationToken = default);

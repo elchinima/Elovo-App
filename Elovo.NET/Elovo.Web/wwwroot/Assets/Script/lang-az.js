@@ -64,6 +64,7 @@ window.ElovoTranslations = {
         "Selected": "Seçilib",
         "Choose": "Seç",
         "Profile image": "Profil şəkli",
+        "Open profile image": "Profil şəklini aç",
         "Choose image": "Şəkil seç",
         "Delete": "Sil",
         "Email": "E-poçt",

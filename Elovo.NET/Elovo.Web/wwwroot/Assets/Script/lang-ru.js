@@ -64,6 +64,7 @@ window.ElovoTranslations = {
         "Selected": "Выбрано",
         "Choose": "Выбрать",
         "Profile image": "Изображение профиля",
+        "Open profile image": "Открыть изображение профиля",
         "Choose image": "Выбрать изображение",
         "Delete": "Удалить",
         "Email": "Электронная почта",

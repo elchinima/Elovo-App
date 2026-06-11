@@ -752,6 +752,10 @@ function formatStatus(chat) {
         return t("Online now");
     }
 
+    if (chat.isLastSeenHidden) {
+        return "";
+    }
+
     if (!chat.lastSeenAt) {
         return t("Offline");
     }
@@ -800,12 +804,14 @@ function applyCurrentUserActivityVisibility(chat) {
     const visibility = getCurrentUserActivityVisibility();
     if (visibility === "hidden") {
         chat.isActivityHidden = true;
+        chat.isLastSeenHidden = true;
         chat.isOnline = false;
         chat.lastSeenAt = null;
         return chat;
     }
 
     if (visibility === "online" && !chat.isActivityHidden) {
+        chat.isLastSeenHidden = true;
         chat.lastSeenAt = null;
     }
 
@@ -2168,6 +2174,19 @@ function renderConversationHeader(chat) {
         activeChatSummary.classList.toggle("is-status-hidden", !statusText);
     }
     setAvatarElement(activeAvatar, chat, chat.initial);
+    const canPreviewAvatar = !!chat.profileImageUrl;
+    activeAvatar.classList.toggle("is-previewable", canPreviewAvatar);
+    if (canPreviewAvatar) {
+        activeAvatar.setAttribute("role", "button");
+        activeAvatar.setAttribute("tabindex", "0");
+        activeAvatar.setAttribute("aria-label", t("Open profile image"));
+        activeAvatar.title = t("Open profile image");
+    } else {
+        activeAvatar.removeAttribute("role");
+        activeAvatar.removeAttribute("tabindex");
+        activeAvatar.removeAttribute("aria-label");
+        activeAvatar.removeAttribute("title");
+    }
 
     if (callButton) {
         callButton.disabled = false;
@@ -2192,6 +2211,11 @@ function renderEmptyConversationHeader() {
     if (activeAvatar) {
         activeAvatar.innerHTML = "";
         activeAvatar.textContent = "E";
+        activeAvatar.classList.remove("is-previewable");
+        activeAvatar.removeAttribute("role");
+        activeAvatar.removeAttribute("tabindex");
+        activeAvatar.removeAttribute("aria-label");
+        activeAvatar.removeAttribute("title");
     }
 
     if (messageStream) {
@@ -2263,6 +2287,14 @@ function appendMessage(message) {
         attachMessageActions(bubble, message);
     }
     messageStream.appendChild(bubble);
+}
+
+function openActiveConversationProfileImage() {
+    if (!activeConversation?.profileImageUrl) {
+        return;
+    }
+
+    openImagePreview(activeConversation.profileImageUrl, activeConversation.username, { allowZoom: false });
 }
 
 function formatCallMessageStatus(status) {
@@ -2622,10 +2654,11 @@ function formatVoiceDuration(seconds) {
     return `${minutes}:${remainder}`;
 }
 
-function openImagePreview(path, fileName) {
+function openImagePreview(path, fileName, options = {}) {
     const backdrop = document.createElement("div");
     const image = document.createElement("img");
     const close = document.createElement("button");
+    const allowZoom = options.allowZoom !== false;
     const pointers = new Map();
     let previewScale = 1;
     let translateX = 0;
@@ -2639,6 +2672,7 @@ function openImagePreview(path, fileName) {
     let moved = false;
 
     backdrop.className = "image-preview-backdrop is-open";
+    backdrop.classList.toggle("is-static-preview", !allowZoom);
     backdrop.setAttribute("role", "dialog");
     backdrop.setAttribute("aria-modal", "true");
     image.src = path;
@@ -2732,6 +2766,10 @@ function openImagePreview(path, fileName) {
 
     image.addEventListener("click", (event) => {
         event.stopPropagation();
+        if (!allowZoom) {
+            return;
+        }
+
         if (moved) {
             moved = false;
             return;
@@ -2743,11 +2781,19 @@ function openImagePreview(path, fileName) {
         applyTransform();
     });
     image.addEventListener("pointerdown", (event) => {
+        if (!allowZoom) {
+            return;
+        }
+
         pointers.set(event.pointerId, event);
         image.setPointerCapture(event.pointerId);
         beginPointerGesture();
     });
     image.addEventListener("pointermove", (event) => {
+        if (!allowZoom) {
+            return;
+        }
+
         if (!pointers.has(event.pointerId)) {
             return;
         }
@@ -2772,6 +2818,10 @@ function openImagePreview(path, fileName) {
         }
     });
     const endPointerGesture = (event) => {
+        if (!allowZoom) {
+            return;
+        }
+
         pointers.delete(event.pointerId);
         if (pointers.size > 0) {
             beginPointerGesture();
@@ -2782,6 +2832,10 @@ function openImagePreview(path, fileName) {
     image.addEventListener("pointercancel", endPointerGesture);
     image.addEventListener("lostpointercapture", endPointerGesture);
     image.addEventListener("wheel", (event) => {
+        if (!allowZoom) {
+            return;
+        }
+
         event.preventDefault();
         previewScale += event.deltaY < 0 ? 0.18 : -0.18;
         applyTransform();
@@ -3211,23 +3265,31 @@ async function startSignalR() {
         }
     });
 
-    connection.on("UserOnline", (userId, lastSeenAt, isActivityHidden = false) => {
-        updateUserStatus(userId, true, lastSeenAt, isActivityHidden);
+    connection.on("UserOnline", (userId, lastSeenAt, isActivityHidden = false, isLastSeenHidden = false) => {
+        updateUserStatus(userId, true, lastSeenAt, isActivityHidden, isLastSeenHidden);
     });
 
-    connection.on("UserOffline", (userId, lastSeenAt, isActivityHidden = false) => {
-        updateUserStatus(userId, false, lastSeenAt, isActivityHidden);
+    connection.on("UserOffline", (userId, lastSeenAt, isActivityHidden = false, isLastSeenHidden = false) => {
+        updateUserStatus(userId, false, lastSeenAt, isActivityHidden, isLastSeenHidden);
     });
 
     connection.on("UserTyping", (userId) => {
         if (activeConversation && sameId(userId, activeConversation.userId)) {
+            if (activeConversation.isActivityHidden || getCurrentUserActivityVisibility() === "hidden") {
+                return;
+            }
+
             activeStatus.textContent = t("Typing...");
+            activeStatus.hidden = false;
+            if (activeChatSummary) {
+                activeChatSummary.classList.remove("is-status-hidden");
+            }
         }
     });
 
     connection.on("UserStopTyping", (userId) => {
         if (activeConversation && sameId(userId, activeConversation.userId)) {
-            activeStatus.textContent = formatStatus(activeConversation);
+            renderConversationHeader(activeConversation);
         }
     });
 
@@ -3339,15 +3401,16 @@ function messageBelongsToActiveConversation(message) {
             sameId(message.receiverId, activeConversation.userId));
 }
 
-function updateUserStatus(userId, isOnline, lastSeenAt = null, isActivityHidden = false) {
+function updateUserStatus(userId, isOnline, lastSeenAt = null, isActivityHidden = false, isLastSeenHidden = false) {
     const chat = conversations.find(x => sameId(x.userId, userId));
     if (!chat) {
         return;
     }
 
     chat.isActivityHidden = !!isActivityHidden;
+    chat.isLastSeenHidden = !!isLastSeenHidden;
     chat.isOnline = chat.isActivityHidden ? false : isOnline;
-    chat.lastSeenAt = chat.isActivityHidden || isOnline ? null : lastSeenAt;
+    chat.lastSeenAt = chat.isActivityHidden || chat.isLastSeenHidden || isOnline ? null : lastSeenAt;
     applyCurrentUserActivityVisibility(chat);
 
     if (activeConversation && sameId(activeConversation.userId, userId)) {
@@ -3902,6 +3965,16 @@ if (settingsButton) {
 
 if (callButton) {
     callButton.addEventListener("click", startOutgoingCall);
+}
+
+if (activeAvatar) {
+    activeAvatar.addEventListener("click", openActiveConversationProfileImage);
+    activeAvatar.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openActiveConversationProfileImage();
+        }
+    });
 }
 
 if (endCallButton) {

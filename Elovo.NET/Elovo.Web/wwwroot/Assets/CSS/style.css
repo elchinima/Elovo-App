@@ -858,6 +858,15 @@ input:disabled {
     transform: scale(1.05);
 }
 
+.chat-header .avatar.is-previewable {
+    cursor: pointer;
+}
+
+.chat-header .avatar.is-previewable:focus-visible {
+    outline: 3px solid rgba(125, 134, 255, 0.38);
+    outline-offset: 3px;
+}
+
 .chat-copy {
     min-width: 0;
     position: relative;
@@ -1569,6 +1578,11 @@ input:disabled {
 
 .image-preview-backdrop > img.is-zoomed {
     cursor: zoom-out;
+}
+
+.image-preview-backdrop.is-static-preview > img {
+    cursor: default;
+    touch-action: auto;
 }
 
 .image-preview-close {

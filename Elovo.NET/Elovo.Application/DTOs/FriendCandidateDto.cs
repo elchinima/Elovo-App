@@ -7,6 +7,7 @@ public class FriendCandidateDto
     public bool IsOnline { get; set; }
     public DateTime? LastSeenAt { get; set; }
     public bool IsActivityHidden { get; set; }
+    public bool IsLastSeenHidden { get; set; }
     public string Status { get; set; } = "none";
     public string? ProfileImagePath { get; set; }
     public string? ProfileImageUrl { get; set; }

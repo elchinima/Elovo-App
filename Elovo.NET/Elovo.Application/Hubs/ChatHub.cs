@@ -42,14 +42,7 @@ public class ChatHub : Hub
         await SendActiveCallAsync(userId);
         if (becameOnline)
         {
-            if (presence?.IsOnline == true)
-            {
-                await Clients.Others.SendAsync("UserOnline", userId, presence.LastSeenAt, presence.IsActivityHidden);
-            }
-            else
-            {
-                await Clients.Others.SendAsync("UserOffline", userId, null, presence?.IsActivityHidden == true);
-            }
+            await NotifyPresenceChangedAsync(userId);
         }
 
         await base.OnConnectedAsync();
@@ -61,8 +54,8 @@ public class ChatHub : Hub
         var isOffline = _presenceTracker.Disconnect(userId, Context.ConnectionId);
         if (isOffline)
         {
-            var presence = await _userService.SetOnlineStatusAsync(userId, false);
-            await Clients.Others.SendAsync("UserOffline", userId, presence.LastSeenAt, presence.IsActivityHidden);
+            await _userService.SetOnlineStatusAsync(userId, false);
+            await NotifyPresenceChangedAsync(userId);
         }
 
         await base.OnDisconnectedAsync(exception);
@@ -497,6 +490,23 @@ public class ChatHub : Hub
     }
 
     private static string UserGroup(Guid userId) => $"user:{userId}";
+
+    private async Task NotifyPresenceChangedAsync(Guid userId)
+    {
+        var conversations = await _unitOfWork.Conversations.GetForUserAsync(userId, Context.ConnectionAborted);
+        var viewerIds = conversations
+            .Select(conversation => conversation.FirstUserId == userId ? conversation.SecondUserId : conversation.FirstUserId)
+            .Distinct()
+            .ToList();
+
+        foreach (var viewerId in viewerIds)
+        {
+            var presence = await _userService.GetVisiblePresenceAsync(userId, viewerId, Context.ConnectionAborted);
+            var eventName = presence.IsOnline ? "UserOnline" : "UserOffline";
+            await Clients.Group(UserGroup(viewerId))
+                .SendAsync(eventName, userId, presence.LastSeenAt, presence.IsActivityHidden, presence.IsLastSeenHidden, Context.ConnectionAborted);
+        }
+    }
 
     private async Task SendPendingMessagesAsync(Guid userId)
     {

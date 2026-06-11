@@ -73,6 +73,7 @@ public class UserService : IUserService
                 IsOnline = presence.IsOnline,
                 LastSeenAt = presence.LastSeenAt,
                 IsActivityHidden = presence.IsActivityHidden,
+                IsLastSeenHidden = presence.IsLastSeenHidden,
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 LastMessage = "Start a conversation.",
@@ -119,6 +120,7 @@ public class UserService : IUserService
                 IsOnline = presence.IsOnline,
                 LastSeenAt = presence.LastSeenAt,
                 IsActivityHidden = presence.IsActivityHidden,
+                IsLastSeenHidden = presence.IsLastSeenHidden,
                 ProfileImagePath = isFriend ? user.ProfileImagePath : null,
                 ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, isFriend),
                 Status = isFriend
@@ -325,6 +327,13 @@ public class UserService : IUserService
         return ToProfileDto(user);
     }
 
+    public async Task<UserPresenceDto> GetVisiblePresenceAsync(Guid targetUserId, Guid viewerUserId, CancellationToken cancellationToken = default)
+    {
+        var target = await GetRequiredUserAsync(targetUserId, cancellationToken);
+        var viewerVisibility = await GetUserActivityVisibilityAsync(viewerUserId, cancellationToken);
+        return GetVisiblePresence(target, viewerVisibility);
+    }
+
     public async Task SendFriendRequestAsync(Guid currentUserId, Guid receiverId, CancellationToken cancellationToken = default)
     {
         if (currentUserId == receiverId)
@@ -464,6 +473,7 @@ public class UserService : IUserService
         dto.IsOnline = presence.IsOnline;
         dto.LastSeenAt = presence.LastSeenAt;
         dto.IsActivityHidden = presence.IsActivityHidden;
+        dto.IsLastSeenHidden = presence.IsLastSeenHidden;
         dto.ProfileImagePath = canSeeProfileImage ? user.ProfileImagePath : null;
         dto.ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, canSeeProfileImage);
         return dto;
@@ -517,8 +527,8 @@ public class UserService : IUserService
 
         return visibility switch
         {
-            ActivityVisibilityHidden => new UserPresenceDto { IsActivityHidden = true },
-            ActivityVisibilityOnlineOnly => new UserPresenceDto { IsOnline = isOnline },
+            ActivityVisibilityHidden => new UserPresenceDto { IsActivityHidden = true, IsLastSeenHidden = true },
+            ActivityVisibilityOnlineOnly => new UserPresenceDto { IsOnline = isOnline, IsLastSeenHidden = true },
             _ => new UserPresenceDto
             {
                 IsOnline = isOnline,

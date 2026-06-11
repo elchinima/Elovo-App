@@ -70,6 +70,7 @@ public class UserService : IUserService
                 Username = user.Username,
                 IsOnline = presence.IsOnline,
                 LastSeenAt = presence.LastSeenAt,
+                IsActivityHidden = presence.IsActivityHidden,
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 LastMessage = "Start a conversation.",
@@ -114,6 +115,7 @@ public class UserService : IUserService
                 Username = user.Username,
                 IsOnline = presence.IsOnline,
                 LastSeenAt = presence.LastSeenAt,
+                IsActivityHidden = presence.IsActivityHidden,
                 ProfileImagePath = isFriend ? user.ProfileImagePath : null,
                 ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, isFriend),
                 Status = isFriend
@@ -458,6 +460,7 @@ public class UserService : IUserService
         var presence = GetVisiblePresence(user);
         dto.IsOnline = presence.IsOnline;
         dto.LastSeenAt = presence.LastSeenAt;
+        dto.IsActivityHidden = presence.IsActivityHidden;
         dto.ProfileImagePath = canSeeProfileImage ? user.ProfileImagePath : null;
         dto.ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, canSeeProfileImage);
         return dto;
@@ -503,7 +506,7 @@ public class UserService : IUserService
 
         return visibility switch
         {
-            ActivityVisibilityHidden => new UserPresenceDto(),
+            ActivityVisibilityHidden => new UserPresenceDto { IsActivityHidden = true },
             ActivityVisibilityOnlineOnly => new UserPresenceDto { IsOnline = isOnline },
             _ => new UserPresenceDto
             {

@@ -36,7 +36,12 @@ const profilePasswordClose = document.querySelector("#profilePasswordClose");
 const profilePasswordCancel = document.querySelector("#profilePasswordCancel");
 const twoFactorToggle = document.querySelector("#twoFactorToggle");
 const twoFactorStatus = document.querySelector("#twoFactorStatus");
-const activityVisibilitySelect = document.querySelector("#activityVisibilitySelect");
+const activityVisibilityOpen = document.querySelector("#activityVisibilityOpen");
+const activityVisibilityModal = document.querySelector("#activityVisibilityModal");
+const activityVisibilityClose = document.querySelector("#activityVisibilityClose");
+const activityVisibilityOptions = document.querySelector("#activityVisibilityOptions");
+const activityVisibilityCurrentIcon = document.querySelector("#activityVisibilityCurrentIcon");
+const activityVisibilityCurrentLabel = document.querySelector("#activityVisibilityCurrentLabel");
 const activityVisibilityStatus = document.querySelector("#activityVisibilityStatus");
 const profileLogoutButton = document.querySelector("#profileLogoutButton");
 const profileLogoutStatus = document.querySelector("#profileLogoutStatus");
@@ -68,6 +73,25 @@ const profileConfirmIcons = {
 const allowedProfileImageTypes = ["image/png", "image/jpeg", "image/jpg"];
 const maxImageSize = 10 * 1024 * 1024;
 let isProfileEmailEditing = false;
+
+const activityVisibilityItems = {
+    full: {
+        label: "Show online status and last seen",
+        icon: "/Assets/Images/Icons/activity-full.svg"
+    },
+    online: {
+        label: "Show only when online",
+        icon: "/Assets/Images/Icons/activity-online.svg"
+    },
+    hidden: {
+        label: "Show nothing",
+        icon: "/Assets/Images/Icons/activity-hidden.svg"
+    }
+};
+
+function normalizeActivityVisibility(value) {
+    return Object.prototype.hasOwnProperty.call(activityVisibilityItems, value) ? value : "full";
+}
 
 function isProfileEmailLocked() {
     return !!(window.elovoProfile && window.elovoProfile.hasEmail && window.elovoProfile.isEmailConfirmed);
@@ -189,16 +213,45 @@ function renderProfile(profile) {
         twoFactorToggle.disabled = false;
     }
 
-    if (activityVisibilitySelect) {
-        activityVisibilitySelect.value = profile.activityVisibility || "full";
-        activityVisibilitySelect.disabled = false;
-    }
+    renderActivityVisibility(profile.activityVisibility);
 
     updateEmailVerificationUi();
 
     if (window.parent !== window && window.location.pathname.startsWith("/settings/")) {
         window.parent.postMessage({ type: "elovo:profile-updated", profile }, window.location.origin);
     }
+}
+
+function renderActivityVisibility(value) {
+    const visibility = normalizeActivityVisibility(value);
+    const item = activityVisibilityItems[visibility];
+
+    if (activityVisibilityCurrentLabel) {
+        activityVisibilityCurrentLabel.textContent = t(item.label);
+    }
+
+    if (activityVisibilityCurrentIcon) {
+        activityVisibilityCurrentIcon.src = item.icon;
+    }
+
+    if (activityVisibilityOptions) {
+        activityVisibilityOptions.querySelectorAll("[data-visibility]").forEach((button) => {
+            const isSelected = button.dataset.visibility === visibility;
+            button.disabled = false;
+            button.classList.toggle("is-active", isSelected);
+            button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+        });
+    }
+}
+
+function openActivityVisibilityModal() {
+    renderActivityVisibility(window.elovoProfile?.activityVisibility);
+    setProfileStatus(activityVisibilityStatus, "");
+    openModal(activityVisibilityModal);
+}
+
+function closeActivityVisibilityModal() {
+    closeModal(activityVisibilityModal);
 }
 
 function closeProfileConfirm(result) {
@@ -677,13 +730,15 @@ async function setTwoFactorEnabled() {
     setProfileStatus(twoFactorStatus, await readResponseText(response), "error");
 }
 
-async function saveActivityVisibility() {
-    if (!activityVisibilitySelect) {
+async function saveActivityVisibility(visibility) {
+    const normalizedVisibility = normalizeActivityVisibility(visibility);
+    if (!activityVisibilityOptions) {
         return;
     }
 
-    const visibility = activityVisibilitySelect.value;
-    activityVisibilitySelect.disabled = true;
+    activityVisibilityOptions.querySelectorAll("button").forEach((button) => {
+        button.disabled = true;
+    });
     setProfileStatus(activityVisibilityStatus, t("Saving setting..."));
 
     const response = await fetch("/api/profile/activity-visibility", {
@@ -692,17 +747,19 @@ async function saveActivityVisibility() {
             "Content-Type": "application/json",
             "RequestVerificationToken": getAntiForgeryToken()
         },
-        body: JSON.stringify({ visibility })
+        body: JSON.stringify({ visibility: normalizedVisibility })
     });
 
     if (response.ok) {
         renderProfile(await response.json());
         setProfileStatus(activityVisibilityStatus, t("Activity visibility saved."), "success");
+        closeActivityVisibilityModal();
         return;
     }
 
-    activityVisibilitySelect.value = window.elovoProfile?.activityVisibility || "full";
-    activityVisibilitySelect.disabled = false;
+    activityVisibilityOptions.querySelectorAll("button").forEach((button) => {
+        button.disabled = false;
+    });
     setProfileStatus(activityVisibilityStatus, await readResponseText(response), "error");
 }
 
@@ -786,6 +843,7 @@ if (profileEmailVerificationWarning) {
 
 setProfileEmailEditing(false);
 updateEmailVerificationUi();
+renderActivityVisibility(window.elovoProfile?.activityVisibility);
 emailVerificationTimer = window.setInterval(updateEmailVerificationUi, 1000);
 
 if (profilePasswordOpen) {
@@ -836,8 +894,29 @@ if (twoFactorToggle) {
     twoFactorToggle.addEventListener("change", setTwoFactorEnabled);
 }
 
-if (activityVisibilitySelect) {
-    activityVisibilitySelect.addEventListener("change", saveActivityVisibility);
+if (activityVisibilityOpen) {
+    activityVisibilityOpen.addEventListener("click", openActivityVisibilityModal);
+}
+
+if (activityVisibilityClose) {
+    activityVisibilityClose.addEventListener("click", closeActivityVisibilityModal);
+}
+
+if (activityVisibilityModal) {
+    activityVisibilityModal.addEventListener("click", (event) => {
+        if (event.target === activityVisibilityModal) {
+            closeActivityVisibilityModal();
+        }
+    });
+}
+
+if (activityVisibilityOptions) {
+    activityVisibilityOptions.addEventListener("click", (event) => {
+        const option = event.target.closest("[data-visibility]");
+        if (option) {
+            saveActivityVisibility(option.dataset.visibility);
+        }
+    });
 }
 
 if (profileLogoutButton) {

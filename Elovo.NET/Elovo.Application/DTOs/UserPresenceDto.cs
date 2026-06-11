@@ -4,4 +4,5 @@ public class UserPresenceDto
 {
     public bool IsOnline { get; set; }
     public DateTime? LastSeenAt { get; set; }
+    public bool IsActivityHidden { get; set; }
 }

@@ -23,6 +23,7 @@ const messageInput = document.querySelector("#messageInput");
 const messageSubmitIcon = document.querySelector("#messageSubmitIcon");
 const attachImageButton = document.querySelector("#attachImageButton");
 const imageInput = document.querySelector("#imageInput");
+const activeChatSummary = document.querySelector("#activeChatSummary");
 const activeName = document.querySelector("#activeName");
 const activeStatus = document.querySelector("#activeStatus");
 const activeAvatar = document.querySelector("#activeAvatar");
@@ -742,6 +743,10 @@ function formatTime(value) {
 }
 
 function formatStatus(chat) {
+    if (chat.isActivityHidden) {
+        return "";
+    }
+
     if (chat.isOnline) {
         return t("Online now");
     }
@@ -2085,6 +2090,7 @@ function renderChatList(items = conversations) {
         name.textContent = chat.username;
         preview.textContent = chat.lastMessage || t("Start a conversation.");
         time.textContent = formatTime(chat.lastMessageAt);
+        status.hidden = !!chat.isActivityHidden;
         avatarRing.appendChild(avatar);
         nameRow.append(name, status);
         meta.append(time);
@@ -2101,7 +2107,12 @@ function renderConversationHeader(chat) {
     }
 
     activeName.textContent = chat.username;
-    activeStatus.textContent = formatStatus(chat);
+    const statusText = formatStatus(chat);
+    activeStatus.textContent = statusText;
+    activeStatus.hidden = !statusText;
+    if (activeChatSummary) {
+        activeChatSummary.classList.toggle("is-status-hidden", !statusText);
+    }
     setAvatarElement(activeAvatar, chat, chat.initial);
 
     if (callButton) {
@@ -2117,6 +2128,11 @@ function renderEmptyConversationHeader() {
 
     if (activeStatus) {
         activeStatus.textContent = t("Choose a conversation");
+        activeStatus.hidden = false;
+    }
+
+    if (activeChatSummary) {
+        activeChatSummary.classList.remove("is-status-hidden");
     }
 
     if (activeAvatar) {
@@ -3140,12 +3156,12 @@ async function startSignalR() {
         }
     });
 
-    connection.on("UserOnline", (userId, lastSeenAt) => {
-        updateUserStatus(userId, true, lastSeenAt);
+    connection.on("UserOnline", (userId, lastSeenAt, isActivityHidden = false) => {
+        updateUserStatus(userId, true, lastSeenAt, isActivityHidden);
     });
 
-    connection.on("UserOffline", (userId, lastSeenAt) => {
-        updateUserStatus(userId, false, lastSeenAt);
+    connection.on("UserOffline", (userId, lastSeenAt, isActivityHidden = false) => {
+        updateUserStatus(userId, false, lastSeenAt, isActivityHidden);
     });
 
     connection.on("UserTyping", (userId) => {
@@ -3268,14 +3284,15 @@ function messageBelongsToActiveConversation(message) {
             sameId(message.receiverId, activeConversation.userId));
 }
 
-function updateUserStatus(userId, isOnline, lastSeenAt = null) {
+function updateUserStatus(userId, isOnline, lastSeenAt = null, isActivityHidden = false) {
     const chat = conversations.find(x => sameId(x.userId, userId));
     if (!chat) {
         return;
     }
 
-    chat.isOnline = isOnline;
-    chat.lastSeenAt = isOnline ? null : lastSeenAt;
+    chat.isActivityHidden = !!isActivityHidden;
+    chat.isOnline = chat.isActivityHidden ? false : isOnline;
+    chat.lastSeenAt = chat.isActivityHidden || isOnline ? null : lastSeenAt;
 
     if (activeConversation && sameId(activeConversation.userId, userId)) {
         activeConversation = chat;

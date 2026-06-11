@@ -7,6 +7,7 @@ public class ConversationDto
     public string Username { get; set; } = string.Empty;
     public bool IsOnline { get; set; }
     public DateTime? LastSeenAt { get; set; }
+    public bool IsActivityHidden { get; set; }
     public string LastMessage { get; set; } = string.Empty;
     public DateTime? LastMessageAt { get; set; }
     public DateTime? OtherUserReadAt { get; set; }

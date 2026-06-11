@@ -44,11 +44,11 @@ public class ChatHub : Hub
         {
             if (presence?.IsOnline == true)
             {
-                await Clients.Others.SendAsync("UserOnline", userId, presence.LastSeenAt);
+                await Clients.Others.SendAsync("UserOnline", userId, presence.LastSeenAt, presence.IsActivityHidden);
             }
             else
             {
-                await Clients.Others.SendAsync("UserOffline", userId, null);
+                await Clients.Others.SendAsync("UserOffline", userId, null, presence?.IsActivityHidden == true);
             }
         }
 
@@ -62,7 +62,7 @@ public class ChatHub : Hub
         if (isOffline)
         {
             var presence = await _userService.SetOnlineStatusAsync(userId, false);
-            await Clients.Others.SendAsync("UserOffline", userId, presence.LastSeenAt);
+            await Clients.Others.SendAsync("UserOffline", userId, presence.LastSeenAt, presence.IsActivityHidden);
         }
 
         await base.OnDisconnectedAsync(exception);

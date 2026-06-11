@@ -118,14 +118,16 @@
                     <img src="~/Assets/Images/Icons/user-profile.svg" alt="">
                     <h2>Activity visibility</h2>
                 </div>
-                <label class="profile-select-field">
-                    Activity visibility
-                    <select id="activityVisibilitySelect">
-                        <option value="full" selected="@(Model.ActivityVisibility == "full" ? "selected" : null)">Show online status and last seen</option>
-                        <option value="online" selected="@(Model.ActivityVisibility == "online" ? "selected" : null)">Show only when online</option>
-                        <option value="hidden" selected="@(Model.ActivityVisibility == "hidden" ? "selected" : null)">Show nothing</option>
-                    </select>
-                </label>
+                <button class="activity-visibility-card" id="activityVisibilityOpen" type="button">
+                    <span class="activity-visibility-card-icon">
+                        <img class="activity-visibility-icon" id="activityVisibilityCurrentIcon" src="~/Assets/Images/Icons/activity-full.svg" alt="">
+                    </span>
+                    <span class="activity-visibility-card-copy">
+                        <strong id="activityVisibilityCurrentLabel">Show online status and last seen</strong>
+                        <span>Selected</span>
+                    </span>
+                    <span class="activity-visibility-card-action">Change</span>
+                </button>
                 <p class="chat-settings-copy">Note: this applies to both users in the chat.</p>
                 <p class="profile-status" id="activityVisibilityStatus"></p>
             </section>
@@ -228,6 +230,37 @@
                     </button>
                 </div>
             </form>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="activityVisibilityModal" aria-hidden="true">
+        <section class="modal-panel activity-visibility-panel" role="dialog" aria-modal="true" aria-labelledby="activityVisibilityTitle">
+            <header class="modal-header">
+                <h2 id="activityVisibilityTitle">Activity visibility</h2>
+                <button class="icon-button" type="button" id="activityVisibilityClose" aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <div class="activity-visibility-options" id="activityVisibilityOptions">
+                <button class="activity-visibility-option" type="button" data-visibility="full">
+                    <img class="activity-visibility-icon" src="~/Assets/Images/Icons/activity-full.svg" alt="">
+                    <span>
+                        <strong>Show online status and last seen</strong>
+                    </span>
+                </button>
+                <button class="activity-visibility-option" type="button" data-visibility="online">
+                    <img class="activity-visibility-icon" src="~/Assets/Images/Icons/activity-online.svg" alt="">
+                    <span>
+                        <strong>Show only when online</strong>
+                    </span>
+                </button>
+                <button class="activity-visibility-option" type="button" data-visibility="hidden">
+                    <img class="activity-visibility-icon" src="~/Assets/Images/Icons/activity-hidden.svg" alt="">
+                    <span>
+                        <strong>Show nothing</strong>
+                    </span>
+                </button>
+            </div>
         </section>
     </div>
 

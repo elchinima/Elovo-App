@@ -108,6 +108,7 @@ const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
 const maxImageSize = 10 * 1024 * 1024;
 const maxVoiceDurationMs = 60 * 1000;
 const maxUnansweredCallDurationMs = 60 * 1000;
+const activityVisibilityModes = ["full", "online", "hidden"];
 const voiceAudioBitRate = 64000;
 const minVoiceDurationMs = 450;
 const allowedVoiceTypes = ["audio/webm", "audio/ogg", "audio/mp4"];
@@ -756,6 +757,35 @@ function formatStatus(chat) {
     }
 
     return t("Last seen {time}", { time: formatTime(chat.lastSeenAt) });
+}
+
+function normalizeActivityVisibility(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    return activityVisibilityModes.includes(normalized) ? normalized : "full";
+}
+
+function getCurrentUserActivityVisibility() {
+    return normalizeActivityVisibility(window.elovoCurrentUserActivityVisibility);
+}
+
+function applyCurrentUserActivityVisibility(chat) {
+    if (!chat) {
+        return chat;
+    }
+
+    const visibility = getCurrentUserActivityVisibility();
+    if (visibility === "hidden") {
+        chat.isActivityHidden = true;
+        chat.isOnline = false;
+        chat.lastSeenAt = null;
+        return chat;
+    }
+
+    if (visibility === "online" && !chat.isActivityHidden) {
+        chat.lastSeenAt = null;
+    }
+
+    return chat;
 }
 
 function openModal(modal) {
@@ -2754,7 +2784,7 @@ async function loadConversations() {
         return;
     }
 
-    conversations = applyLocalConversationHistory(await response.json());
+    conversations = applyLocalConversationHistory(await response.json()).map(applyCurrentUserActivityVisibility);
     hiddenConversationIds = readHiddenConversationIds();
     await purgeRemovedLocalConversations(conversations.map((chat) => chat.userId));
     updateRestoreHiddenButton();
@@ -3293,6 +3323,7 @@ function updateUserStatus(userId, isOnline, lastSeenAt = null, isActivityHidden 
     chat.isActivityHidden = !!isActivityHidden;
     chat.isOnline = chat.isActivityHidden ? false : isOnline;
     chat.lastSeenAt = chat.isActivityHidden || isOnline ? null : lastSeenAt;
+    applyCurrentUserActivityVisibility(chat);
 
     if (activeConversation && sameId(activeConversation.userId, userId)) {
         activeConversation = chat;
@@ -3806,6 +3837,19 @@ window.addEventListener("message", (event) => {
             image.classList.add("profile-image");
         }
         window.elovoCurrentUserProfileImageUrl = profile.profileImageUrl || "";
+        const previousActivityVisibility = getCurrentUserActivityVisibility();
+        window.elovoCurrentUserActivityVisibility = normalizeActivityVisibility(profile.activityVisibility || window.elovoCurrentUserActivityVisibility);
+        if (previousActivityVisibility !== getCurrentUserActivityVisibility()) {
+            loadConversations().catch(() => { });
+            return;
+        }
+
+        conversations.forEach(applyCurrentUserActivityVisibility);
+        if (activeConversation) {
+            activeConversation = conversations.find(x => sameId(x.userId, activeConversation.userId)) || activeConversation;
+            renderConversationHeader(activeConversation);
+        }
+        renderChatList(getFilteredConversations());
         return;
     }
 

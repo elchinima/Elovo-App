@@ -251,6 +251,7 @@
         window.AndroidBridge.onUserLoggedIn(window.elovoCurrentUserId);
     }
     window.elovoCurrentUserProfileImageUrl = "@ViewBag.CurrentUserProfileImageUrl";
+    window.elovoCurrentUserActivityVisibility = @Json.Serialize(ViewBag.CurrentUserActivityVisibility ?? "full");
 </script>
 
 @section Scripts {

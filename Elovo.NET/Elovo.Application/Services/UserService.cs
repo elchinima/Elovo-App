@@ -45,14 +45,16 @@ public class UserService : IUserService
 
     public async Task<IReadOnlyList<UserDto>> GetUsersAsync(Guid currentUserId, CancellationToken cancellationToken = default)
     {
+        var viewerVisibility = await GetUserActivityVisibilityAsync(currentUserId, cancellationToken);
         var users = await _unitOfWork.Users.GetAllExceptAsync(currentUserId, cancellationToken);
         var conversations = await _unitOfWork.Conversations.GetForUserAsync(currentUserId, cancellationToken);
         var friendIds = GetFriendIds(currentUserId, conversations);
-        return users.Select(user => ToUserDto(user, friendIds.Contains(user.Id))).ToList();
+        return users.Select(user => ToUserDto(user, friendIds.Contains(user.Id), viewerVisibility)).ToList();
     }
 
     public async Task<IReadOnlyList<ConversationDto>> GetConversationsAsync(Guid currentUserId, CancellationToken cancellationToken = default)
     {
+        var viewerVisibility = await GetUserActivityVisibilityAsync(currentUserId, cancellationToken);
         var conversations = await _unitOfWork.Conversations.GetForUserAsync(currentUserId, cancellationToken);
 
         var items = conversations.Select(conversation =>
@@ -61,7 +63,7 @@ public class UserService : IUserService
                 ? conversation.SecondUser
                 : conversation.FirstUser;
 
-            var presence = GetVisiblePresence(user);
+            var presence = GetVisiblePresence(user, viewerVisibility);
 
             return new ConversationDto
             {
@@ -99,6 +101,7 @@ public class UserService : IUserService
         var users = await _unitOfWork.Users.GetAllExceptAsync(currentUserId, cancellationToken);
         var conversations = await _unitOfWork.Conversations.GetForUserAsync(currentUserId, cancellationToken);
         var friendIds = GetFriendIds(currentUserId, conversations);
+        var viewerVisibility = await GetUserActivityVisibilityAsync(currentUserId, cancellationToken);
 
         var items = new List<FriendCandidateDto>();
 
@@ -107,7 +110,7 @@ public class UserService : IUserService
             var request = await _unitOfWork.FriendRequests.GetBetweenUsersAsync(currentUserId, user.Id, cancellationToken);
             var isFriend = friendIds.Contains(user.Id);
 
-            var presence = GetVisiblePresence(user);
+            var presence = GetVisiblePresence(user, viewerVisibility);
 
             items.Add(new FriendCandidateDto
             {
@@ -454,10 +457,10 @@ public class UserService : IUserService
             ?? throw new InvalidOperationException("User was not found.");
     }
 
-    private UserDto ToUserDto(User user, bool canSeeProfileImage)
+    private UserDto ToUserDto(User user, bool canSeeProfileImage, string viewerVisibility)
     {
         var dto = _mapper.Map<UserDto>(user);
-        var presence = GetVisiblePresence(user);
+        var presence = GetVisiblePresence(user, viewerVisibility);
         dto.IsOnline = presence.IsOnline;
         dto.LastSeenAt = presence.LastSeenAt;
         dto.IsActivityHidden = presence.IsActivityHidden;
@@ -499,9 +502,17 @@ public class UserService : IUserService
         };
     }
 
-    private UserPresenceDto GetVisiblePresence(User user)
+    private async Task<string> GetUserActivityVisibilityAsync(Guid userId, CancellationToken cancellationToken)
     {
-        var visibility = NormalizeActivityVisibility(user.Session?.ActivityVisibility);
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        return NormalizeActivityVisibility(user.Session?.ActivityVisibility);
+    }
+
+    private UserPresenceDto GetVisiblePresence(User user, string? viewerVisibility = null)
+    {
+        var visibility = CombineActivityVisibility(
+            NormalizeActivityVisibility(user.Session?.ActivityVisibility),
+            NormalizeActivityVisibility(viewerVisibility));
         var isOnline = _presenceTracker.IsOnline(user.Id);
 
         return visibility switch
@@ -520,6 +531,21 @@ public class UserService : IUserService
     {
         var normalized = (visibility ?? string.Empty).Trim().ToLowerInvariant();
         return SupportedActivityVisibilities.Contains(normalized) ? normalized : ActivityVisibilityFull;
+    }
+
+    private static string CombineActivityVisibility(string targetVisibility, string viewerVisibility)
+    {
+        if (targetVisibility == ActivityVisibilityHidden || viewerVisibility == ActivityVisibilityHidden)
+        {
+            return ActivityVisibilityHidden;
+        }
+
+        if (targetVisibility == ActivityVisibilityOnlineOnly || viewerVisibility == ActivityVisibilityOnlineOnly)
+        {
+            return ActivityVisibilityOnlineOnly;
+        }
+
+        return ActivityVisibilityFull;
     }
 
     private string? GetImageUrl(string? path)

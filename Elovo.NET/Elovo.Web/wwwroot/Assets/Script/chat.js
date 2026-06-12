@@ -2174,7 +2174,7 @@ function renderConversationHeader(chat) {
         activeChatSummary.classList.toggle("is-status-hidden", !statusText);
     }
     setAvatarElement(activeAvatar, chat, chat.initial);
-    const canPreviewAvatar = !!chat.profileImageUrl;
+    const canPreviewAvatar = !!getAvatarImageSource(activeAvatar);
     activeAvatar.classList.toggle("is-previewable", canPreviewAvatar);
     if (canPreviewAvatar) {
         activeAvatar.setAttribute("role", "button");
@@ -2289,12 +2289,46 @@ function appendMessage(message) {
     messageStream.appendChild(bubble);
 }
 
-function openActiveConversationProfileImage() {
-    if (!activeConversation?.profileImageUrl) {
+function getAvatarImageSource(avatar) {
+    const image = avatar?.querySelector("img");
+    return image?.currentSrc || image?.src || "";
+}
+
+function openAvatarImagePreview(avatar, label) {
+    const imageSource = getAvatarImageSource(avatar);
+    if (!imageSource) {
         return;
     }
 
-    openImagePreview(activeConversation.profileImageUrl, activeConversation.username, { allowZoom: false });
+    openImagePreview(imageSource, label || t("Profile image"), { allowZoom: false });
+}
+
+function openActiveConversationProfileImage() {
+    openAvatarImagePreview(activeAvatar, activeConversation?.username);
+}
+
+function openCurrentUserProfileImage() {
+    openAvatarImagePreview(currentUserAvatar, t("Profile image"));
+}
+
+function syncCurrentUserAvatarPreviewState() {
+    if (!currentUserAvatar) {
+        return;
+    }
+
+    const canPreview = !!getAvatarImageSource(currentUserAvatar);
+    currentUserAvatar.classList.toggle("is-previewable", canPreview);
+    if (canPreview) {
+        currentUserAvatar.setAttribute("role", "button");
+        currentUserAvatar.setAttribute("tabindex", "0");
+        currentUserAvatar.setAttribute("aria-label", t("Open profile image"));
+        currentUserAvatar.title = t("Open profile image");
+    } else {
+        currentUserAvatar.removeAttribute("role");
+        currentUserAvatar.removeAttribute("tabindex");
+        currentUserAvatar.removeAttribute("aria-label");
+        currentUserAvatar.removeAttribute("title");
+    }
 }
 
 function formatCallMessageStatus(status) {
@@ -3924,6 +3958,7 @@ window.addEventListener("message", (event) => {
         if (image) {
             image.classList.add("profile-image");
         }
+        syncCurrentUserAvatarPreviewState();
         window.elovoCurrentUserProfileImageUrl = profile.profileImageUrl || "";
         const previousActivityVisibility = getCurrentUserActivityVisibility();
         window.elovoCurrentUserActivityVisibility = readActivityVisibilityFromProfile(profile);
@@ -3963,6 +3998,8 @@ if (settingsButton) {
     settingsButton.addEventListener("click", () => openSettingsFrame());
 }
 
+syncCurrentUserAvatarPreviewState();
+
 if (callButton) {
     callButton.addEventListener("click", startOutgoingCall);
 }
@@ -3973,6 +4010,16 @@ if (activeAvatar) {
         if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             openActiveConversationProfileImage();
+        }
+    });
+}
+
+if (currentUserAvatar) {
+    currentUserAvatar.addEventListener("click", openCurrentUserProfileImage);
+    currentUserAvatar.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openCurrentUserProfileImage();
         }
     });
 }

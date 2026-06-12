@@ -26,11 +26,104 @@
         border-color: rgba(109, 103, 255, 0.55);
         background: rgba(109, 103, 255, 0.12);
     }
+
+    .home-action:hover,
+    .home-action:focus-visible,
+    .home-cta:hover,
+    .home-cta:focus-visible {
+        transform: translateY(-2px);
+        border-color: rgba(125, 134, 255, 0.46);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .home-action--primary:hover,
+    .home-action--primary:focus-visible,
+    .home-cta--primary:hover,
+    .home-cta--primary:focus-visible {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+
+    .home-feature:hover {
+        transform: translateY(-3px);
+        border-color: rgba(125, 134, 255, 0.42);
+    }
 }
 
 @media (max-width: 820px) {
     .language-selector {
         display: none;
+    }
+
+    .home-body {
+        overflow-x: hidden;
+        overflow-y: auto;
+        user-select: auto;
+        -webkit-user-select: auto;
+        -webkit-touch-callout: default;
+    }
+
+    .home-body img {
+        pointer-events: auto;
+    }
+
+    .home-page {
+        width: min(100% - 28px, 680px);
+        padding: 14px 0 38px;
+    }
+
+    .home-nav {
+        min-height: 58px;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: color-mix(in srgb, var(--bg) 84%, transparent);
+        backdrop-filter: blur(18px);
+    }
+
+    .home-action {
+        min-height: 42px;
+        padding: 0 12px;
+    }
+
+    .home-hero {
+        min-height: auto;
+        grid-template-columns: 1fr;
+        gap: 30px;
+        padding: 32px 0 24px;
+    }
+
+    .home-hero h1 {
+        font-size: clamp(2.55rem, 12vw, 4.2rem);
+        line-height: 0.95;
+    }
+
+    html[lang="ru"] .home-hero h1,
+    html[lang="az"] .home-hero h1 {
+        font-size: clamp(2.2rem, 10vw, 3.65rem);
+    }
+
+    .home-hero-text {
+        font-size: 1rem;
+        line-height: 1.58;
+    }
+
+    .home-device {
+        width: min(100%, 390px);
+        min-height: 470px;
+        justify-self: center;
+        border-radius: 24px;
+    }
+
+    .home-chat-preview {
+        min-height: 398px;
+    }
+
+    .home-feature-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .home-feature {
+        min-height: 0;
     }
 
     body {
@@ -537,6 +630,60 @@
 }
 
 @media (max-width: 520px) {
+
+    .home-page {
+        width: min(100% - 22px, 420px);
+        padding-top: 10px;
+    }
+
+    .home-brand span {
+        display: none;
+    }
+
+    .home-actions {
+        gap: 7px;
+    }
+
+    .home-action {
+        min-height: 40px;
+        padding: 0 10px;
+        font-size: 0.9rem;
+    }
+
+    .home-hero-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .home-cta {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .home-device {
+        min-height: 410px;
+        padding: 10px;
+    }
+
+    .home-chat-preview {
+        min-height: 346px;
+        padding: 14px;
+    }
+
+    .home-preview-header {
+        top: 14px;
+        left: 14px;
+        right: 14px;
+    }
+
+    .home-message {
+        max-width: 92%;
+        font-size: 0.92rem;
+    }
+
+    .home-section-heading h2 {
+        font-size: 2rem;
+    }
 
     .login-card,
     .brand-panel {

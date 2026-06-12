@@ -1,8 +1,85 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Elovo Home";
+    ViewData["BodyClass"] = "home-body";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<main class="home-page">
+    <header class="home-nav" aria-label="Site navigation">
+        <a class="home-brand" asp-controller="Home" asp-action="Index" aria-label="Elovo home">
+            <img src="~/Assets/Images/Logo/Elovo-Logo.png" alt="Elovo logo">
+            <span>Elovo Chat</span>
+        </a>
+        <nav class="home-actions" aria-label="Account actions">
+            <a class="home-action home-action--ghost" asp-controller="Auth" asp-action="Login">Log in</a>
+            <a class="home-action home-action--primary" asp-controller="Auth" asp-action="Register">Sign up</a>
+        </nav>
+    </header>
+
+    <section class="home-hero" aria-labelledby="homeHeroTitle">
+        <div class="home-hero-copy">
+            <p class="eyebrow">Elovo Chat</p>
+            <h1 id="homeHeroTitle">A calmer messenger for real conversations.</h1>
+            <p class="home-hero-text">Elovo brings private chats, voice messages, image sharing, calls, and clean profile controls into one focused workspace.</p>
+            <div class="home-hero-actions">
+                <a class="home-cta home-cta--primary" asp-controller="Auth" asp-action="Register">
+                    <img class="button-icon" src="~/Assets/Images/Icons/signup.svg" alt="">
+                    <span>Create account</span>
+                </a>
+                <a class="home-cta home-cta--secondary" asp-controller="Auth" asp-action="Login">
+                    <img class="button-icon" src="~/Assets/Images/Icons/login.svg" alt="">
+                    <span>Log in</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="home-device" aria-label="Elovo chat preview">
+            <div class="home-device-top">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <div class="home-chat-preview">
+                <div class="home-preview-header">
+                    <div class="home-avatar">E</div>
+                    <div>
+                        <strong>Elovo</strong>
+                        <span>Online now</span>
+                    </div>
+                </div>
+                <div class="home-message home-message--incoming">Fast chats, focused space.</div>
+                <div class="home-message home-message--outgoing">Voice, images, calls, and privacy in one place.</div>
+                <div class="home-wave" aria-hidden="true">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-section" aria-labelledby="homeFeatureTitle">
+        <div class="home-section-heading">
+            <p class="eyebrow">Built for daily use</p>
+            <h2 id="homeFeatureTitle">Everything feels close, quick, and secure.</h2>
+        </div>
+        <div class="home-feature-grid">
+            <article class="home-feature">
+                <img src="~/Assets/Images/Icons/send.svg" alt="">
+                <h3>Realtime messaging</h3>
+                <p>Send text, images, and voice messages with a chat experience tuned for speed.</p>
+            </article>
+            <article class="home-feature">
+                <img src="~/Assets/Images/Icons/call.svg" alt="">
+                <h3>Audio calls</h3>
+                <p>Start focused conversations with clear call controls and responsive mobile layouts.</p>
+            </article>
+            <article class="home-feature">
+                <img src="~/Assets/Images/Icons/settings.svg" alt="">
+                <h3>Personal settings</h3>
+                <p>Your language, theme, profile image, security, and cleanup preferences stay with you.</p>
+            </article>
+        </div>
+    </section>
+</main>

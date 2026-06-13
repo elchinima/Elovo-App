@@ -3,6 +3,7 @@
     ViewData["BodyClass"] = "home-body";
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
     var currentUsername = User.Identity?.Name ?? "";
+    var currentInitial = string.IsNullOrWhiteSpace(currentUsername) ? "E" : currentUsername[..1].ToUpperInvariant();
 }
 
 <main class="home-page">
@@ -14,7 +15,10 @@
         <nav class="home-actions" aria-label="Account actions">
             @if (isAuthenticated)
             {
-                <a class="home-action home-user-action" asp-controller="Chat" asp-action="Index" aria-label="Open messages" title="@currentUsername">@currentUsername</a>
+                <a class="home-action home-user-action" asp-controller="Chat" asp-action="Index" aria-label="Open messages" title="@currentUsername">
+                    <span class="home-user-initial">@currentInitial</span>
+                    <span class="home-user-name">@currentUsername</span>
+                </a>
             }
             else
             {

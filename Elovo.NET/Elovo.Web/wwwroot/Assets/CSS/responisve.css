@@ -74,10 +74,26 @@
     .home-nav {
         min-height: 58px;
         position: sticky;
-        top: 0;
+        top: 10px;
         z-index: 20;
-        background: color-mix(in srgb, var(--bg) 84%, transparent);
+        padding: 8px;
+        border: 1px solid rgba(125, 134, 255, 0.18);
+        border-radius: 18px;
+        background:
+            linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+            color-mix(in srgb, var(--bg) 86%, transparent);
         backdrop-filter: blur(18px);
+    }
+
+    .home-nav::after {
+        left: 16px;
+        right: 16px;
+        bottom: -1px;
+    }
+
+    .home-brand img {
+        width: 40px;
+        height: 40px;
     }
 
     .home-action {
@@ -648,6 +664,18 @@
         min-height: 40px;
         padding: 0 10px;
         font-size: 0.9rem;
+    }
+
+    .home-user-action {
+        max-width: min(210px, 62vw);
+        padding-left: 6px;
+        padding-right: 11px;
+    }
+
+    .home-user-initial {
+        width: 28px;
+        height: 28px;
+        font-size: 0.78rem;
     }
 
     .home-hero-actions {

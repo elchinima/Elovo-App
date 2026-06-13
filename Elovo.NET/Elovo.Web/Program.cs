@@ -145,6 +145,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/", () => Results.Redirect("/auth/login"));
+app.MapControllerRoute(
+    name: "home",
+    pattern: "home",
+    defaults: new { controller = "Home", action = "Index" });
 app.MapGet("/health", () => Results.Text("ok", "text/plain"));
 app.MapHub<ChatHub>("/chatHub");
 

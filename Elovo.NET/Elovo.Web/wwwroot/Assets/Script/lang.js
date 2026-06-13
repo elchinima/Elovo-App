@@ -1,5 +1,6 @@
 (() => {
     const storageKey = "elovo:language";
+    const preferenceStorageKey = "elovo:language-preference";
     const supportedLanguages = ["en", "ru", "az"];
     const languageOptions = [
         { code: "en", flag: "/Assets/Images/Flags/en.svg", label: "English" },
@@ -21,9 +22,27 @@
         return normalizeLanguage(navigator.language);
     }
 
+    function getStoredPreference() {
+        const preference = String(window.localStorage.getItem(preferenceStorageKey) || "").toLowerCase();
+        if (preference === "system") {
+            return preference;
+        }
+
+        return supportedLanguages.includes(preference) ? preference : "";
+    }
+
     function getLanguage() {
         if (isHomePage()) {
             return getSystemLanguage();
+        }
+
+        const preference = getStoredPreference();
+        if (preference === "system") {
+            return getSystemLanguage();
+        }
+
+        if (preference) {
+            return preference;
         }
 
         const stored = window.localStorage.getItem(storageKey);
@@ -38,6 +57,11 @@
     function getLanguagePreference() {
         if (isHomePage()) {
             return "system";
+        }
+
+        const preference = getStoredPreference();
+        if (preference) {
+            return preference;
         }
 
         const stored = window.localStorage.getItem(storageKey);
@@ -95,11 +119,13 @@
     function setLanguage(language) {
         const useSystemLanguage = language === "system";
         const normalizedLanguage = useSystemLanguage
-            ? (isHomePage() ? getSystemLanguage() : getLanguage())
+            ? getSystemLanguage()
             : normalizeLanguage(language);
         if (useSystemLanguage) {
+            window.localStorage.setItem(preferenceStorageKey, "system");
             window.localStorage.removeItem(storageKey);
         } else {
+            window.localStorage.setItem(preferenceStorageKey, normalizedLanguage);
             window.localStorage.setItem(storageKey, normalizedLanguage);
         }
         fetch("/api/account/language", {

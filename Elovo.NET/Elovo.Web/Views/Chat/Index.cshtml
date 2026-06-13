@@ -63,12 +63,14 @@
                     <h2 id="activeName">Elovo</h2>
                     <p id="activeStatus">Choose a conversation</p>
                 </div>
-                <button class="ghost-button" id="callButton" type="button" aria-label="Start audio call" title="Audio call" aria-pressed="false" disabled>
-                    <img class="button-icon" src="~/Assets/Images/Icons/call.svg" alt="">
-                </button>
-                <button class="ghost-button" id="chatOptionsButton" type="button" aria-label="More options" title="More options">
-                    <img class="button-icon" src="~/Assets/Images/Icons/more-vertical.svg" alt="">
-                </button>
+                <div class="chat-header-actions">
+                    <button class="ghost-button" id="callButton" type="button" aria-label="Start audio call" title="Audio call" aria-pressed="false" disabled>
+                        <img class="button-icon" src="~/Assets/Images/Icons/call.svg" alt="">
+                    </button>
+                    <button class="ghost-button" id="chatOptionsButton" type="button" aria-label="More options" title="More options">
+                        <img class="button-icon" src="~/Assets/Images/Icons/more-vertical.svg" alt="">
+                    </button>
+                </div>
             </header>
 
             <div class="message-stream" id="messageStream" aria-live="polite"></div>

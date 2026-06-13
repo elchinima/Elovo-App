@@ -1,6 +1,8 @@
 @{
     ViewData["Title"] = "Elovo Home";
     ViewData["BodyClass"] = "home-body";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var currentUsername = User.Identity?.Name ?? "";
 }
 
 <main class="home-page">
@@ -10,8 +12,15 @@
             <span>Elovo Chat</span>
         </a>
         <nav class="home-actions" aria-label="Account actions">
-            <a class="home-action home-action--ghost" asp-controller="Auth" asp-action="Login">Log in</a>
-            <a class="home-action home-action--primary" asp-controller="Auth" asp-action="Register">Sign up</a>
+            @if (isAuthenticated)
+            {
+                <a class="home-action home-user-action" asp-controller="Chat" asp-action="Index" aria-label="Open messages" title="@currentUsername">@currentUsername</a>
+            }
+            else
+            {
+                <a class="home-action home-action--ghost" asp-controller="Auth" asp-action="Login">Log in</a>
+                <a class="home-action home-action--primary" asp-controller="Auth" asp-action="Register">Sign up</a>
+            }
         </nav>
     </header>
 
@@ -21,14 +30,24 @@
             <h1 id="homeHeroTitle">A calmer messenger for real conversations.</h1>
             <p class="home-hero-text">Elovo brings private chats, voice messages, image sharing, calls, and clean profile controls into one focused workspace.</p>
             <div class="home-hero-actions">
-                <a class="home-cta home-cta--primary" asp-controller="Auth" asp-action="Register">
-                    <img class="button-icon" src="~/Assets/Images/Icons/signup.svg" alt="">
-                    <span>Create account</span>
-                </a>
-                <a class="home-cta home-cta--secondary" asp-controller="Auth" asp-action="Login">
-                    <img class="button-icon" src="~/Assets/Images/Icons/login.svg" alt="">
-                    <span>Log in</span>
-                </a>
+                @if (isAuthenticated)
+                {
+                    <a class="home-cta home-cta--primary" asp-controller="Chat" asp-action="Index">
+                        <img class="button-icon" src="~/Assets/Images/Icons/open-chat.svg" alt="">
+                        <span>Open messages</span>
+                    </a>
+                }
+                else
+                {
+                    <a class="home-cta home-cta--primary" asp-controller="Auth" asp-action="Register">
+                        <img class="button-icon" src="~/Assets/Images/Icons/signup.svg" alt="">
+                        <span>Create account</span>
+                    </a>
+                    <a class="home-cta home-cta--secondary" asp-controller="Auth" asp-action="Login">
+                        <img class="button-icon" src="~/Assets/Images/Icons/login.svg" alt="">
+                        <span>Log in</span>
+                    </a>
+                }
             </div>
         </div>
 

@@ -24,6 +24,7 @@ window.ElovoTranslations = {
         "A calmer messenger for real conversations.": "H\u0259qiqi s\u00f6hb\u0259tl\u0259r \u00fc\u00e7\u00fcn daha sakit mesencer.",
         "Elovo brings private chats, voice messages, image sharing, calls, and clean profile controls into one focused workspace.": "Elovo \u015f\u0259xsi \u00e7atlar\u0131, s\u0259sli mesajlar\u0131, \u015f\u0259kil payla\u015f\u0131m\u0131n\u0131, z\u0259ngl\u0259ri v\u0259 t\u0259miz profil idar\u0259etm\u0259sini bir fokuslu i\u015f m\u0259kan\u0131nda birl\u0259\u015fdirir.",
         "Create account": "Hesab yarat",
+        "Open messages": "Mesajları aç",
         "Elovo chat preview": "Elovo \u00e7at \u00f6nbax\u0131\u015f\u0131",
         "Fast chats, focused space.": "S\u00fcr\u0259tli \u00e7atlar, fokuslu m\u0259kan.",
         "Voice, images, calls, and privacy in one place.": "S\u0259s, \u015f\u0259kill\u0259r, z\u0259ngl\u0259r v\u0259 m\u0259xfilik bir yerd\u0259.",

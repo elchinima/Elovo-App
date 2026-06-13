@@ -709,7 +709,8 @@
         padding: 0;
     }
 
-    .sidebar-actions {
+    .sidebar-actions,
+    .chat-header-actions {
         gap: 6px;
     }
 

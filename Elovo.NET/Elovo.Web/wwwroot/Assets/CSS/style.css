@@ -496,6 +496,13 @@ input:disabled {
     background: rgba(255, 255, 255, 0.04);
 }
 
+.home-user-action {
+    max-width: min(280px, 48vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .home-action--primary,
 .home-cta--primary {
     border-color: transparent;
@@ -1331,6 +1338,12 @@ html[data-theme="light"] .home-wave {
     align-content: center;
 }
 
+.chat-header-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
 .chat-header .active-chat-summary.is-status-hidden {
     align-content: center;
 }
@@ -1343,6 +1356,10 @@ html[data-theme="light"] .home-wave {
 .chat-header h2 {
     font-size: 1.16rem;
     line-height: 1.15;
+}
+
+#activeStatus {
+    font-size: calc(0.86rem - 2px);
 }
 
 .ghost-button,
@@ -1383,10 +1400,6 @@ html[data-theme="light"] .home-wave {
     cursor: default;
     opacity: 0.48;
     transform: none;
-}
-
-#callButton {
-    margin-left: auto;
 }
 
 .icon-button {

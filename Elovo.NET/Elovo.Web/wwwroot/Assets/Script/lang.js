@@ -8,6 +8,10 @@
     ];
     const dictionaries = window.ElovoTranslations || {};
 
+    function isHomePage() {
+        return document.body.classList.contains("home-body");
+    }
+
     function normalizeLanguage(value) {
         const language = String(value || "").toLowerCase().split("-")[0];
         return supportedLanguages.includes(language) ? language : "en";
@@ -18,12 +22,31 @@
     }
 
     function getLanguage() {
+        if (isHomePage()) {
+            return getSystemLanguage();
+        }
+
         const stored = window.localStorage.getItem(storageKey);
-        return stored ? normalizeLanguage(stored) : getSystemLanguage();
+        if (stored) {
+            return normalizeLanguage(stored);
+        }
+
+        const preferred = document.querySelector("meta[name='elovo-preferred-language']")?.content;
+        return preferred ? normalizeLanguage(preferred) : "en";
     }
 
     function getLanguagePreference() {
-        return window.localStorage.getItem(storageKey) || "system";
+        if (isHomePage()) {
+            return "system";
+        }
+
+        const stored = window.localStorage.getItem(storageKey);
+        if (stored) {
+            return normalizeLanguage(stored);
+        }
+
+        const preferred = document.querySelector("meta[name='elovo-preferred-language']")?.content;
+        return preferred ? normalizeLanguage(preferred) : "en";
     }
 
     function interpolate(value, params) {
@@ -71,7 +94,9 @@
 
     function setLanguage(language) {
         const useSystemLanguage = language === "system";
-        const normalizedLanguage = useSystemLanguage ? getSystemLanguage() : normalizeLanguage(language);
+        const normalizedLanguage = useSystemLanguage
+            ? (isHomePage() ? getSystemLanguage() : getLanguage())
+            : normalizeLanguage(language);
         if (useSystemLanguage) {
             window.localStorage.removeItem(storageKey);
         } else {
@@ -156,7 +181,9 @@
         document.body.appendChild(selector);
     }
 
-    syncSystemLanguage();
+    if (!isHomePage()) {
+        syncSystemLanguage();
+    }
     translatePage();
     createLanguageSelector();
 

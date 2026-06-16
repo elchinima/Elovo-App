@@ -736,6 +736,10 @@ async function saveActivityVisibility(visibility) {
         return;
     }
 
+    if (normalizedVisibility === normalizeActivityVisibility(window.elovoProfile?.activityVisibility)) {
+        return;
+    }
+
     activityVisibilityOptions.querySelectorAll("button").forEach((button) => {
         button.disabled = true;
     });
@@ -913,7 +917,7 @@ if (activityVisibilityModal) {
 if (activityVisibilityOptions) {
     activityVisibilityOptions.addEventListener("click", (event) => {
         const option = event.target.closest("[data-visibility]");
-        if (option) {
+        if (option && !option.classList.contains("is-active")) {
             saveActivityVisibility(option.dataset.visibility);
         }
     });

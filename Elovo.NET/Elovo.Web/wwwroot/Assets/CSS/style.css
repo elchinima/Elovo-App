@@ -3408,6 +3408,14 @@ html[data-theme] .profile-logout-button .button-icon {
     box-shadow: inset 3px 0 0 rgba(83, 214, 164, 0.84);
 }
 
+.settings-theme-option.active:active,
+.settings-language-option.active:active,
+.chat-retention-option.is-active:active,
+.activity-visibility-option.is-active:active {
+    transform: none !important;
+    opacity: 1 !important;
+}
+
 .activity-visibility-option:disabled {
     cursor: default;
     opacity: 0.62;
@@ -3903,32 +3911,6 @@ html[data-theme] .profile-logout-button .button-icon {
     text-transform: none;
 }
 
-@media (max-width: 720px) {
-    .error-page {
-        padding: 18px;
-    }
-
-    .error-card {
-        grid-template-columns: 1fr;
-        gap: 22px;
-        padding: 28px 22px;
-        text-align: center;
-    }
-
-    .error-card__visual {
-        width: min(58vw, 210px);
-    }
-
-    .error-card__copy {
-        margin-right: auto;
-        margin-left: auto;
-    }
-
-    .error-card__actions {
-        justify-content: center;
-    }
-}
-
 html[data-theme="dark"] {
     --bg: #050505;
     --bg-soft: #0b0b0b;
@@ -3995,8 +3977,12 @@ html[data-theme="light"] img.profile-confirm-card[src$=".svg"] {
     filter: none !important;
 }
 
-html[data-theme] img.activity-visibility-icon[src$=".svg"] {
+html[data-theme="dark"] img.activity-visibility-icon[src$=".svg"] {
     filter: none !important;
+}
+
+html[data-theme="light"] img.activity-visibility-icon[src$=".svg"] {
+    filter: brightness(0) !important;
 }
 
 html[data-theme] .google-auth-icon[src$=".svg"] {
@@ -4043,6 +4029,24 @@ html[data-theme="default"] .call-modal-panel button img.button-icon[src$=".svg"]
 }
 
 html[data-theme] .modal-panel .primary-icon-button img.button-icon[src$=".svg"] {
+    filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme] #profileConfirmAccept,
+html[data-theme] #profileConfirmAccept *,
+html[data-theme] #chatRetentionConfirmAccept,
+html[data-theme] #chatRetentionConfirmAccept *,
+html[data-theme] #confirmRestoreHiddenButton,
+html[data-theme] #confirmRestoreHiddenButton *,
+html[data-theme] .profile-logout-button,
+html[data-theme] .profile-logout-button * {
+    color: #fff !important;
+}
+
+html[data-theme] #profileConfirmAccept img.button-icon[src$=".svg"],
+html[data-theme] #chatRetentionConfirmAccept img.button-icon[src$=".svg"],
+html[data-theme] #confirmRestoreHiddenButton img.button-icon[src$=".svg"],
+html[data-theme] .profile-logout-button img.button-icon[src$=".svg"] {
     filter: brightness(0) invert(1) !important;
 }
 
@@ -4368,30 +4372,4 @@ html[data-theme="dark"] .page-loader {
 
 html[data-theme="light"] .page-loader {
     background: rgba(255, 255, 255, 0.82);
-}
-
-@media (max-width: 700px) {
-    .settings-theme-options {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 8px;
-    }
-
-    .settings-theme-option {
-        min-height: 84px;
-        flex-direction: column;
-        justify-content: center;
-        gap: 7px;
-        padding: 9px 5px;
-        text-align: center;
-    }
-
-    .settings-theme-icon {
-        width: 36px;
-        height: 36px;
-        padding: 6px;
-    }
-
-    .settings-theme-option small {
-        display: none;
-    }
 }

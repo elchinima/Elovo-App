@@ -10,6 +10,7 @@
         t
     } = window.Elovo;
 const settingsButton = document.querySelector("#settingsButton");
+const premiumButton = document.querySelector("#premiumButton");
 const restoreHiddenButton = document.querySelector("#restoreHiddenButton");
 const appShell = document.querySelector(".app-shell");
 const currentUserAvatar = document.querySelector("#currentUserAvatar");
@@ -59,6 +60,7 @@ const allFriendsModal = document.querySelector("#allFriendsModal");
 const addFriendModal = document.querySelector("#addFriendModal");
 const friendRequestsModal = document.querySelector("#friendRequestsModal");
 const restoreHiddenModal = document.querySelector("#restoreHiddenModal");
+const premiumModal = document.querySelector("#premiumModal");
 const deleteFriendModal = document.querySelector("#deleteFriendModal");
 const confirmRestoreHiddenButton = document.querySelector("#confirmRestoreHiddenButton");
 const confirmDeleteFriendButton = document.querySelector("#confirmDeleteFriendButton");
@@ -3996,6 +3998,10 @@ if (messengerView && chatList && messageStream) {
 
 if (settingsButton) {
     settingsButton.addEventListener("click", () => openSettingsFrame());
+}
+
+if (premiumButton) {
+    premiumButton.addEventListener("click", () => openModal(premiumModal));
 }
 
 syncCurrentUserAvatarPreviewState();

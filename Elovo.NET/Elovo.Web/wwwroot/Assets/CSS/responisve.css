@@ -11,6 +11,7 @@
 }
 
 @media (hover: hover) {
+
     button:hover .button-icon,
     .icon-button:hover .button-icon {
         transform: translateY(-1px) scale(1.06);
@@ -158,7 +159,7 @@
         pointer-events: none;
     }
 
-    .image-preview-backdrop > img,
+    .image-preview-backdrop>img,
     .message-actions-popover img,
     .image-upload-status img {
         pointer-events: auto;
@@ -407,7 +408,7 @@
         padding: max(56px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
     }
 
-    .image-preview-backdrop > img {
+    .image-preview-backdrop>img {
         max-width: calc(100vw - 24px);
         max-height: calc(100dvh - 88px);
     }
@@ -462,12 +463,24 @@
         height: 100vh;
         height: 100dvh;
         max-height: none;
+        grid-template-rows: auto auto;
         border: 0;
         border-radius: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    #premiumModal .premium-header {
+        position: sticky;
+        top: 0;
     }
 
     .premium-body {
+        min-height: calc(100vh - 78px);
+        min-height: calc(100dvh - 78px);
         padding: 14px;
+        overflow: visible;
     }
 
     .premium-feature-list {
@@ -637,7 +650,7 @@
         border-top: 0;
     }
 
-    .profile-grid > .profile-panel:last-child {
+    .profile-grid>.profile-panel:last-child {
         border-bottom: 0;
     }
 
@@ -847,7 +860,7 @@
         gap: 10px;
     }
 
-    .settings-title-row > div {
+    .settings-title-row>div {
         min-width: 0;
     }
 

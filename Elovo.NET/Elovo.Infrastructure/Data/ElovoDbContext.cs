@@ -12,6 +12,7 @@ public class ElovoDbContext : DbContext
     public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<UserTwoFactor> UserTwoFactor => Set<UserTwoFactor>();
     public DbSet<UserEmail> UserEmails => Set<UserEmail>();
+    public DbSet<UserPremium> UserPremium => Set<UserPremium>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
     public DbSet<PendingMessage> PendingMessages => Set<PendingMessage>();
@@ -71,6 +72,17 @@ public class ElovoDbContext : DbContext
             entity.HasOne(x => x.User)
                 .WithOne(x => x.EmailSettings)
                 .HasForeignKey<UserEmail>(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserPremium>(entity =>
+        {
+            entity.ToTable("UserPremium");
+            entity.HasKey(x => x.UserId);
+
+            entity.HasOne(x => x.User)
+                .WithOne(x => x.Premium)
+                .HasForeignKey<UserPremium>(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

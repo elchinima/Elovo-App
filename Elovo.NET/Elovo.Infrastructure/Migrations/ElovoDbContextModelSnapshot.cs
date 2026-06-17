@@ -247,6 +247,16 @@ namespace Elovo.Infrastructure.Migrations
                     b.ToTable("UserEmails");
                 });
 
+            modelBuilder.Entity("Elovo.Domain.UserPremium", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("UserPremium");
+                });
+
             modelBuilder.Entity("Elovo.Domain.UserSession", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -404,6 +414,17 @@ namespace Elovo.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Elovo.Domain.UserPremium", b =>
+                {
+                    b.HasOne("Elovo.Domain.User", "User")
+                        .WithOne("Premium")
+                        .HasForeignKey("Elovo.Domain.UserPremium", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Elovo.Domain.UserTwoFactor", b =>
                 {
                     b.HasOne("Elovo.Domain.User", "User")
@@ -426,6 +447,8 @@ namespace Elovo.Infrastructure.Migrations
                     b.Navigation("SentFriendRequests");
 
                     b.Navigation("EmailSettings");
+
+                    b.Navigation("Premium");
 
                     b.Navigation("Session");
 

@@ -2581,6 +2581,12 @@ body.is-page-loading .page-loader {
     animation-delay: -8s;
 }
 
+@media (min-width: 821px) {
+    .premium-background-icons img:nth-child(n + 14) {
+        display: none;
+    }
+}
+
 @keyframes premiumIconFloat {
     0% {
         transform: translate3d(0, 0, 0) rotate(var(--premium-icon-rotate));

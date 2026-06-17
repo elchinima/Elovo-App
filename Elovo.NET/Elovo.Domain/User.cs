@@ -11,6 +11,7 @@ public class User
     public UserSession? Session { get; set; }
     public UserTwoFactor? TwoFactor { get; set; }
     public UserEmail? EmailSettings { get; set; }
+    public UserPremium? Premium { get; set; }
     public ICollection<Conversation> ConversationsAsFirstUser { get; set; } = new List<Conversation>();
     public ICollection<Conversation> ConversationsAsSecondUser { get; set; } = new List<Conversation>();
     public ICollection<FriendRequest> SentFriendRequests { get; set; } = new List<FriendRequest>();

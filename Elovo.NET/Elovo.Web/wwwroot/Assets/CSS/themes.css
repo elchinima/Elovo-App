@@ -219,6 +219,10 @@ html[data-theme="light"] .premium-button {
         rgba(255, 255, 255, 0.86);
 }
 
+html[data-theme="light"] .premium-button img.button-icon[src$=".svg"] {
+    filter: brightness(0) !important;
+}
+
 html[data-theme="dark"] .premium-panel {
     border-color: rgba(248, 200, 83, 0.32);
     background:

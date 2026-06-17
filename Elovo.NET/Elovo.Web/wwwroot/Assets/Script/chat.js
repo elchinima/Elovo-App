@@ -61,6 +61,8 @@ const addFriendModal = document.querySelector("#addFriendModal");
 const friendRequestsModal = document.querySelector("#friendRequestsModal");
 const restoreHiddenModal = document.querySelector("#restoreHiddenModal");
 const premiumModal = document.querySelector("#premiumModal");
+const premiumBody = premiumModal?.querySelector(".premium-body");
+const premiumBackgroundIcons = premiumModal?.querySelector(".premium-background-icons");
 const deleteFriendModal = document.querySelector("#deleteFriendModal");
 const confirmRestoreHiddenButton = document.querySelector("#confirmRestoreHiddenButton");
 const confirmDeleteFriendButton = document.querySelector("#confirmDeleteFriendButton");
@@ -79,6 +81,7 @@ let latestMessageId = "";
 let isSending = false;
 let messageActionTimer = null;
 let activeMessageActions = null;
+let premiumBackgroundFrame = 0;
 let imageTransferStatus = null;
 let voiceTransferStatus = null;
 let avatarCropState = null;
@@ -828,6 +831,9 @@ function openModal(modal) {
     modal.classList.add("is-open");
     modal.setAttribute("aria-hidden", "false");
     syncModalScrollLock();
+    if (modal === premiumModal) {
+        syncPremiumBackgroundOffset();
+    }
     if (modal === callModal) {
         syncActiveCallBanner();
     }
@@ -844,6 +850,23 @@ function closeModal(modal) {
     if (modal === callModal) {
         syncActiveCallBanner();
     }
+}
+
+function syncPremiumBackgroundOffset() {
+    if (!premiumBody || !premiumBackgroundIcons) {
+        return;
+    }
+
+    premiumBackgroundFrame = 0;
+    premiumBackgroundIcons.style.setProperty("--premium-background-y", `${Math.round(premiumBody.scrollTop * 0.78)}px`);
+}
+
+function requestPremiumBackgroundOffsetSync() {
+    if (premiumBackgroundFrame) {
+        return;
+    }
+
+    premiumBackgroundFrame = window.requestAnimationFrame(syncPremiumBackgroundOffset);
 }
 
 function formatCallDuration(totalSeconds) {
@@ -4002,6 +4025,11 @@ if (settingsButton) {
 
 if (premiumButton) {
     premiumButton.addEventListener("click", () => openModal(premiumModal));
+}
+
+if (premiumBody) {
+    premiumBody.addEventListener("scroll", requestPremiumBackgroundOffsetSync, { passive: true });
+    window.addEventListener("resize", requestPremiumBackgroundOffsetSync);
 }
 
 syncCurrentUserAvatarPreviewState();

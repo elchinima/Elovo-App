@@ -463,24 +463,13 @@
         height: 100vh;
         height: 100dvh;
         max-height: none;
-        grid-template-rows: auto auto;
         border: 0;
         border-radius: 0;
-        overflow-x: hidden;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-    }
-
-    #premiumModal .premium-header {
-        position: sticky;
-        top: 0;
     }
 
     .premium-body {
-        min-height: calc(100vh - 78px);
-        min-height: calc(100dvh - 78px);
         padding: 14px;
-        overflow: visible;
+        overscroll-behavior: contain;
     }
 
     .premium-feature-list {
@@ -501,6 +490,111 @@
         width: 64px;
         height: 64px;
         padding: 12px;
+    }
+
+    #premiumModal .premium-background-icons {
+        height: calc(100vh - 78px);
+        height: calc(100dvh - 78px);
+        min-height: 560px;
+        transform: translate3d(0, var(--premium-background-y, 0px), 0);
+        will-change: transform;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(1) {
+        left: 12px;
+        top: 2%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(2) {
+        right: 20%;
+        top: 4%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(3) {
+        right: 10px;
+        top: 13%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(4) {
+        left: 8%;
+        top: 23%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(5) {
+        right: 24%;
+        top: 30%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(6) {
+        left: 36%;
+        top: 39%;
+        bottom: auto;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(7) {
+        right: 8px;
+        top: 46%;
+        bottom: auto;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(8) {
+        left: 10px;
+        top: 56%;
+        bottom: auto;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(9) {
+        right: 28%;
+        top: 63%;
+        bottom: auto;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(10) {
+        left: 28%;
+        top: 71%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(11) {
+        right: 12px;
+        top: 78%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(12) {
+        left: 8px;
+        top: 86%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(13) {
+        right: 34%;
+        top: 91%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(14) {
+        left: 45%;
+        top: 11%;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(15) {
+        right: 8%;
+        top: 36%;
+        bottom: auto;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(16) {
+        left: 18%;
+        top: 48%;
+        bottom: auto;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(17) {
+        right: 18%;
+        top: 66%;
+        bottom: auto;
+    }
+
+    #premiumModal .premium-background-icons img:nth-child(18) {
+        left: 40%;
+        top: 84%;
     }
 
     .call-modal-backdrop {

@@ -13,6 +13,11 @@
         return document.body.classList.contains("home-body");
     }
 
+    function isBrowserLanguageDefaultPage() {
+        const path = window.location.pathname.toLowerCase().replace(/\/+$/, "");
+        return path === "/auth/login" || path === "/auth/register";
+    }
+
     function normalizeLanguage(value) {
         const language = String(value || "").toLowerCase().split("-")[0];
         return supportedLanguages.includes(language) ? language : "en";
@@ -51,6 +56,10 @@
         }
 
         const preferred = document.querySelector("meta[name='elovo-preferred-language']")?.content;
+        if (isBrowserLanguageDefaultPage()) {
+            return getSystemLanguage();
+        }
+
         return preferred ? normalizeLanguage(preferred) : "en";
     }
 
@@ -70,6 +79,10 @@
         }
 
         const preferred = document.querySelector("meta[name='elovo-preferred-language']")?.content;
+        if (isBrowserLanguageDefaultPage()) {
+            return "system";
+        }
+
         return preferred ? normalizeLanguage(preferred) : "en";
     }
 

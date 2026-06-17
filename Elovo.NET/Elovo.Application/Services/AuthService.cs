@@ -28,6 +28,7 @@ public class AuthService : IAuthService
             return AuthResultDto.Failure("Username already exists.");
         }
 
+        var preferredLanguage = NormalizeLanguage(dto.PreferredLanguage);
         var user = new User
         {
             Id = Guid.NewGuid(),
@@ -37,7 +38,8 @@ public class AuthService : IAuthService
             Session = new UserSession
             {
                 RegistrationIp = clientIp,
-                LastLoginIp = clientIp
+                LastLoginIp = clientIp,
+                PreferredLanguage = preferredLanguage is "ru" or "az" ? preferredLanguage : "en"
             },
             TwoFactor = new UserTwoFactor(),
             EmailSettings = new UserEmail()

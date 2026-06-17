@@ -479,9 +479,15 @@
     }
 
     .premium-background-icons img {
-        width: 58px;
-        height: 58px;
-        padding: 11px;
+        width: 74px;
+        height: 74px;
+        padding: 14px;
+    }
+
+    .premium-background-icons img:nth-child(n + 10) {
+        width: 64px;
+        height: 64px;
+        padding: 12px;
     }
 
     .call-modal-backdrop {

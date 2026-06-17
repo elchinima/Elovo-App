@@ -181,6 +181,7 @@ window.ElovoTranslations = {
         "Store data in the cloud on Google Drive.": "Возможность хранения данных в облаке Google Drive.",
         "Noise suppression for the microphone.": "Шумоподавление для микрофона.",
         "A unique badge next to the username. It can be hidden if the buyer wants.": "Уникальный значок рядом с именем пользователя. По желанию покупателя его можно скрыть.",
+        "Buy Premium": "Купить Premium",
         "Show hidden chats": "Показать скрытые чаты",
         "Search": "Поиск",
         "Search chats": "Поиск чатов",

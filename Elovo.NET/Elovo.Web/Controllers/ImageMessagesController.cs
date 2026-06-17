@@ -145,7 +145,7 @@ public class ImageMessagesController : ControllerBase
             {
                 await SaveWithEncoderAsync(extensionType, image, output, "SaveAsJpegAsync", "SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder, SixLabors.ImageSharp", cancellationToken, encoder =>
                 {
-                    encoder.GetType().GetProperty("Quality")?.SetValue(encoder, 50);
+                    encoder.GetType().GetProperty("Quality")?.SetValue(encoder, 100);
                 });
                 return;
             }

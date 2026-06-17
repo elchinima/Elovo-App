@@ -15,6 +15,7 @@
 
         <form class="login-card" id="registerForm" asp-action="Register" asp-controller="Auth" method="post">
             @Html.AntiForgeryToken()
+            <input type="hidden" id="registerPreferredLanguage" name="PreferredLanguage" value="">
             <div>
                 <span class="form-kicker">Welcome</span>
                 <h2>Create Account</h2>

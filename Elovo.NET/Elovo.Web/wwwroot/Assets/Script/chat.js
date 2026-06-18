@@ -82,6 +82,7 @@ let isSending = false;
 let messageActionTimer = null;
 let activeMessageActions = null;
 let premiumBackgroundFrame = 0;
+let premiumBackgroundOffset = "";
 let imageTransferStatus = null;
 let voiceTransferStatus = null;
 let avatarCropState = null;
@@ -121,6 +122,7 @@ const imageCacheDbName = "elovo-image-cache";
 const imageCacheStoreName = "images";
 const voiceCacheDbName = "elovo-voice-cache";
 const voiceCacheStoreName = "voices";
+const premiumBadgeIcon = "/Assets/Images/Icons/premium.svg";
 let imageCacheDb = null;
 let imageCacheDbPromise = null;
 let voiceCacheDb = null;
@@ -777,6 +779,29 @@ function getCurrentUserActivityVisibility() {
     return normalizeActivityVisibility(window.elovoCurrentUserActivityVisibility);
 }
 
+function readPremiumState(value) {
+    return value === true || value === "true" || value === "True";
+}
+
+function syncPremiumButtonVisibility() {
+    if (premiumButton) {
+        premiumButton.hidden = readPremiumState(window.elovoCurrentUserIsPremium);
+    }
+}
+
+function appendPremiumBadge(parent, item) {
+    if (!parent || !readPremiumState(item?.isPremium ?? item?.IsPremium)) {
+        return;
+    }
+
+    const badge = document.createElement("img");
+    badge.className = "premium-user-badge";
+    badge.src = premiumBadgeIcon;
+    badge.alt = "";
+    badge.title = t("Premium");
+    parent.appendChild(badge);
+}
+
 function readActivityVisibilityFromProfile(profile) {
     if (!profile) {
         return getCurrentUserActivityVisibility();
@@ -793,6 +818,10 @@ function readConversationsPayload(payload) {
     window.elovoCurrentUserActivityVisibility = normalizeActivityVisibility(
         payload?.activityVisibility ?? payload?.ActivityVisibility ?? window.elovoCurrentUserActivityVisibility
     );
+    window.elovoCurrentUserIsPremium = readPremiumState(
+        payload?.isPremium ?? payload?.IsPremium ?? window.elovoCurrentUserIsPremium
+    );
+    syncPremiumButtonVisibility();
 
     return Array.isArray(payload?.conversations)
         ? payload.conversations
@@ -858,7 +887,13 @@ function syncPremiumBackgroundOffset() {
     }
 
     premiumBackgroundFrame = 0;
-    premiumBackgroundIcons.style.setProperty("--premium-background-y", `${Math.round(premiumBody.scrollTop * 0.78)}px`);
+    const nextOffset = `${(premiumBody.scrollTop * 0.78).toFixed(2)}px`;
+    if (nextOffset === premiumBackgroundOffset) {
+        return;
+    }
+
+    premiumBackgroundOffset = nextOffset;
+    premiumBackgroundIcons.style.transform = `translate3d(0, ${nextOffset}, 0)`;
 }
 
 function requestPremiumBackgroundOffsetSync() {
@@ -2177,7 +2212,9 @@ function renderChatList(items = conversations) {
         time.textContent = formatTime(chat.lastMessageAt);
         status.hidden = !!chat.isActivityHidden;
         avatarRing.appendChild(avatar);
-        nameRow.append(name, status);
+        appendPremiumBadge(nameRow, chat);
+        nameRow.prepend(name);
+        nameRow.append(status);
         meta.append(time);
         copy.append(nameRow, preview);
         button.append(avatarRing, copy, meta);
@@ -2191,7 +2228,12 @@ function renderConversationHeader(chat) {
         return;
     }
 
-    activeName.textContent = chat.username;
+    const nameText = document.createElement("span");
+    nameText.className = "active-chat-name-text";
+    nameText.textContent = chat.username;
+    activeName.innerHTML = "";
+    activeName.append(nameText);
+    appendPremiumBadge(activeName, chat);
     const statusText = formatStatus(chat);
     activeStatus.textContent = statusText;
     activeStatus.hidden = !statusText;
@@ -2968,6 +3010,7 @@ function renderUsers(items) {
         const row = document.createElement("div");
         const avatar = document.createElement("span");
         const copy = document.createElement("span");
+        const nameRow = document.createElement("span");
         const name = document.createElement("strong");
         const status = document.createElement("span");
         const button = document.createElement("button");
@@ -2975,6 +3018,7 @@ function renderUsers(items) {
         row.className = "user-row";
         avatar.className = "avatar";
         copy.className = "chat-copy";
+        nameRow.className = "chat-name-row";
         button.type = "button";
         button.className = `row-action${user.status === "none" ? " primary" : ""}`;
 
@@ -2997,7 +3041,9 @@ function renderUsers(items) {
             button.addEventListener("click", () => sendFriendRequest(user.id, button, status));
         }
 
-        copy.append(name, status);
+        appendPremiumBadge(nameRow, user);
+        nameRow.prepend(name);
+        copy.append(nameRow, status);
         row.append(avatar, copy, button);
         userSearchResults.appendChild(row);
     });
@@ -3022,6 +3068,7 @@ function renderAllFriends(items) {
         const row = document.createElement("div");
         const avatar = document.createElement("span");
         const copy = document.createElement("span");
+        const nameRow = document.createElement("span");
         const name = document.createElement("strong");
         const status = document.createElement("span");
         const actions = document.createElement("span");
@@ -3034,6 +3081,7 @@ function renderAllFriends(items) {
         row.className = "user-row";
         avatar.className = "avatar";
         copy.className = "chat-copy";
+        nameRow.className = "chat-name-row";
         actions.className = "user-row-actions";
         button.type = "button";
         button.className = "row-action primary open-chat-action";
@@ -3063,7 +3111,9 @@ function renderAllFriends(items) {
         deleteButton.appendChild(deleteIcon);
         deleteButton.addEventListener("click", () => promptDeleteFriend(friend));
 
-        copy.append(name, status);
+        appendPremiumBadge(nameRow, friend);
+        nameRow.prepend(name);
+        copy.append(nameRow, status);
         actions.append(button, deleteButton);
         row.append(avatar, copy, actions);
         allFriendsList.appendChild(row);
@@ -3985,6 +4035,8 @@ window.addEventListener("message", (event) => {
         }
         syncCurrentUserAvatarPreviewState();
         window.elovoCurrentUserProfileImageUrl = profile.profileImageUrl || "";
+        window.elovoCurrentUserIsPremium = readPremiumState(profile.isPremium ?? profile.IsPremium ?? window.elovoCurrentUserIsPremium);
+        syncPremiumButtonVisibility();
         const previousActivityVisibility = getCurrentUserActivityVisibility();
         window.elovoCurrentUserActivityVisibility = readActivityVisibilityFromProfile(profile);
         if (previousActivityVisibility !== getCurrentUserActivityVisibility()) {
@@ -4022,6 +4074,8 @@ if (messengerView && chatList && messageStream) {
 if (settingsButton) {
     settingsButton.addEventListener("click", () => openSettingsFrame());
 }
+
+syncPremiumButtonVisibility();
 
 if (premiumButton) {
     premiumButton.addEventListener("click", () => openModal(premiumModal));

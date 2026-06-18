@@ -9,6 +9,7 @@ public class ConversationDto
     public DateTime? LastSeenAt { get; set; }
     public bool IsActivityHidden { get; set; }
     public bool IsLastSeenHidden { get; set; }
+    public bool IsPremium { get; set; }
     public string LastMessage { get; set; } = string.Empty;
     public DateTime? LastMessageAt { get; set; }
     public DateTime? OtherUserReadAt { get; set; }

@@ -220,7 +220,7 @@ html[data-theme="light"] .premium-button {
 }
 
 html[data-theme="light"] .premium-button img.button-icon[src$=".svg"] {
-    filter: brightness(0) !important;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28)) !important;
 }
 
 html[data-theme="dark"] .premium-panel {
@@ -273,7 +273,7 @@ html[data-theme="light"] .premium-feature-list li {
 html[data-theme="light"] .premium-background-icons img {
     border-color: rgba(166, 106, 0, 0.18);
     background: rgba(255, 255, 255, 0.58);
-    opacity: 0.18;
+    opacity: 0.36;
 }
 
 html[data-theme="dark"] .incoming-call-banner-button,

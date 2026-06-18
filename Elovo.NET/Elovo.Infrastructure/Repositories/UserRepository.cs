@@ -60,6 +60,7 @@ public class UserRepository : IUserRepository
         return _context.Users
             .Include(x => x.Session)
             .Include(x => x.TwoFactor)
-            .Include(x => x.EmailSettings);
+            .Include(x => x.EmailSettings)
+            .Include(x => x.Premium);
     }
 }

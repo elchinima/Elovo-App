@@ -37,6 +37,7 @@ public class ChatController : Controller
         ViewBag.CurrentUserInitial = profile.Initial;
         ViewBag.CurrentUserProfileImageUrl = profile.ProfileImageUrl;
         ViewBag.CurrentUserActivityVisibility = profile.ActivityVisibility;
+        ViewBag.CurrentUserIsPremium = profile.IsPremium;
         return View();
     }
 

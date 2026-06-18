@@ -23,6 +23,7 @@ public class MessagesApiController : ControllerBase
         return Ok(new
         {
             activityVisibility = profile.ActivityVisibility,
+            isPremium = profile.IsPremium,
             conversations
         });
     }

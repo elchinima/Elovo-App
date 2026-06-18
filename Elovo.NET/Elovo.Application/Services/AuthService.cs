@@ -265,11 +265,6 @@ public class AuthService : IAuthService
         {
             session.LastLoginIp = clientIp;
         }
-
-        if (string.IsNullOrWhiteSpace(session.RegistrationIp))
-        {
-            session.RegistrationIp = session.LastLoginIp;
-        }
     }
 
     private static void ApplyPreferredLanguage(UserSession session, string? language)

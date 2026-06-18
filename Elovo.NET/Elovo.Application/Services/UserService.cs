@@ -74,6 +74,7 @@ public class UserService : IUserService
                 LastSeenAt = presence.LastSeenAt,
                 IsActivityHidden = presence.IsActivityHidden,
                 IsLastSeenHidden = presence.IsLastSeenHidden,
+                IsPremium = user.Premium is not null,
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 LastMessage = "Start a conversation.",
@@ -121,6 +122,7 @@ public class UserService : IUserService
                 LastSeenAt = presence.LastSeenAt,
                 IsActivityHidden = presence.IsActivityHidden,
                 IsLastSeenHidden = presence.IsLastSeenHidden,
+                IsPremium = user.Premium is not null,
                 ProfileImagePath = isFriend ? user.ProfileImagePath : null,
                 ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, isFriend),
                 Status = isFriend
@@ -508,6 +510,7 @@ public class UserService : IUserService
             ProfileImagePath = user.ProfileImagePath,
             ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
             IsTwoFactorEnabled = user.TwoFactor?.IsTwoFactorEnabled ?? false,
+            IsPremium = user.Premium is not null,
             ActivityVisibility = NormalizeActivityVisibility(user.Session?.ActivityVisibility)
         };
     }
@@ -662,11 +665,6 @@ public class UserService : IUserService
         if (!string.IsNullOrWhiteSpace(clientIp))
         {
             session.LastLoginIp = clientIp;
-        }
-
-        if (string.IsNullOrWhiteSpace(session.RegistrationIp))
-        {
-            session.RegistrationIp = session.LastLoginIp;
         }
     }
 

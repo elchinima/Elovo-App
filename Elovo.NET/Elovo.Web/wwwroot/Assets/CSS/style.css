@@ -1330,6 +1330,15 @@ html[lang="az"] .home-hero h1 {
     min-width: 0;
 }
 
+.premium-user-badge {
+    width: 17px;
+    height: 17px;
+    display: block;
+    flex: 0 0 auto;
+    object-fit: contain;
+    filter: drop-shadow(0 1px 2px rgba(3, 6, 18, 0.34));
+}
+
 .chat-copy strong,
 .chat-copy span {
     display: block;
@@ -1423,8 +1432,24 @@ html[lang="az"] .home-hero h1 {
 }
 
 .chat-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
     font-size: 1.16rem;
     line-height: 1.15;
+}
+
+.active-chat-name-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-header h2 .premium-user-badge {
+    width: 20px;
+    height: 20px;
 }
 
 #activeStatus {
@@ -2425,6 +2450,9 @@ body.is-page-loading .page-loader {
     inset: 0;
     overflow: hidden;
     pointer-events: none;
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    contain: paint;
 }
 
 .premium-background-icons img {
@@ -2441,6 +2469,7 @@ body.is-page-loading .page-loader {
     --premium-icon-y: -14px;
     transform: translate3d(0, 0, 0) rotate(var(--premium-icon-rotate));
     animation: premiumIconFloat 16s ease-in-out infinite alternate;
+    backface-visibility: hidden;
 }
 
 .premium-background-icons img:nth-child(1) {

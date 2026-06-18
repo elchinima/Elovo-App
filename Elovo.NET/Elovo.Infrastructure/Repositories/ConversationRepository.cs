@@ -21,6 +21,10 @@ public class ConversationRepository : IConversationRepository
                 .ThenInclude(x => x.TwoFactor)
             .Include(x => x.SecondUser)
                 .ThenInclude(x => x.TwoFactor)
+            .Include(x => x.FirstUser)
+                .ThenInclude(x => x.Premium)
+            .Include(x => x.SecondUser)
+                .ThenInclude(x => x.Premium)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
     }
 
@@ -44,6 +48,10 @@ public class ConversationRepository : IConversationRepository
                 .ThenInclude(x => x.TwoFactor)
             .Include(x => x.SecondUser)
                 .ThenInclude(x => x.TwoFactor)
+            .Include(x => x.FirstUser)
+                .ThenInclude(x => x.Premium)
+            .Include(x => x.SecondUser)
+                .ThenInclude(x => x.Premium)
             .Where(x => x.FirstUserId == userId || x.SecondUserId == userId)
             .AsSplitQuery()
             .ToListAsync(cancellationToken);

@@ -11,6 +11,9 @@ public class ElovoMappingProfile : Profile
                 options => options.MapFrom(source => source.Session != null && source.Session.IsOnline))
             .ForMember(
                 destination => destination.LastSeenAt,
-                options => options.MapFrom(source => source.Session == null ? null : source.Session.LastSeenAt));
+                options => options.MapFrom(source => source.Session == null ? null : source.Session.LastSeenAt))
+            .ForMember(
+                destination => destination.IsPremium,
+                options => options.MapFrom(source => source.Premium != null));
     }
 }

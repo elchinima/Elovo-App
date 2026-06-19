@@ -235,10 +235,13 @@
                         <span>A unique badge next to the username. It can be hidden if the buyer wants.</span>
                     </li>
                 </ul>
-                <button class="premium-purchase-button" type="button" aria-label="Buy Premium" title="Buy Premium">
-                    <img class="button-icon" src="~/Assets/Images/Icons/premium-purchase.svg" alt="">
-                    <span>Buy Premium</span>
-                </button>
+                @if (ViewBag.CurrentUserIsPremium != true)
+                {
+                    <button class="premium-purchase-button" type="button" aria-label="Buy Premium" title="Buy Premium">
+                        <img class="button-icon" src="~/Assets/Images/Icons/premium-purchase.svg" alt="">
+                        <span>Buy Premium</span>
+                    </button>
+                }
             </div>
         </section>
     </div>

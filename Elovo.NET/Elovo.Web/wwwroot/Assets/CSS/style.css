@@ -1717,6 +1717,23 @@ html[lang="az"] .home-hero h1 {
     animation-delay: var(--meter-delay, 0ms);
 }
 
+.message-voice.is-loading {
+    pointer-events: none;
+}
+
+.message-voice.is-loading .voice-play-button {
+    opacity: 0.78;
+}
+
+.message-voice.is-loading .voice-play-button .button-icon,
+.message-voice.is-loading .voice-play-button img {
+    animation: spin 880ms linear infinite;
+}
+
+.message-voice.is-loading .voice-wave span {
+    opacity: 0.42;
+}
+
 .voice-duration {
     min-width: 36px;
     color: rgba(255, 255, 255, 0.72);

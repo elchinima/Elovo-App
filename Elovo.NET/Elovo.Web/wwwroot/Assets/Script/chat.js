@@ -561,8 +561,9 @@
         })).then(async () => {
             if (activeConversation && sameId(activeConversation.userId, userId)) {
                 await loadMessages(userId, {
-                    scrollToBottom: false,
-                    preserveScroll: options.preserveScroll !== false
+                    scrollToBottom: options.scrollToBottom === true,
+                    preserveScroll: options.preserveScroll === true,
+                    smooth: options.smooth !== false
                 });
             }
 
@@ -2557,11 +2558,31 @@
         }
 
         if (options.scrollToBottom !== false) {
+            scrollMessageStreamToBottom({ smooth: options.smooth !== false });
+        }
+    }
+
+    function scrollMessageStreamToBottom({ smooth = true } = {}) {
+        if (!messageStream) {
+            return;
+        }
+
+        if (smooth) {
             messageStream.scrollTo({
                 top: messageStream.scrollHeight,
-                behavior: options.smooth === false ? "auto" : "smooth"
+                behavior: "smooth"
             });
+            return;
         }
+
+        const scrollNow = () => {
+            messageStream.scrollTop = messageStream.scrollHeight;
+            messageStreamLastScrollTop = messageStream.scrollTop;
+        };
+
+        scrollNow();
+        window.requestAnimationFrame(scrollNow);
+        window.setTimeout(scrollNow, 60);
     }
 
     function appendMessage(message) {
@@ -3591,8 +3612,11 @@
         const messages = readStoredMessages(userId);
         prepareMediaState(userId, messages);
         renderMessages(messages, options);
+        const shouldScrollToBottom = options.scrollToBottom !== false && options.preserveScroll !== true;
         queueAllowedMediaLoad(userId, messages, {
-            preserveScroll: options.preserveScroll !== false
+            preserveScroll: options.preserveScroll === true,
+            scrollToBottom: shouldScrollToBottom,
+            smooth: options.smooth !== false
         });
     }
 
@@ -4392,7 +4416,7 @@
         requestPersistentStorage();
         purgeExpiredChatMessages()
             .then(loadConversations)
-            .then(() => activeConversation ? loadMessages(activeConversation.userId) : null)
+            .then(() => activeConversation ? loadMessages(activeConversation.userId, { smooth: false }) : null)
             .then(startSignalR)
             .catch(() => {
                 navigateWithLoader("/auth/login");

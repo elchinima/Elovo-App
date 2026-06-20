@@ -3243,6 +3243,7 @@
             const row = document.createElement("div");
             const avatar = document.createElement("span");
             const copy = document.createElement("span");
+            const nameRow = document.createElement("span");
             const name = document.createElement("strong");
             const date = document.createElement("span");
             const button = document.createElement("button");
@@ -3250,6 +3251,7 @@
             row.className = "user-row";
             avatar.className = "avatar";
             copy.className = "chat-copy";
+            nameRow.className = "chat-name-row";
             button.type = "button";
             button.className = "row-action primary";
 
@@ -3259,7 +3261,8 @@
             button.textContent = t("Accept");
             button.addEventListener("click", () => acceptFriendRequest(request.id, button));
 
-            copy.append(name, date);
+            nameRow.appendChild(name);
+            copy.append(nameRow, date);
             row.append(avatar, copy, button);
             friendRequestsList.appendChild(row);
         });
@@ -4299,4 +4302,3 @@
         userSearchButton.addEventListener("click", () => searchUsers(true));
     }
 })();
-

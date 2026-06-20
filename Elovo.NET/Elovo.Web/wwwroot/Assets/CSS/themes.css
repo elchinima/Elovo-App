@@ -97,9 +97,13 @@ html[data-theme="light"] img[src$=".svg"]:not([src*="/Flags/"]) {
     filter: brightness(0) !important;
 }
 
-html[data-theme] img[src*="/Icons/premium"][src$=".svg"],
-html[data-theme] .modal-panel button img.button-icon[src*="/Icons/premium"][src$=".svg"] {
+html[data-theme] img[src*="/Icons/premium"][src$=".svg"]:not([src*="/Icons/premium-actions.svg"]),
+html[data-theme] .modal-panel button img.button-icon[src*="/Icons/premium"][src$=".svg"]:not([src*="/Icons/premium-actions.svg"]) {
     filter: none !important;
+}
+
+html[data-theme] .settings-nav-button.is-active .settings-nav-premium-icon[src$=".svg"] {
+    filter: brightness(0) invert(1) !important;
 }
 
 html[data-theme] .premium-purchase-button,

@@ -38,16 +38,24 @@ public class ProfileController : Controller
     }
 
     [HttpGet("chat")]
-    public IActionResult Chat()
+    public async Task<IActionResult> Chat(CancellationToken cancellationToken)
     {
-        ViewBag.CurrentUserId = GetCurrentUserId();
+        var profile = await _userService.GetProfileAsync(GetCurrentUserId(), cancellationToken);
+        ViewBag.CurrentUserId = profile.Id;
+        ViewBag.CurrentUserIsPremium = profile.IsPremium;
         return View();
     }
 
     [HttpGet("premium-actions")]
     public async Task<IActionResult> PremiumActions(CancellationToken cancellationToken)
     {
-        return View(await _userService.GetProfileAsync(GetCurrentUserId(), cancellationToken));
+        var profile = await _userService.GetProfileAsync(GetCurrentUserId(), cancellationToken);
+        if (!profile.IsPremium)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        return View(profile);
     }
 
     [HttpGet("/profile")]

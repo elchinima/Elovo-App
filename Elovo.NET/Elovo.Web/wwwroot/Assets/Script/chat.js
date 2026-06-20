@@ -741,6 +741,16 @@
         return "200MP+";
     }
 
+    function getImageMegapixelLabelFromPath(path) {
+        const match = String(path || "").match(/_mp(12|48|50|64|100|108|200)(plus)?\.(?:png|jpe?g|gif|webp)(?:$|[?#])/i);
+
+        if (!match) {
+            return "";
+        }
+
+        return `${match[1]}MP${match[2] ? "+" : ""}`;
+    }
+
     function applyLocalConversationHistory(items) {
         return items
             .map((chat) => {
@@ -1714,6 +1724,34 @@
         return Boolean(settingsFrameShell && !settingsFrameShell.hidden);
     }
 
+    function isMobileChatLayout() {
+        return window.matchMedia("(max-width: 820px)").matches;
+    }
+
+    function isChatPanelVisible() {
+        return !messengerView || !isMobileChatLayout() || messengerView.classList.contains("chat-open");
+    }
+
+    function focusComposerInput() {
+        if (messageInput && isChatPanelVisible() && !isSettingsFrameOpen()) {
+            try {
+                messageInput.focus({ preventScroll: true });
+            } catch {
+                messageInput.focus();
+            }
+        }
+    }
+
+    function closeMobileChatPanel() {
+        closeMessageActions();
+        if (messageInput) {
+            messageInput.blur();
+        }
+        if (messengerView) {
+            messengerView.classList.remove("chat-open");
+        }
+    }
+
     function reloadChatWhenSafe() {
         if (shouldReloadChatAfterSettings && !activeCall && !incomingCall && !isSettingsFrameOpen()) {
             window.location.reload();
@@ -2667,6 +2705,7 @@
         const loader = document.createElement("span");
         const resolution = document.createElement("span");
         let previewPath = message.imagePath;
+        const pathResolutionLabel = getImageMegapixelLabelFromPath(message.imageStoragePath || message.content || message.imagePath);
 
         frame.type = "button";
         frame.className = "message-image-frame is-loading";
@@ -2682,7 +2721,7 @@
         image.addEventListener("load", () => {
             frame.classList.remove("is-loading");
             frame.classList.remove("is-error");
-            const label = getImageMegapixelLabel(image.naturalWidth, image.naturalHeight);
+            const label = pathResolutionLabel || getImageMegapixelLabel(image.naturalWidth, image.naturalHeight);
             resolution.textContent = label;
             resolution.hidden = !label;
         });
@@ -3423,13 +3462,16 @@
 
             if (messageBelongsToActiveConversation(message)) {
                 await loadMessages(activeConversation.userId);
-                if (!sameId(message.senderId, getCurrentUserId())) {
+                const isConversationVisible = isChatPanelVisible() && !isSettingsFrameOpen();
+                if (isConversationVisible && !sameId(message.senderId, getCurrentUserId())) {
                     notifyActiveConversationRead();
                 }
-                messageStream.scrollTo({
-                    top: messageStream.scrollHeight,
-                    behavior: "smooth"
-                });
+                if (isConversationVisible) {
+                    messageStream.scrollTo({
+                        top: messageStream.scrollHeight,
+                        behavior: "smooth"
+                    });
+                }
             }
 
             await loadConversations();
@@ -3632,7 +3674,7 @@
             } finally {
                 messageForm.classList.remove("is-sending");
                 messageInput.disabled = false;
-                messageInput.focus();
+                focusComposerInput();
                 isSending = false;
             }
 
@@ -3650,7 +3692,7 @@
         } finally {
             messageForm.classList.remove("is-sending");
             messageInput.disabled = false;
-            messageInput.focus();
+            focusComposerInput();
             isSending = false;
         }
     }
@@ -3751,6 +3793,7 @@
         }
 
         const file = imageInput.files && imageInput.files[0];
+        const targetConversationId = activeConversation.userId;
         imageInput.value = "";
 
         if (!file) {
@@ -3774,7 +3817,7 @@
 
             setImageTransferState(true, 100);
             try {
-                await connection.invoke("SendImageMessage", activeConversation.userId, image.path, image.fileName || file.name);
+                await connection.invoke("SendImageMessage", targetConversationId, image.path, image.fileName || file.name);
             } catch (error) {
                 if (imageStorageKey) {
                     pendingUploadedImages.delete(imageStorageKey);
@@ -3784,9 +3827,7 @@
         } finally {
             isSending = false;
             setImageTransferState(false);
-            if (messageInput) {
-                messageInput.focus();
-            }
+            focusComposerInput();
         }
     }
 
@@ -4325,9 +4366,7 @@
 
     if (backButton) {
         backButton.addEventListener("click", () => {
-            if (messengerView) {
-                messengerView.classList.remove("chat-open");
-            }
+            closeMobileChatPanel();
         });
     }
 

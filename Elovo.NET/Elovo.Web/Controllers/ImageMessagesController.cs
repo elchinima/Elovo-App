@@ -48,20 +48,22 @@ public class ImageMessagesController : ControllerBase
             return BadRequest("Only PNG, JPEG, JPG and GIF images are allowed.");
         }
 
-        var fileName = Path.GetFileName(image.FileName);
-        var storagePath = $"messages/{GetCurrentUserId():N}/{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-
         await using var compressed = new MemoryStream();
+        ImageCompressionResult compression;
 
         try
         {
             using var input = image.OpenReadStream();
-            await SaveCompressedImageAsync(input, extension, compressed, cancellationToken);
+            compression = await SaveCompressedImageAsync(input, extension, compressed, cancellationToken);
         }
         catch (InvalidOperationException)
         {
             return BadRequest("Image file is invalid.");
         }
+
+        var fileName = Path.GetFileName(image.FileName);
+        var megapixelToken = GetMegapixelPathToken(compression.MegapixelLabel);
+        var storagePath = $"messages/{GetCurrentUserId():N}/{Guid.NewGuid():N}{megapixelToken}{extension.ToLowerInvariant()}";
 
         compressed.Position = 0;
         var upload = await _imageStorageService.UploadAsync(compressed, storagePath, GetContentType(extension), cancellationToken);
@@ -117,7 +119,9 @@ public class ImageMessagesController : ControllerBase
         return "image/jpeg";
     }
 
-    private static async Task SaveCompressedImageAsync(Stream input, string extension, Stream output, CancellationToken cancellationToken)
+    private sealed record ImageCompressionResult(string MegapixelLabel);
+
+    private static async Task<ImageCompressionResult> SaveCompressedImageAsync(Stream input, string extension, Stream output, CancellationToken cancellationToken)
     {
         using var image = await Image.LoadAsync(input, cancellationToken);
         var width = Math.Max(1, (int)Math.Round(image.Width * ImageResizeRatio));
@@ -128,6 +132,7 @@ public class ImageMessagesController : ControllerBase
             Mode = ResizeMode.Stretch,
             Sampler = KnownResamplers.Lanczos3
         }));
+        var megapixelLabel = GetImageMegapixelLabel(image.Width, image.Height);
 
         if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
             extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase))
@@ -136,7 +141,7 @@ public class ImageMessagesController : ControllerBase
             {
                 Quality = ImageQuality
             }, cancellationToken);
-            return;
+            return new ImageCompressionResult(megapixelLabel);
         }
 
         if (extension.Equals(".png", StringComparison.OrdinalIgnoreCase))
@@ -145,9 +150,94 @@ public class ImageMessagesController : ControllerBase
             {
                 CompressionLevel = PngCompressionLevel.BestCompression
             }, cancellationToken);
-            return;
+            return new ImageCompressionResult(megapixelLabel);
         }
 
         await image.SaveAsGifAsync(output, cancellationToken);
+        return new ImageCompressionResult(megapixelLabel);
+    }
+
+    private static string GetImageMegapixelLabel(int width, int height)
+    {
+        var megapixels = (int)Math.Floor((double)width * height / 1000000);
+
+        if (megapixels < 12)
+        {
+            return string.Empty;
+        }
+
+        if (megapixels == 12)
+        {
+            return "12MP";
+        }
+
+        if (megapixels < 48)
+        {
+            return "12MP+";
+        }
+
+        if (megapixels == 48)
+        {
+            return "48MP";
+        }
+
+        if (megapixels < 50)
+        {
+            return "48MP+";
+        }
+
+        if (megapixels == 50)
+        {
+            return "50MP";
+        }
+
+        if (megapixels < 64)
+        {
+            return "50MP+";
+        }
+
+        if (megapixels == 64)
+        {
+            return "64MP";
+        }
+
+        if (megapixels < 100)
+        {
+            return "64MP+";
+        }
+
+        if (megapixels == 100)
+        {
+            return "100MP";
+        }
+
+        if (megapixels < 108)
+        {
+            return "100MP+";
+        }
+
+        if (megapixels == 108)
+        {
+            return "108MP";
+        }
+
+        if (megapixels < 200)
+        {
+            return "108MP+";
+        }
+
+        if (megapixels == 200)
+        {
+            return "200MP";
+        }
+
+        return "200MP+";
+    }
+
+    private static string GetMegapixelPathToken(string label)
+    {
+        return string.IsNullOrWhiteSpace(label)
+            ? string.Empty
+            : $"_mp{label.Replace("MP", string.Empty, StringComparison.Ordinal).Replace("+", "plus", StringComparison.Ordinal)}";
     }
 }

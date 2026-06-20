@@ -336,6 +336,12 @@ html[data-theme="light"] .message.them .voice-wave span {
     background: rgba(0, 0, 0, 0.72);
 }
 
+html[data-theme] .message-image-resolution {
+    color: #fff !important;
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(3, 6, 18, 0.72);
+}
+
 html[data-theme="dark"] input,
 html[data-theme="dark"] .language-selector-toggle,
 html[data-theme="dark"] .language-selector-option,

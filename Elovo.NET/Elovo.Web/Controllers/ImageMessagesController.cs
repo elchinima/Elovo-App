@@ -1,3 +1,8 @@
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Processing;
+
 namespace Elovo.Web.Controllers;
 
 [Authorize]
@@ -5,6 +10,8 @@ namespace Elovo.Web.Controllers;
 public class ImageMessagesController : ControllerBase
 {
     private const long MaxImageBytes = 10 * 1024 * 1024;
+    private const int ImageQuality = 50;
+    private const double ImageResizeRatio = 0.5;
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".png",
@@ -112,101 +119,35 @@ public class ImageMessagesController : ControllerBase
 
     private static async Task SaveCompressedImageAsync(Stream input, string extension, Stream output, CancellationToken cancellationToken)
     {
-        var imageType = Type.GetType("SixLabors.ImageSharp.Image, SixLabors.ImageSharp");
-        var extensionType = Type.GetType("SixLabors.ImageSharp.ImageExtensions, SixLabors.ImageSharp");
-
-        if (imageType is null || extensionType is null)
+        using var image = await Image.LoadAsync(input, cancellationToken);
+        var width = Math.Max(1, (int)Math.Round(image.Width * ImageResizeRatio));
+        var height = Math.Max(1, (int)Math.Round(image.Height * ImageResizeRatio));
+        image.Mutate(x => x.Resize(new ResizeOptions
         {
-            await input.CopyToAsync(output, cancellationToken);
+            Size = new Size(width, height),
+            Mode = ResizeMode.Stretch,
+            Sampler = KnownResamplers.Lanczos3
+        }));
+
+        if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+            extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase))
+        {
+            await image.SaveAsJpegAsync(output, new JpegEncoder
+            {
+                Quality = ImageQuality
+            }, cancellationToken);
             return;
         }
 
-        var loadMethod = imageType.GetMethods()
-            .FirstOrDefault(x =>
-            {
-                var parameters = x.GetParameters();
-                return x.Name == "LoadAsync" &&
-                    parameters.Length == 2 &&
-                    parameters[0].ParameterType == typeof(Stream) &&
-                    parameters[1].ParameterType == typeof(CancellationToken);
-            }) ?? throw new InvalidOperationException("ImageSharp loader is unavailable.");
-
-        var imageTask = (Task?)loadMethod.Invoke(null, new object[] { input, cancellationToken })
-            ?? throw new InvalidOperationException("ImageSharp loader failed.");
-
-        await imageTask;
-        var image = imageTask.GetType().GetProperty("Result")?.GetValue(imageTask)
-            ?? throw new InvalidOperationException("Image file is invalid.");
-
-        try
+        if (extension.Equals(".png", StringComparison.OrdinalIgnoreCase))
         {
-            if (extension.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
-                extension.Equals(".jpeg", StringComparison.OrdinalIgnoreCase))
+            await image.SaveAsPngAsync(output, new PngEncoder
             {
-                await SaveWithEncoderAsync(extensionType, image, output, "SaveAsJpegAsync", "SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder, SixLabors.ImageSharp", cancellationToken, encoder =>
-                {
-                    encoder.GetType().GetProperty("Quality")?.SetValue(encoder, 100);
-                });
-                return;
-            }
-
-            if (extension.Equals(".png", StringComparison.OrdinalIgnoreCase))
-            {
-                await SaveWithEncoderAsync(extensionType, image, output, "SaveAsPngAsync", "SixLabors.ImageSharp.Formats.Png.PngEncoder, SixLabors.ImageSharp", cancellationToken, encoder =>
-                {
-                    var property = encoder.GetType().GetProperty("CompressionLevel");
-                    if (property?.PropertyType.IsEnum == true && Enum.TryParse(property.PropertyType, "BestCompression", out var value))
-                    {
-                        property.SetValue(encoder, value);
-                    }
-                });
-                return;
-            }
-
-            var gifMethod = extensionType.GetMethods()
-                .FirstOrDefault(x =>
-                {
-                    var parameters = x.GetParameters();
-                    return x.Name == "SaveAsGifAsync" &&
-                        parameters.Length == 3 &&
-                        parameters[1].ParameterType == typeof(Stream) &&
-                        parameters[2].ParameterType == typeof(CancellationToken);
-                }) ?? throw new InvalidOperationException("ImageSharp GIF encoder is unavailable.");
-
-            var gifTask = (Task?)gifMethod.Invoke(null, new[] { image, output, cancellationToken })
-                ?? throw new InvalidOperationException("ImageSharp GIF encoder failed.");
-            await gifTask;
+                CompressionLevel = PngCompressionLevel.BestCompression
+            }, cancellationToken);
+            return;
         }
-        finally
-        {
-            if (image is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-        }
-    }
 
-    private static async Task SaveWithEncoderAsync(Type extensionType, object image, Stream output, string methodName, string encoderTypeName, CancellationToken cancellationToken, Action<object> configure)
-    {
-        var encoderType = Type.GetType(encoderTypeName)
-            ?? throw new InvalidOperationException("ImageSharp encoder is unavailable.");
-        var encoder = Activator.CreateInstance(encoderType)
-            ?? throw new InvalidOperationException("ImageSharp encoder failed.");
-        configure(encoder);
-
-        var method = extensionType.GetMethods()
-            .FirstOrDefault(x =>
-            {
-                var parameters = x.GetParameters();
-                return x.Name == methodName &&
-                    parameters.Length == 4 &&
-                    parameters[1].ParameterType == typeof(Stream) &&
-                    parameters[2].ParameterType == encoderType &&
-                    parameters[3].ParameterType == typeof(CancellationToken);
-            }) ?? throw new InvalidOperationException("ImageSharp encoder is unavailable.");
-
-        var saveTask = (Task?)method.Invoke(null, new[] { image, output, encoder, cancellationToken })
-            ?? throw new InvalidOperationException("ImageSharp encoder failed.");
-        await saveTask;
+        await image.SaveAsGifAsync(output, cancellationToken);
     }
 }

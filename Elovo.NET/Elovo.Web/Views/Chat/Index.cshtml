@@ -21,9 +21,12 @@
                     <strong>Messages</strong>
                 </div>
                 <div class="sidebar-actions">
-                    <button class="icon-button premium-button" id="premiumButton" type="button" aria-label="Premium" title="Premium" hidden="@(ViewBag.CurrentUserIsPremium == true ? "hidden" : null)">
-                        <img class="button-icon" src="~/Assets/Images/Icons/premium.svg" alt="">
-                    </button>
+                    @if (ViewBag.CurrentUserIsPremium != true)
+                    {
+                        <button class="icon-button premium-button" id="premiumButton" type="button" aria-label="Premium" title="Premium">
+                            <img class="button-icon" src="~/Assets/Images/Icons/premium.svg" alt="">
+                        </button>
+                    }
                     <button class="icon-button hidden-chats-button" id="restoreHiddenButton" type="button" aria-label="Show hidden chats" title="Show hidden chats" hidden>
                         <img class="button-icon" src="~/Assets/Images/Icons/hidden-chats.svg" alt="">
                     </button>

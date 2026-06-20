@@ -1755,6 +1755,32 @@ html[lang="az"] .home-hero h1 {
     opacity: 0;
 }
 
+.message-image-resolution {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 4px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(3, 6, 18, 0.7);
+    backdrop-filter: blur(10px);
+    font-size: 0.72rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    pointer-events: none;
+    box-shadow: 0 8px 18px rgba(3, 6, 18, 0.26);
+}
+
+.message-image-resolution[hidden] {
+    display: none;
+}
+
 .image-transfer-loader {
     position: absolute;
     inset: 0;
@@ -3397,6 +3423,11 @@ body:has(.profile-view.is-active) {
 .settings-nav-preferences-icon {
     width: 35px;
     height: 35px;
+}
+
+.settings-nav-premium-icon {
+    width: 34px;
+    height: 34px;
 }
 
 .profile-topbar h1,

@@ -679,6 +679,68 @@
         return message.isImage ? t("Image") : message.content;
     }
 
+    function getImageMegapixelLabel(width, height) {
+        const megapixels = Math.floor((Number(width) * Number(height)) / 1000000);
+
+        if (!Number.isFinite(megapixels) || megapixels < 12) {
+            return "";
+        }
+
+        if (megapixels === 12) {
+            return "12MP";
+        }
+
+        if (megapixels < 48) {
+            return "12MP+";
+        }
+
+        if (megapixels === 48) {
+            return "48MP";
+        }
+
+        if (megapixels < 50) {
+            return "48MP+";
+        }
+
+        if (megapixels === 50) {
+            return "50MP";
+        }
+
+        if (megapixels < 64) {
+            return "50MP+";
+        }
+
+        if (megapixels === 64) {
+            return "64MP";
+        }
+
+        if (megapixels < 100) {
+            return "64MP+";
+        }
+
+        if (megapixels === 100) {
+            return "100MP";
+        }
+
+        if (megapixels < 108) {
+            return "100MP+";
+        }
+
+        if (megapixels === 108) {
+            return "108MP";
+        }
+
+        if (megapixels < 200) {
+            return "108MP+";
+        }
+
+        if (megapixels === 200) {
+            return "200MP";
+        }
+
+        return "200MP+";
+    }
+
     function applyLocalConversationHistory(items) {
         return items
             .map((chat) => {
@@ -2603,6 +2665,7 @@
         const frame = document.createElement("button");
         const image = document.createElement("img");
         const loader = document.createElement("span");
+        const resolution = document.createElement("span");
         let previewPath = message.imagePath;
 
         frame.type = "button";
@@ -2612,15 +2675,22 @@
         image.alt = message.imageFileName || t("Sent image");
         image.loading = "lazy";
         loader.className = "image-transfer-loader";
+        resolution.className = "message-image-resolution";
+        resolution.setAttribute("aria-label", t("Image resolution"));
+        resolution.hidden = true;
 
         image.addEventListener("load", () => {
             frame.classList.remove("is-loading");
             frame.classList.remove("is-error");
+            const label = getImageMegapixelLabel(image.naturalWidth, image.naturalHeight);
+            resolution.textContent = label;
+            resolution.hidden = !label;
         });
 
         image.addEventListener("error", () => {
             frame.classList.remove("is-loading");
             frame.classList.add("is-error");
+            resolution.hidden = true;
         });
 
         readCachedImageBlob(message.id).then((blob) => {
@@ -2633,7 +2703,7 @@
         });
 
         frame.addEventListener("click", () => openImagePreview(previewPath, message.imageFileName));
-        frame.append(image, loader);
+        frame.append(image, loader, resolution);
         return frame;
     }
 

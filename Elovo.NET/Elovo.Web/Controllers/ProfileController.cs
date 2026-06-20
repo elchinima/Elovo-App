@@ -44,6 +44,12 @@ public class ProfileController : Controller
         return View();
     }
 
+    [HttpGet("premium-actions")]
+    public async Task<IActionResult> PremiumActions(CancellationToken cancellationToken)
+    {
+        return View(await _userService.GetProfileAsync(GetCurrentUserId(), cancellationToken));
+    }
+
     [HttpGet("/profile")]
     public IActionResult LegacyProfile()
     {

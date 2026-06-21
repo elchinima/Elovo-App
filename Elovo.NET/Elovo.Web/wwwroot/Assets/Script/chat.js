@@ -127,6 +127,8 @@
     const voiceCacheStoreName = "voices";
     const premiumBadgeIcon = "/Assets/Images/Icons/premium.svg";
     const mediaBatchSize = 5;
+    const mediaBatchBottomGuardPx = 160;
+    const mediaBatchBoundaryOffsetPx = 120;
     let imageCacheDb = null;
     let imageCacheDbPromise = null;
     let voiceCacheDb = null;
@@ -3640,6 +3642,11 @@
             return;
         }
 
+        const distanceFromBottom = messageStream.scrollHeight - currentScrollTop - messageStream.clientHeight;
+        if (distanceFromBottom < mediaBatchBottomGuardPx) {
+            return;
+        }
+
         const userId = activeConversation.userId;
         const messages = readStoredMessages(userId);
         const state = prepareMediaState(userId, messages);
@@ -3660,7 +3667,7 @@
 
         const streamRect = messageStream.getBoundingClientRect();
         const boundaryRect = boundary.getBoundingClientRect();
-        if (boundaryRect.top > streamRect.bottom + 80) {
+        if (boundaryRect.top > streamRect.top + mediaBatchBoundaryOffsetPx) {
             return;
         }
 

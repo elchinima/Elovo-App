@@ -1522,6 +1522,10 @@ html[lang="az"] .home-hero h1 {
     -ms-overflow-style: none;
 }
 
+.message-stream.is-instant-scroll {
+    scroll-behavior: auto !important;
+}
+
 .message {
     min-width: 0;
     max-width: min(68%, 560px);

@@ -112,6 +112,7 @@
     let mobileBoundaryPulseTimer = null;
     let shouldReloadChatAfterSettings = false;
     let messageStreamLastScrollTop = 0;
+    let instantScrollRestoreTimer = null;
     const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
     const maxImageSize = 10 * 1024 * 1024;
     const maxVoiceDurationMs = 60 * 1000;
@@ -2263,7 +2264,7 @@
                 activeConversation = getFilteredConversations()[0] || null;
                 if (activeConversation) {
                     renderConversationHeader(activeConversation);
-                    loadMessages(activeConversation.userId);
+                    loadMessages(activeConversation.userId, { smooth: false });
                 } else {
                     renderEmptyConversationHeader();
                 }
@@ -2307,7 +2308,7 @@
         if (!activeConversation && conversations.length > 0) {
             activeConversation = conversations[0];
             renderConversationHeader(activeConversation);
-            loadMessages(activeConversation.userId);
+            loadMessages(activeConversation.userId, { smooth: false });
         }
         renderChatList(getFilteredConversations());
         renderAllFriends(conversations);
@@ -2351,7 +2352,7 @@
             activeConversation = getFilteredConversations()[0] || null;
             if (activeConversation) {
                 renderConversationHeader(activeConversation);
-                await loadMessages(activeConversation.userId);
+                await loadMessages(activeConversation.userId, { smooth: false });
             } else {
                 renderEmptyConversationHeader();
             }
@@ -2576,13 +2577,19 @@
         }
 
         const scrollNow = () => {
+            messageStream.classList.add("is-instant-scroll");
+            void messageStream.offsetHeight;
             messageStream.scrollTop = messageStream.scrollHeight;
             messageStreamLastScrollTop = messageStream.scrollTop;
         };
 
+        window.clearTimeout(instantScrollRestoreTimer);
         scrollNow();
         window.requestAnimationFrame(scrollNow);
         window.setTimeout(scrollNow, 60);
+        instantScrollRestoreTimer = window.setTimeout(() => {
+            messageStream.classList.remove("is-instant-scroll");
+        }, 140);
     }
 
     function appendMessage(message) {

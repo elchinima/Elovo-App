@@ -520,15 +520,6 @@
         return getMediaState(activeConversation.userId).allowedIds.has(message.id);
     }
 
-    function isMessageMediaReady(message) {
-        if (!activeConversation || !message || !message.id || !isMediaMessage(message)) {
-            return false;
-        }
-
-        const state = getMediaState(activeConversation.userId);
-        return state.loadedIds.has(message.id) || state.failedIds.has(message.id);
-    }
-
     async function cacheMediaForMessage(message) {
         if (message.isVoice) {
             return cacheVoiceForMessage(message);
@@ -562,7 +553,7 @@
         }));
     }
 
-    function queueAllowedMediaLoad(userId, messages, options = {}) {
+    function queueAllowedMediaLoad(userId, messages) {
         const state = getMediaState(userId);
         const mediaMessages = getMediaMessages(messages);
         const toLoad = mediaMessages.filter((message) =>
@@ -586,15 +577,7 @@
             } else {
                 state.failedIds.add(message.id);
             }
-        })).then(async () => {
-            if (activeConversation && sameId(activeConversation.userId, userId)) {
-                await loadMessages(userId, {
-                    scrollToBottom: options.scrollToBottom === true,
-                    preserveScroll: options.preserveScroll === true,
-                    smooth: options.smooth !== false
-                });
-            }
-
+        })).then(() => {
             return true;
         }).finally(() => {
             if (state.batchPromise === loadPromise) {
@@ -2915,7 +2898,6 @@
         let objectUrl = null;
         const pathResolutionLabel = getImageMegapixelLabelFromPath(message.imageStoragePath || message.content || message.imagePath);
         const canLoadMedia = isMessageMediaAllowed(message);
-        const isMediaReady = isMessageMediaReady(message);
 
         frame.type = "button";
         frame.className = "message-image-frame is-loading";
@@ -2927,7 +2909,7 @@
         resolution.setAttribute("aria-label", t("Image resolution"));
         resolution.hidden = true;
 
-        if (!canLoadMedia || !isMediaReady) {
+        if (!canLoadMedia) {
             frame.disabled = true;
             frame.setAttribute("aria-busy", "true");
             frame.append(image, loader, resolution);
@@ -2978,7 +2960,6 @@
         const audio = document.createElement("audio");
         let objectUrl = null;
         const canLoadMedia = isMessageMediaAllowed(message);
-        const isMediaReady = isMessageMediaReady(message);
 
         player.className = "message-voice";
         player.style.setProperty("--voice-progress", "0%");
@@ -2994,7 +2975,7 @@
 
         createVoiceBars(message.id).forEach((bar) => wave.appendChild(bar));
 
-        if (!canLoadMedia || !isMediaReady) {
+        if (!canLoadMedia) {
             player.classList.add("is-loading");
             player.setAttribute("aria-busy", "true");
             playButton.disabled = true;
@@ -3647,12 +3628,7 @@
         prepareMediaState(userId, messages);
         await markCachedAllowedMediaReady(userId, messages);
         renderMessages(messages, options);
-        const shouldScrollToBottom = options.scrollToBottom !== false && options.preserveScroll !== true;
-        queueAllowedMediaLoad(userId, messages, {
-            preserveScroll: options.preserveScroll === true,
-            scrollToBottom: shouldScrollToBottom,
-            smooth: options.smooth !== false
-        });
+        queueAllowedMediaLoad(userId, messages);
     }
 
     function maybeLoadOlderMediaBatch() {

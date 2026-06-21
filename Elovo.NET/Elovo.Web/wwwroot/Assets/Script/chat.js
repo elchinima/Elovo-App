@@ -537,6 +537,31 @@
         return cacheImageForMessage(message);
     }
 
+    async function markCachedAllowedMediaReady(userId, messages) {
+        const state = getMediaState(userId);
+        const mediaMessages = getMediaMessages(messages);
+        const toCheck = mediaMessages.filter((message) =>
+            message.id &&
+            state.allowedIds.has(message.id) &&
+            !state.loadedIds.has(message.id) &&
+            !state.failedIds.has(message.id) &&
+            !state.loadingIds.has(message.id));
+
+        if (toCheck.length === 0) {
+            return;
+        }
+
+        await Promise.all(toCheck.map(async (message) => {
+            const cached = message.isVoice
+                ? await readCachedVoiceBlob(message.id)
+                : await readCachedImageBlob(message.id);
+
+            if (cached) {
+                state.loadedIds.add(message.id);
+            }
+        }));
+    }
+
     function queueAllowedMediaLoad(userId, messages, options = {}) {
         const state = getMediaState(userId);
         const mediaMessages = getMediaMessages(messages);
@@ -3620,6 +3645,7 @@
     async function loadMessages(userId, options = {}) {
         const messages = readStoredMessages(userId);
         prepareMediaState(userId, messages);
+        await markCachedAllowedMediaReady(userId, messages);
         renderMessages(messages, options);
         const shouldScrollToBottom = options.scrollToBottom !== false && options.preserveScroll !== true;
         queueAllowedMediaLoad(userId, messages, {

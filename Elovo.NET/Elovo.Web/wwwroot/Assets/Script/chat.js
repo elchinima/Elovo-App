@@ -604,6 +604,39 @@
         return true;
     }
 
+    function getNewlyAllowedMediaMessages(userId, messages, previouslyAllowedIds) {
+        const state = getMediaState(userId);
+        return getMediaMessages(messages).filter((message) =>
+            message.id &&
+            state.allowedIds.has(message.id) &&
+            !previouslyAllowedIds.has(message.id));
+    }
+
+    function renderAllowedMediaMessages(mediaMessages) {
+        if (!messageStream || mediaMessages.length === 0) {
+            return;
+        }
+
+        mediaMessages.forEach((message) => {
+            const bubble = Array.from(messageStream.querySelectorAll("[data-message-id]"))
+                .find((element) => element.dataset.messageId === message.id);
+            const currentMedia = bubble?.querySelector(".message-image-frame, .message-voice");
+            if (!bubble || !currentMedia) {
+                return;
+            }
+
+            const replacement = message.isVoice && message.voiceUrl
+                ? createVoiceMessage(message)
+                : message.isImage && message.imagePath
+                    ? createImageMessage(message)
+                    : null;
+
+            if (replacement) {
+                currentMedia.replaceWith(replacement);
+            }
+        });
+    }
+
     function getOldestAllowedMediaId(userId, messages) {
         const state = getMediaState(userId);
         return getMediaMessages(messages).find((message) => message.id && state.allowedIds.has(message.id))?.id || "";
@@ -2903,7 +2936,7 @@
         frame.className = "message-image-frame is-loading";
         frame.title = message.imageFileName || t("Open image");
         image.alt = message.imageFileName || t("Sent image");
-        image.loading = "lazy";
+        image.loading = "eager";
         loader.className = "image-transfer-loader";
         resolution.className = "message-image-resolution";
         resolution.setAttribute("aria-label", t("Image resolution"));
@@ -3656,6 +3689,8 @@
             return;
         }
 
+        const previouslyAllowedIds = new Set(state.allowedIds);
+
         const boundaryId = getOldestAllowedMediaId(userId, messages);
         if (!boundaryId) {
             return;
@@ -3674,7 +3709,8 @@
         }
 
         if (allowOlderMediaBatch(userId, messages)) {
-            loadMessages(userId, { scrollToBottom: false, preserveScroll: true });
+            renderAllowedMediaMessages(getNewlyAllowedMediaMessages(userId, messages, previouslyAllowedIds));
+            queueAllowedMediaLoad(userId, messages);
         }
     }
 

@@ -322,6 +322,7 @@ window.ElovoTranslations = {
         "Speaker {number}": "Dinamik {number}",
         "Delete {name}": "{name} istifadəçisini sil",
         "Image upload was cancelled.": "Şəklin yüklənməsi ləğv edildi.",
+        "Image upload timed out.": "Şəklin yüklənmə vaxtı bitdi.",
         "Image is not ready.": "Şəkil hələ hazır deyil.",
         "Canvas is unavailable.": "Şəkil emalı sahəsi əlçatan deyil.",
         "Image crop failed.": "Şəkli kəsmək mümkün olmadı.",

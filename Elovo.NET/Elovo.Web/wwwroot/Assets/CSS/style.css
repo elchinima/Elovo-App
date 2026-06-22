@@ -1926,6 +1926,7 @@ html[lang="az"] .home-hero h1 {
 
 .composer.is-voice-recording {
     background: rgba(83, 214, 164, 0.08);
+    touch-action: none;
 }
 
 .composer.is-voice-recording::before {
@@ -1956,6 +1957,7 @@ html[lang="az"] .home-hero h1 {
 .composer.is-voice-recording .send-button {
     box-shadow: 0 0 0 0 rgba(83, 214, 164, 0.38);
     animation: recordButtonPulse 920ms ease-in-out infinite;
+    touch-action: none;
 }
 
 .composer.is-voice-recording .send-button .button-icon {
@@ -2086,6 +2088,16 @@ html[lang="az"] .home-hero h1 {
     font-weight: 800;
     overflow: hidden;
     pointer-events: none;
+}
+
+.image-upload-status.is-error {
+    border-color: rgba(255, 92, 122, 0.52);
+    color: #fff;
+    background: rgba(255, 92, 122, 0.18);
+}
+
+.image-upload-status.is-error img {
+    filter: brightness(0) invert(1);
 }
 
 .image-upload-status::before {

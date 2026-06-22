@@ -323,6 +323,7 @@ window.ElovoTranslations = {
         "Speaker {number}": "Динамик {number}",
         "Delete {name}": "Удалить {name}",
         "Image upload was cancelled.": "Загрузка изображения отменена.",
+        "Image upload timed out.": "Время загрузки изображения истекло.",
         "Image is not ready.": "Изображение ещё не готово.",
         "Canvas is unavailable.": "Область обработки изображения недоступна.",
         "Image crop failed.": "Не удалось обрезать изображение.",

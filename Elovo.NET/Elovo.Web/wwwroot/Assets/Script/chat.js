@@ -4150,6 +4150,27 @@
         imageTransferStatus.innerHTML = `<img src="/Assets/Images/Icons/image-upload-loader.svg" alt=""> <span>${percent}%${remainingText}</span>`;
     }
 
+    function showImageTransferError(message) {
+        if (!messageForm) {
+            return;
+        }
+
+        if (!imageTransferStatus) {
+            imageTransferStatus = document.createElement("span");
+            imageTransferStatus.className = "image-upload-status";
+            messageForm.appendChild(imageTransferStatus);
+        }
+
+        imageTransferStatus.classList.add("is-error");
+        imageTransferStatus.innerHTML = `<img src="/Assets/Images/Icons/close.svg" alt=""> <span>${t(message || "Image upload failed.")}</span>`;
+        window.setTimeout(() => {
+            if (imageTransferStatus?.classList.contains("is-error")) {
+                imageTransferStatus.remove();
+                imageTransferStatus = null;
+            }
+        }, 3200);
+    }
+
     function formatBytes(value) {
         if (!value) {
             return "0 KB";
@@ -4175,6 +4196,7 @@
             request.open("POST", "/api/messages/images");
             request.setRequestHeader("RequestVerificationToken", getAntiForgeryToken());
             request.responseType = "json";
+            request.timeout = 120000;
 
             request.upload.addEventListener("progress", (event) => {
                 if (event.lengthComputable) {
@@ -4190,11 +4212,15 @@
                     return;
                 }
 
-                reject(new Error(t("Image upload failed.")));
+                const error = typeof request.response === "string"
+                    ? request.response
+                    : request.response?.message || request.response?.title || t("Image upload failed.");
+                reject(new Error(error));
             });
 
             request.addEventListener("error", () => reject(new Error(t("Image upload failed."))));
             request.addEventListener("abort", () => reject(new Error(t("Image upload was cancelled."))));
+            request.addEventListener("timeout", () => reject(new Error(t("Image upload timed out."))));
             request.send(data);
         });
     }
@@ -4219,6 +4245,7 @@
 
         isSending = true;
         setImageTransferState(true, 0);
+        let uploadErrorMessage = "";
 
         try {
             const image = await uploadImage(file);
@@ -4236,9 +4263,14 @@
                 }
                 throw error;
             }
+        } catch (error) {
+            uploadErrorMessage = error?.message || "Image upload failed.";
         } finally {
             isSending = false;
             setImageTransferState(false);
+            if (uploadErrorMessage) {
+                showImageTransferError(uploadErrorMessage);
+            }
             focusComposerInput();
         }
     }
@@ -4318,6 +4350,52 @@
             event.clientX <= rect.right &&
             event.clientY >= rect.top &&
             event.clientY <= rect.bottom;
+    }
+
+    function hasActiveVoicePointer(event) {
+        return activeVoicePointerId !== null && event.pointerId === activeVoicePointerId;
+    }
+
+    function addVoicePointerListeners() {
+        window.addEventListener("pointermove", handleVoicePointerMove, true);
+        window.addEventListener("pointerup", handleVoicePointerUp, true);
+        window.addEventListener("pointercancel", handleVoicePointerCancel, true);
+    }
+
+    function removeVoicePointerListeners() {
+        window.removeEventListener("pointermove", handleVoicePointerMove, true);
+        window.removeEventListener("pointerup", handleVoicePointerUp, true);
+        window.removeEventListener("pointercancel", handleVoicePointerCancel, true);
+    }
+
+    function handleVoicePointerMove(event) {
+        if (!hasActiveVoicePointer(event) || (!isRecordingVoice && !isPreparingVoice)) {
+            return;
+        }
+
+        setVoiceCancelArmed(isPointerOverVoiceCancel(event));
+    }
+
+    function handleVoicePointerUp(event) {
+        if (!hasActiveVoicePointer(event) || (!isRecordingVoice && !isPreparingVoice)) {
+            return;
+        }
+
+        event.preventDefault();
+        const shouldSend = !isPointerOverVoiceCancel(event) && !isVoiceCancelArmed;
+        removeVoicePointerListeners();
+        stopVoiceRecording(shouldSend);
+    }
+
+    function handleVoicePointerCancel(event) {
+        if (!hasActiveVoicePointer(event)) {
+            return;
+        }
+
+        if (isVoiceCancelArmed) {
+            removeVoicePointerListeners();
+            stopVoiceRecording(false);
+        }
     }
 
     function createRecordingMeterMarkup() {
@@ -4421,6 +4499,7 @@
         voiceStream = null;
         voiceChunks = [];
         voiceRecordStartedAt = 0;
+        removeVoicePointerListeners();
         activeVoicePointerId = null;
         isRecordingVoice = false;
         isPreparingVoice = false;
@@ -4756,32 +4835,13 @@
 
                 activeVoicePointerId = event.pointerId;
                 setVoiceCancelArmed(false);
-                submitButton.setPointerCapture(event.pointerId);
+                addVoicePointerListeners();
+                try {
+                    submitButton.setPointerCapture(event.pointerId);
+                } catch {
+                    // Window-level pointer listeners keep the drag gesture alive on mobile.
+                }
                 startVoiceRecording(event);
-            });
-
-            submitButton.addEventListener("pointermove", (event) => {
-                if (activeVoicePointerId !== event.pointerId || (!isRecordingVoice && !isPreparingVoice)) {
-                    return;
-                }
-
-                setVoiceCancelArmed(isPointerOverVoiceCancel(event));
-            });
-
-            submitButton.addEventListener("pointerup", (event) => {
-                if (!isRecordingVoice && !isPreparingVoice) {
-                    return;
-                }
-
-                event.preventDefault();
-                stopVoiceRecording(!isPointerOverVoiceCancel(event) && !isVoiceCancelArmed);
-            });
-
-            submitButton.addEventListener("pointercancel", () => stopVoiceRecording(false));
-            submitButton.addEventListener("lostpointercapture", () => {
-                if (isRecordingVoice || isPreparingVoice) {
-                    stopVoiceRecording(!isVoiceCancelArmed);
-                }
             });
         }
     }

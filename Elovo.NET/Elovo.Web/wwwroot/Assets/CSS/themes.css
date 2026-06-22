@@ -107,6 +107,20 @@ html[data-theme="light"] .settings-nav-button.is-active .settings-nav-premium-ic
     filter: brightness(0) invert(1) !important;
 }
 
+html[data-theme="dark"] .premium-actions-view .profile-panel-heading img[src*="/Icons/premium"][src$=".svg"],
+html[data-theme="dark"] .premium-actions-view .settings-nav-button:not(.is-active) img[src*="/Icons/premium"][src$=".svg"] {
+    filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="light"] .premium-actions-view .profile-panel-heading img[src*="/Icons/premium"][src$=".svg"],
+html[data-theme="light"] .premium-actions-view .settings-nav-button:not(.is-active) img[src*="/Icons/premium"][src$=".svg"] {
+    filter: brightness(0) !important;
+}
+
+html[data-theme] .premium-actions-view .settings-nav-button.is-active img[src*="/Icons/premium"][src$=".svg"] {
+    filter: brightness(0) invert(1) !important;
+}
+
 html[data-theme] .premium-purchase-button,
 html[data-theme] .premium-purchase-button * {
     color: #04120a !important;
@@ -615,6 +629,16 @@ html[data-theme="light"] .composer.is-voice-cancel-armed {
 
 html[data-theme="light"] .image-upload-status {
     border-color: rgba(79, 86, 180, 0.36);
+}
+
+html[data-theme="light"] .image-upload-status.is-error {
+    border-color: rgba(176, 25, 58, 0.42);
+    color: #111 !important;
+    background: rgba(255, 236, 240, 0.98);
+}
+
+html[data-theme="light"] .image-upload-status.is-error img {
+    filter: brightness(0) !important;
 }
 
 html[data-theme="light"] .image-upload-status::before {

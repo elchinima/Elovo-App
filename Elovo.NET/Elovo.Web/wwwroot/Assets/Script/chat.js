@@ -829,10 +829,10 @@
 
     async function refreshConversationAfterMessageChange(userId) {
         if (activeConversation && sameId(activeConversation.userId, userId)) {
-            await loadMessages(activeConversation.userId);
+            await syncMessagesFromStorage(activeConversation.userId);
         }
 
-        await loadConversations();
+        updateConversationSummaryFromStorage(userId);
     }
 
     function notifyActiveConversationRead() {
@@ -863,6 +863,34 @@
         }
 
         return message.isImage ? t("Image") : message.content;
+    }
+
+    function sortConversationsByLastMessage() {
+        conversations.sort((first, second) => {
+            const firstTime = first.lastMessageAt ? new Date(first.lastMessageAt).getTime() : 0;
+            const secondTime = second.lastMessageAt ? new Date(second.lastMessageAt).getTime() : 0;
+            return secondTime - firstTime || first.username.localeCompare(second.username);
+        });
+    }
+
+    function updateConversationSummaryFromStorage(userId) {
+        const chat = conversations.find((item) => sameId(item.userId, userId));
+        if (!chat) {
+            return false;
+        }
+
+        const summary = getStoredConversationSummary(chat.userId);
+        chat.lastMessage = summary.lastMessage;
+        chat.lastMessageAt = summary.lastMessageAt;
+        chat.unreadCount = 0;
+        sortConversationsByLastMessage();
+
+        if (activeConversation && sameId(activeConversation.userId, chat.userId)) {
+            activeConversation = chat;
+        }
+
+        renderChatList(getFilteredConversations());
+        return true;
     }
 
     function getImageMegapixelLabel(width, height) {
@@ -2606,36 +2634,29 @@
         }
     }
 
-    function scrollMessageStreamToBottom({ smooth = true } = {}) {
-        if (!messageStream) {
-            return;
-        }
-
-        if (smooth) {
-            messageStream.scrollTo({
-                top: messageStream.scrollHeight,
-                behavior: "smooth"
-            });
-            return;
-        }
-
-        const scrollNow = () => {
-            messageStream.classList.add("is-instant-scroll");
-            void messageStream.offsetHeight;
-            messageStream.scrollTop = messageStream.scrollHeight;
-            messageStreamLastScrollTop = messageStream.scrollTop;
-        };
-
-        window.clearTimeout(instantScrollRestoreTimer);
-        scrollNow();
-        window.requestAnimationFrame(scrollNow);
-        window.setTimeout(scrollNow, 60);
-        instantScrollRestoreTimer = window.setTimeout(() => {
-            messageStream.classList.remove("is-instant-scroll");
-        }, 140);
+    function getMessageRenderSignature(message) {
+        return JSON.stringify({
+            id: `${message.id || ""}`,
+            senderId: normalizeId(message.senderId),
+            receiverId: normalizeId(message.receiverId),
+            content: message.content || "",
+            sentAt: message.sentAt || "",
+            readAt: message.readAt || "",
+            isPending: message.isPending === true,
+            isImage: message.isImage === true,
+            imagePath: message.imagePath || "",
+            imageStoragePath: message.imageStoragePath || "",
+            imageFileName: message.imageFileName || "",
+            isVoice: message.isVoice === true,
+            voiceUrl: message.voiceUrl || "",
+            voiceDurationSeconds: message.voiceDurationSeconds || null,
+            isCall: message.isCall === true,
+            callStatus: message.callStatus || "",
+            callDurationSeconds: message.callDurationSeconds || null
+        });
     }
 
-    function appendMessage(message) {
+    function createMessageBubble(message) {
         const bubble = document.createElement("article");
         const meta = document.createElement("span");
         const time = document.createElement("small");
@@ -2644,6 +2665,7 @@
 
         bubble.className = `message ${isMine ? "mine" : "them"}${message.id === latestMessageId ? " is-new" : ""}${message.isImage ? " has-image" : ""}${message.isVoice ? " has-voice" : ""}${message.isCall ? " has-call" : ""}`;
         bubble.dataset.messageId = message.id;
+        bubble.dataset.messageSignature = getMessageRenderSignature(message);
         meta.className = "message-meta";
         time.textContent = formatTime(message.sentAt);
         meta.appendChild(time);
@@ -2674,7 +2696,105 @@
         if (isMine || message.isImage) {
             attachMessageActions(bubble, message);
         }
+
+        return bubble;
+    }
+
+    function syncRenderedMessages(messages, options = {}) {
+        if (!messageStream) {
+            return;
+        }
+
+        const shouldPreserveScroll = options.preserveScroll === true;
+        const previousScrollHeight = messageStream.scrollHeight;
+        const previousScrollTop = messageStream.scrollTop;
+        const existing = new Map(Array.from(messageStream.querySelectorAll("[data-message-id]"))
+            .map((element) => [element.dataset.messageId, element]));
+
+        messageStream.querySelectorAll(".message.is-new").forEach((element) => {
+            if (element.dataset.messageId !== latestMessageId) {
+                element.classList.remove("is-new");
+            }
+        });
+
+        messages.forEach((message, index) => {
+            const messageId = `${message.id || ""}`;
+            if (!messageId) {
+                return;
+            }
+
+            const current = existing.get(messageId);
+            const signature = getMessageRenderSignature(message);
+            if (current && current.dataset.messageSignature === signature) {
+                existing.delete(messageId);
+                return;
+            }
+
+            const nextBubble = createMessageBubble(message);
+            if (current) {
+                current.replaceWith(nextBubble);
+                existing.delete(messageId);
+                return;
+            }
+
+            const nextExistingMessage = messages.slice(index + 1)
+                .map((nextMessage) => existing.get(`${nextMessage.id || ""}`))
+                .find(Boolean);
+            messageStream.insertBefore(nextBubble, nextExistingMessage || null);
+        });
+
+        existing.forEach((element) => element.remove());
+
+        if (shouldPreserveScroll) {
+            messageStream.scrollTop = previousScrollTop + (messageStream.scrollHeight - previousScrollHeight);
+        }
+
+        if (options.scrollToBottom === true) {
+            scrollMessageStreamToBottom({ smooth: options.smooth !== false });
+        }
+    }
+
+    async function syncMessagesFromStorage(userId, options = {}) {
+        const messages = readStoredMessages(userId);
+        prepareMediaState(userId, messages);
+        await markCachedAllowedMediaReady(userId, messages);
+        syncRenderedMessages(messages, options);
+        queueAllowedMediaLoad(userId, messages);
+    }
+
+    function scrollMessageStreamToBottom({ smooth = true } = {}) {
+        if (!messageStream) {
+            return;
+        }
+
+        if (smooth) {
+            messageStream.scrollTo({
+                top: messageStream.scrollHeight,
+                behavior: "smooth"
+            });
+            return;
+        }
+
+        const scrollNow = () => {
+            messageStream.classList.add("is-instant-scroll");
+            void messageStream.offsetHeight;
+            messageStream.scrollTop = messageStream.scrollHeight;
+            messageStreamLastScrollTop = messageStream.scrollTop;
+        };
+
+        window.clearTimeout(instantScrollRestoreTimer);
+        scrollNow();
+        window.requestAnimationFrame(scrollNow);
+        window.setTimeout(scrollNow, 60);
+        instantScrollRestoreTimer = window.setTimeout(() => {
+            messageStream.classList.remove("is-instant-scroll");
+        }, 140);
+    }
+
+    function appendMessage(message) {
+        const bubble = createMessageBubble(message);
         messageStream.appendChild(bubble);
+        return bubble;
     }
 
     function getAvatarImageSource(avatar) {
@@ -2897,8 +3017,7 @@
         if (message.isVoice) {
             await removeCachedVoice(message.id);
         }
-        await loadMessages(activeConversation.userId);
-        await loadConversations();
+        await refreshConversationAfterMessageChange(activeConversation.userId);
     }
 
     async function deleteMessageForEveryone(message) {
@@ -3764,20 +3883,17 @@
             }
 
             if (messageBelongsToActiveConversation(message)) {
-                await loadMessages(activeConversation.userId);
                 const isConversationVisible = isChatPanelVisible() && !isSettingsFrameOpen();
+                await syncMessagesFromStorage(activeConversation.userId, {
+                    scrollToBottom: isConversationVisible,
+                    smooth: true
+                });
                 if (isConversationVisible && !sameId(message.senderId, getCurrentUserId())) {
                     notifyActiveConversationRead();
                 }
-                if (isConversationVisible) {
-                    messageStream.scrollTo({
-                        top: messageStream.scrollHeight,
-                        behavior: "smooth"
-                    });
-                }
             }
 
-            await loadConversations();
+            updateConversationSummaryFromStorage(getMessageParticipantId(message));
         });
 
         connection.on("UserOnline", (userId, lastSeenAt, isActivityHidden = false, isLastSeenHidden = false) => {
@@ -3963,8 +4079,7 @@
                 messageInput.value = "";
                 updateComposerAction();
                 delete messageForm.dataset.editingMessageId;
-                await loadMessages(activeConversation.userId);
-                await loadConversations();
+                await refreshConversationAfterMessageChange(activeConversation.userId);
             } finally {
                 messageForm.classList.remove("is-sending");
                 messageInput.disabled = false;

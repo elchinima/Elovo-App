@@ -568,6 +568,51 @@ html[data-theme="light"] .voice-recording-meter i {
     background: rgba(0, 0, 0, 0.62);
 }
 
+html[data-theme="dark"] .voice-cancel-button {
+    border-color: rgba(255, 111, 139, 0.38);
+    background:
+        linear-gradient(135deg, rgba(255, 92, 122, 0.18), rgba(255, 122, 92, 0.12)),
+        rgba(255, 255, 255, 0.07);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.42);
+}
+
+html[data-theme="dark"] .voice-cancel-button.is-armed,
+html[data-theme="dark"] .composer.is-voice-cancel-armed .voice-cancel-button {
+    border-color: rgba(255, 126, 151, 0.78);
+    background: linear-gradient(135deg, #ff5c7a, #ff7a5c);
+}
+
+html[data-theme="dark"] .composer.is-voice-cancel-armed {
+    background: rgba(255, 92, 122, 0.12);
+}
+
+html[data-theme="light"] .voice-cancel-button {
+    border-color: rgba(176, 25, 58, 0.34);
+    background:
+        linear-gradient(135deg, rgba(255, 92, 122, 0.18), rgba(255, 122, 92, 0.12)),
+        rgba(255, 255, 255, 0.94);
+    box-shadow: 0 14px 30px rgba(176, 25, 58, 0.16);
+}
+
+html[data-theme="light"] .voice-cancel-button img.button-icon[src$=".svg"] {
+    filter: brightness(0) !important;
+}
+
+html[data-theme="light"] .voice-cancel-button.is-armed,
+html[data-theme="light"] .composer.is-voice-cancel-armed .voice-cancel-button {
+    border-color: rgba(176, 25, 58, 0.7);
+    background: linear-gradient(135deg, #ff5c7a, #ff7a5c);
+}
+
+html[data-theme="light"] .voice-cancel-button.is-armed img.button-icon[src$=".svg"],
+html[data-theme="light"] .composer.is-voice-cancel-armed .voice-cancel-button img.button-icon[src$=".svg"] {
+    filter: brightness(0) invert(1) !important;
+}
+
+html[data-theme="light"] .composer.is-voice-cancel-armed {
+    background: rgba(255, 92, 122, 0.14);
+}
+
 html[data-theme="light"] .image-upload-status {
     border-color: rgba(79, 86, 180, 0.36);
 }

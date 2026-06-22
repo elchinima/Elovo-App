@@ -1963,6 +1963,47 @@ html[lang="az"] .home-hero h1 {
     filter: none;
 }
 
+.voice-cancel-button {
+    position: absolute;
+    right: 18px;
+    bottom: calc(100% + 58px);
+    z-index: 3;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 92, 122, 0.32);
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(255, 92, 122, 0.16);
+    box-shadow: 0 14px 28px rgba(3, 6, 18, 0.28);
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+    transition: opacity 160ms ease, transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    pointer-events: none;
+}
+
+.composer.is-voice-recording .voice-cancel-button {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.voice-cancel-button .button-icon {
+    width: 21px;
+    height: 21px;
+}
+
+.voice-cancel-button.is-armed,
+.composer.is-voice-cancel-armed .voice-cancel-button {
+    border-color: rgba(255, 92, 122, 0.72);
+    background: linear-gradient(135deg, #ff5c7a, #ff7a5c);
+    transform: translateY(-2px) scale(1.08);
+}
+
+.composer.is-voice-cancel-armed {
+    background: rgba(255, 92, 122, 0.1);
+}
+
 .voice-recording-status {
     position: absolute;
     left: 18px;

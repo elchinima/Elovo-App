@@ -35,16 +35,24 @@
         <div class="profile-grid chat-settings-grid">
             <section class="profile-panel">
                 <div class="profile-panel-heading">
-                    <img src="~/Assets/Images/Icons/premium-actions.svg" alt="">
-                    <h2>Premium actions</h2>
+                    <img src="~/Assets/Images/Icons/premium.svg" alt="">
+                    <h2>Premium status</h2>
                 </div>
-                <p class="chat-settings-copy">Premium management options will appear here.</p>
+                <p class="chat-settings-copy">Your current Premium access state.</p>
                 <div class="profile-toggle-row">
                     <div>
                         <strong>Premium status</strong>
                         <span>@(Model.IsPremium ? "Active" : "Not active")</span>
                     </div>
                 </div>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel-heading">
+                    <img src="~/Assets/Images/Icons/premium-voice.svg" alt="">
+                    <h2>Voice messages</h2>
+                </div>
+                <p class="chat-settings-copy">Control the Premium voice message duration limit.</p>
                 <div class="profile-toggle-row">
                     <div>
                         <strong>3-minute voice messages</strong>
@@ -56,6 +64,14 @@
                     </label>
                 </div>
                 <p class="profile-status" id="extendedVoiceMessagesStatus"></p>
+            </section>
+
+            <section class="profile-panel">
+                <div class="profile-panel-heading">
+                    <img src="~/Assets/Images/Icons/premium-badge.svg" alt="">
+                    <h2>Premium badge</h2>
+                </div>
+                <p class="chat-settings-copy">Choose whether other users can see your Premium badge.</p>
                 <div class="profile-toggle-row">
                     <div>
                         <strong>Premium badge near username</strong>

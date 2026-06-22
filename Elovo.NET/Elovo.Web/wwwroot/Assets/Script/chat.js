@@ -23,6 +23,7 @@
     const messageForm = document.querySelector("#messageForm");
     const messageInput = document.querySelector("#messageInput");
     const messageSubmitIcon = document.querySelector("#messageSubmitIcon");
+    const voiceCancelButton = document.querySelector("#voiceCancelButton");
     const attachImageButton = document.querySelector("#attachImageButton");
     const imageInput = document.querySelector("#imageInput");
     const activeChatSummary = document.querySelector("#activeChatSummary");
@@ -96,6 +97,8 @@
     let voiceRecordStartedAt = 0;
     let voiceRecordTimer = null;
     let voiceAutoStopTimer = null;
+    let activeVoicePointerId = null;
+    let isVoiceCancelArmed = false;
     let isPreparingVoice = false;
     let isRecordingVoice = false;
     let shouldStopVoiceWhenReady = false;
@@ -4261,12 +4264,16 @@
         }
 
         messageForm.classList.toggle("is-voice-recording", active);
+        if (voiceCancelButton) {
+            voiceCancelButton.hidden = !active;
+        }
         if (messageInput) {
             messageInput.disabled = active || isSending;
             messageInput.placeholder = active ? t("Recording voice message") : t("Write a message");
         }
 
         if (!active) {
+            setVoiceCancelArmed(false);
             window.clearInterval(voiceRecordTimer);
             window.clearTimeout(voiceAutoStopTimer);
             if (voiceTransferStatus) {
@@ -4288,6 +4295,29 @@
 
         updateVoiceRecordingTimer();
         voiceRecordTimer = window.setInterval(updateVoiceRecordingTimer, 200);
+    }
+
+    function setVoiceCancelArmed(armed) {
+        isVoiceCancelArmed = Boolean(armed);
+        if (messageForm) {
+            messageForm.classList.toggle("is-voice-cancel-armed", isVoiceCancelArmed);
+        }
+        if (voiceCancelButton) {
+            voiceCancelButton.classList.toggle("is-armed", isVoiceCancelArmed);
+            voiceCancelButton.setAttribute("aria-pressed", isVoiceCancelArmed ? "true" : "false");
+        }
+    }
+
+    function isPointerOverVoiceCancel(event) {
+        if (!voiceCancelButton || voiceCancelButton.hidden) {
+            return false;
+        }
+
+        const rect = voiceCancelButton.getBoundingClientRect();
+        return event.clientX >= rect.left &&
+            event.clientX <= rect.right &&
+            event.clientY >= rect.top &&
+            event.clientY <= rect.bottom;
     }
 
     function createRecordingMeterMarkup() {
@@ -4391,9 +4421,11 @@
         voiceStream = null;
         voiceChunks = [];
         voiceRecordStartedAt = 0;
+        activeVoicePointerId = null;
         isRecordingVoice = false;
         isPreparingVoice = false;
         shouldStopVoiceWhenReady = false;
+        setVoiceCancelArmed(false);
         if (messageInput) {
             messageInput.disabled = isSending;
             messageInput.placeholder = t("Write a message");
@@ -4722,8 +4754,18 @@
                     return;
                 }
 
+                activeVoicePointerId = event.pointerId;
+                setVoiceCancelArmed(false);
                 submitButton.setPointerCapture(event.pointerId);
                 startVoiceRecording(event);
+            });
+
+            submitButton.addEventListener("pointermove", (event) => {
+                if (activeVoicePointerId !== event.pointerId || (!isRecordingVoice && !isPreparingVoice)) {
+                    return;
+                }
+
+                setVoiceCancelArmed(isPointerOverVoiceCancel(event));
             });
 
             submitButton.addEventListener("pointerup", (event) => {
@@ -4732,13 +4774,13 @@
                 }
 
                 event.preventDefault();
-                stopVoiceRecording(true);
+                stopVoiceRecording(!isPointerOverVoiceCancel(event) && !isVoiceCancelArmed);
             });
 
             submitButton.addEventListener("pointercancel", () => stopVoiceRecording(false));
             submitButton.addEventListener("lostpointercapture", () => {
                 if (isRecordingVoice || isPreparingVoice) {
-                    stopVoiceRecording(true);
+                    stopVoiceRecording(!isVoiceCancelArmed);
                 }
             });
         }

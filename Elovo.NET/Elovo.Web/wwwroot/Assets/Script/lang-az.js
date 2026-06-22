@@ -259,6 +259,7 @@ window.ElovoTranslations = {
         "{name} will be removed from your friends and the entire chat history will be permanently deleted.": "{name} dostlarınızdan silinəcək və bütün çat tarixçəsi həmişəlik silinəcək.",
         "Friend could not be deleted. Try again.": "Dostu silmək mümkün olmadı. Yenidən cəhd edin.",
         "Send voice message": "Səsli mesaj göndər",
+        "Cancel voice recording": "Səsli mesaj yazısını ləğv et",
         "No conversations yet.": "Hələ söhbət yoxdur.",
         "Read": "Oxunub",
         "Pending": "Gözləyir",

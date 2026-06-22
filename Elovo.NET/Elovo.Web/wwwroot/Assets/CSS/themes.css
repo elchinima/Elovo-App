@@ -569,11 +569,11 @@ html[data-theme="light"] .voice-recording-meter i {
 }
 
 html[data-theme="dark"] .voice-cancel-button {
-    border-color: rgba(255, 111, 139, 0.38);
+    border-color: rgba(255, 111, 139, 0.54);
     background:
-        linear-gradient(135deg, rgba(255, 92, 122, 0.18), rgba(255, 122, 92, 0.12)),
-        rgba(255, 255, 255, 0.07);
-    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.42);
+        linear-gradient(135deg, rgba(255, 92, 122, 0.34), rgba(255, 122, 92, 0.22)),
+        rgba(18, 18, 18, 0.94);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.42);
 }
 
 html[data-theme="dark"] .voice-cancel-button.is-armed,
@@ -587,15 +587,15 @@ html[data-theme="dark"] .composer.is-voice-cancel-armed {
 }
 
 html[data-theme="light"] .voice-cancel-button {
-    border-color: rgba(176, 25, 58, 0.34);
+    border-color: rgba(176, 25, 58, 0.46);
     background:
-        linear-gradient(135deg, rgba(255, 92, 122, 0.18), rgba(255, 122, 92, 0.12)),
+        linear-gradient(135deg, rgba(255, 92, 122, 0.82), rgba(255, 122, 92, 0.72)),
         rgba(255, 255, 255, 0.94);
-    box-shadow: 0 14px 30px rgba(176, 25, 58, 0.16);
+    box-shadow: 0 10px 24px rgba(176, 25, 58, 0.18);
 }
 
 html[data-theme="light"] .voice-cancel-button img.button-icon[src$=".svg"] {
-    filter: brightness(0) !important;
+    filter: brightness(0) invert(1) !important;
 }
 
 html[data-theme="light"] .voice-cancel-button.is-armed,

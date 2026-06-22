@@ -1966,38 +1966,40 @@ html[lang="az"] .home-hero h1 {
 .voice-cancel-button {
     position: absolute;
     right: 18px;
-    bottom: calc(100% + 58px);
+    bottom: calc(100% + 8px);
     z-index: 3;
-    width: 46px;
-    height: 46px;
+    width: 52px;
+    min-height: 42px;
     display: grid;
     place-items: center;
-    border: 1px solid rgba(255, 92, 122, 0.32);
-    border-radius: 999px;
+    border: 1px solid rgba(255, 92, 122, 0.48);
+    border-radius: var(--radius);
     color: #fff;
-    background: rgba(255, 92, 122, 0.16);
-    box-shadow: 0 14px 28px rgba(3, 6, 18, 0.28);
+    background: rgba(255, 92, 122, 0.28);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 10px 24px rgba(3, 6, 18, 0.24);
     opacity: 0;
-    transform: translateY(8px) scale(0.92);
+    transform: translateX(8px) scale(0.96);
     transition: opacity 160ms ease, transform 160ms ease, background 160ms ease, border-color 160ms ease;
     pointer-events: none;
 }
 
 .composer.is-voice-recording .voice-cancel-button {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateX(0) scale(1);
 }
 
 .voice-cancel-button .button-icon {
-    width: 21px;
-    height: 21px;
+    width: 22px;
+    height: 22px;
+    filter: brightness(0) invert(1);
 }
 
 .voice-cancel-button.is-armed,
 .composer.is-voice-cancel-armed .voice-cancel-button {
     border-color: rgba(255, 92, 122, 0.72);
     background: linear-gradient(135deg, #ff5c7a, #ff7a5c);
-    transform: translateY(-2px) scale(1.08);
+    transform: translateX(0) scale(1.06);
 }
 
 .composer.is-voice-cancel-armed {
@@ -2024,6 +2026,10 @@ html[lang="az"] .home-hero h1 {
     font-size: 0.78rem;
     font-weight: 850;
     pointer-events: none;
+}
+
+.composer.is-voice-recording .voice-recording-status {
+    right: 82px;
 }
 
 .voice-recording-dot {

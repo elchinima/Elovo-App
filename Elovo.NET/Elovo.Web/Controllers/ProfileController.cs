@@ -146,6 +146,32 @@ public class ProfileController : Controller
         }
     }
 
+    [HttpPost("/api/profile/extended-voice-messages")]
+    public async Task<IActionResult> SetExtendedVoiceMessages([FromBody] ExtendedVoiceMessagesSettingsDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _userService.SetExtendedVoiceMessagesEnabledAsync(GetCurrentUserId(), dto.Enabled, cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    [HttpPost("/api/profile/premium-badge")]
+    public async Task<IActionResult> SetPremiumBadge([FromBody] PremiumBadgeVisibilitySettingsDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _userService.SetPremiumBadgeVisibleAsync(GetCurrentUserId(), dto.Enabled, cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("/api/profile/activity-visibility")]
     public async Task<IActionResult> SetActivityVisibility([FromBody] ActivityVisibilitySettingsDto dto, CancellationToken cancellationToken)
     {

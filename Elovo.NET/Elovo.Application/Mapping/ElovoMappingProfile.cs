@@ -14,6 +14,6 @@ public class ElovoMappingProfile : Profile
                 options => options.MapFrom(source => source.Session == null ? null : source.Session.LastSeenAt))
             .ForMember(
                 destination => destination.IsPremium,
-                options => options.MapFrom(source => source.Premium != null));
+                options => options.MapFrom(source => source.Premium != null && source.Premium.IsPremiumBadgeVisible));
     }
 }

@@ -74,7 +74,7 @@ public class UserService : IUserService
                 LastSeenAt = presence.LastSeenAt,
                 IsActivityHidden = presence.IsActivityHidden,
                 IsLastSeenHidden = presence.IsLastSeenHidden,
-                IsPremium = user.Premium is not null,
+                IsPremium = IsPremiumBadgeVisible(user),
                 ProfileImagePath = user.ProfileImagePath,
                 ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
                 LastMessage = "Start a conversation.",
@@ -122,7 +122,7 @@ public class UserService : IUserService
                 LastSeenAt = presence.LastSeenAt,
                 IsActivityHidden = presence.IsActivityHidden,
                 IsLastSeenHidden = presence.IsLastSeenHidden,
-                IsPremium = user.Premium is not null,
+                IsPremium = IsPremiumBadgeVisible(user),
                 ProfileImagePath = isFriend ? user.ProfileImagePath : null,
                 ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, isFriend),
                 Status = isFriend
@@ -292,6 +292,36 @@ public class UserService : IUserService
             twoFactor.TwoFactorCodeExpiredAt = null;
         }
 
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+    }
+
+    public async Task<ProfileDto> SetExtendedVoiceMessagesEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        if (user.Premium is null)
+        {
+            throw new InvalidOperationException("Premium is required.");
+        }
+
+        user.Premium.IsExtendedVoiceMessagesEnabled = enabled;
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+    }
+
+    public async Task<ProfileDto> SetPremiumBadgeVisibleAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        if (user.Premium is null)
+        {
+            throw new InvalidOperationException("Premium is required.");
+        }
+
+        user.Premium.IsPremiumBadgeVisible = enabled;
         _unitOfWork.Users.Update(user);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -511,8 +541,15 @@ public class UserService : IUserService
             ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
             IsTwoFactorEnabled = user.TwoFactor?.IsTwoFactorEnabled ?? false,
             IsPremium = user.Premium is not null,
+            IsExtendedVoiceMessagesEnabled = user.Premium?.IsExtendedVoiceMessagesEnabled ?? false,
+            IsPremiumBadgeVisible = user.Premium?.IsPremiumBadgeVisible ?? false,
             ActivityVisibility = NormalizeActivityVisibility(user.Session?.ActivityVisibility)
         };
+    }
+
+    private static bool IsPremiumBadgeVisible(User user)
+    {
+        return user.Premium?.IsPremiumBadgeVisible == true;
     }
 
     private async Task<string> GetUserActivityVisibilityAsync(Guid userId, CancellationToken cancellationToken)

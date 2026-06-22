@@ -38,6 +38,7 @@ public class ChatController : Controller
         ViewBag.CurrentUserProfileImageUrl = profile.ProfileImageUrl;
         ViewBag.CurrentUserActivityVisibility = profile.ActivityVisibility;
         ViewBag.CurrentUserIsPremium = profile.IsPremium;
+        ViewBag.CurrentUserHasExtendedVoiceMessages = profile.IsExtendedVoiceMessagesEnabled;
         return View();
     }
 

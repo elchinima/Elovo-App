@@ -115,7 +115,7 @@
     let instantScrollRestoreTimer = null;
     const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
     const maxImageSize = 10 * 1024 * 1024;
-    const maxVoiceDurationMs = 60 * 1000;
+    const maxVoiceDurationMs = window.elovoCurrentUserHasExtendedVoiceMessages ? 180 * 1000 : 60 * 1000;
     const maxUnansweredCallDurationMs = 60 * 1000;
     const activityVisibilityModes = ["full", "online", "hidden"];
     const voiceAudioBitRate = 64000;
@@ -4302,7 +4302,7 @@
         const elapsed = Math.min(maxVoiceDurationMs, Date.now() - voiceRecordStartedAt);
         const timer = voiceTransferStatus.querySelector(".voice-recording-copy");
         if (timer) {
-            timer.textContent = `${formatVoiceDuration(elapsed / 1000)} / 1:00`;
+            timer.textContent = `${formatVoiceDuration(elapsed / 1000)} / ${formatVoiceDuration(maxVoiceDurationMs / 1000)}`;
         }
 
         messageForm.style.setProperty("--voice-record-progress", `${(elapsed / maxVoiceDurationMs) * 100}%`);
@@ -4417,7 +4417,7 @@
         }
 
         const blob = new Blob(chunks, { type });
-        await sendVoiceBlob(blob, Math.min(durationMs / 1000, 60));
+        await sendVoiceBlob(blob, Math.min(durationMs / 1000, maxVoiceDurationMs / 1000));
     }
 
     function uploadVoice(blob) {

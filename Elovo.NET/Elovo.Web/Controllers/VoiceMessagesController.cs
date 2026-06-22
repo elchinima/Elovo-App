@@ -4,7 +4,8 @@ namespace Elovo.Web.Controllers;
 [ApiController]
 public class VoiceMessagesController : ControllerBase
 {
-    private const long MaxVoiceBytes = 1024 * 1024;
+    private const long StandardMaxVoiceBytes = 1024 * 1024;
+    private const long ExtendedMaxVoiceBytes = 3 * 1024 * 1024;
     private const string StoredVoiceExtension = ".mp3";
     private const string StoredVoiceContentType = "audio/mpeg";
     private static readonly IReadOnlyDictionary<string, string> RecorderInputExtensions =
@@ -16,15 +17,17 @@ public class VoiceMessagesController : ControllerBase
     };
 
     private readonly IImageStorageService _imageStorageService;
+    private readonly IUserService _userService;
 
-    public VoiceMessagesController(IImageStorageService imageStorageService)
+    public VoiceMessagesController(IImageStorageService imageStorageService, IUserService userService)
     {
         _imageStorageService = imageStorageService;
+        _userService = userService;
     }
 
     [HttpPost("/api/messages/voice")]
-    [RequestSizeLimit(MaxVoiceBytes)]
-    [RequestFormLimits(MultipartBodyLengthLimit = MaxVoiceBytes)]
+    [RequestSizeLimit(ExtendedMaxVoiceBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = ExtendedMaxVoiceBytes)]
     public async Task<IActionResult> Upload([FromForm] IFormFile? voice, CancellationToken cancellationToken)
     {
         if (voice is null || voice.Length == 0)
@@ -32,9 +35,13 @@ public class VoiceMessagesController : ControllerBase
             return BadRequest("Voice message is required.");
         }
 
-        if (voice.Length > MaxVoiceBytes)
+        var profile = await _userService.GetProfileAsync(GetCurrentUserId(), cancellationToken);
+        var maxVoiceBytes = profile.IsExtendedVoiceMessagesEnabled ? ExtendedMaxVoiceBytes : StandardMaxVoiceBytes;
+        if (voice.Length > maxVoiceBytes)
         {
-            return BadRequest("Voice message must be 1 MB or less.");
+            return BadRequest(profile.IsExtendedVoiceMessagesEnabled
+                ? "Voice message must be 3 MB or less."
+                : "Voice message must be 1 MB or less.");
         }
 
         if (!TryGetRecorderInputExtension(voice.ContentType, out var inputExtension))

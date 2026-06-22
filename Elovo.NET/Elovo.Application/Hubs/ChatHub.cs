@@ -4,6 +4,8 @@ namespace Elovo.Application.Hubs;
 [Authorize]
 public class ChatHub : Hub
 {
+    private const double StandardVoiceMessageLimitSeconds = 60.5;
+    private const double ExtendedVoiceMessageLimitSeconds = 180.5;
     private readonly IMessageService _messageService;
     private readonly IUserService _userService;
     private readonly IUnitOfWork _unitOfWork;
@@ -128,13 +130,21 @@ public class ChatHub : Hub
     {
         if (string.IsNullOrWhiteSpace(voicePath) ||
             !_imageStorageService.IsVoicePath(voicePath) ||
-            durationSeconds <= 0 ||
-            durationSeconds > 60.5)
+            durationSeconds <= 0)
         {
             return;
         }
 
         var senderId = GetCurrentUserId();
+        var sender = await _userService.GetProfileAsync(senderId, Context.ConnectionAborted);
+        var maxDurationSeconds = sender.IsExtendedVoiceMessagesEnabled
+            ? ExtendedVoiceMessageLimitSeconds
+            : StandardVoiceMessageLimitSeconds;
+        if (durationSeconds > maxDurationSeconds)
+        {
+            return;
+        }
+
         var message = await _messageService.SendVoiceMessageAsync(senderId, new SendMessageDto
         {
             ReceiverId = receiverId,

@@ -352,6 +352,7 @@
     window.elovoCurrentUserProfileImageUrl = "@ViewBag.CurrentUserProfileImageUrl";
     window.elovoCurrentUserActivityVisibility = @Json.Serialize(ViewBag.CurrentUserActivityVisibility ?? "full");
     window.elovoCurrentUserIsPremium = @Json.Serialize(ViewBag.CurrentUserIsPremium == true);
+    window.elovoCurrentUserHasExtendedVoiceMessages = @Json.Serialize(ViewBag.CurrentUserHasExtendedVoiceMessages == true);
 </script>
 
 @section Scripts {

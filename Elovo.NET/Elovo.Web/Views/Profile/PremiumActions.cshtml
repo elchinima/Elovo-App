@@ -4,6 +4,7 @@
 }
 
 <main class="app-shell">
+    @Html.AntiForgeryToken()
     <section class="profile-view is-active" id="premiumActionsView" aria-label="Premium actions">
         <header class="profile-topbar">
             <div class="settings-title-row">
@@ -44,7 +45,40 @@
                         <span>@(Model.IsPremium ? "Active" : "Not active")</span>
                     </div>
                 </div>
+                <div class="profile-toggle-row">
+                    <div>
+                        <strong>3-minute voice messages</strong>
+                        <span>Allow voice messages up to 3 minutes while Premium is active.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="extendedVoiceMessagesToggle" @(Model.IsExtendedVoiceMessagesEnabled ? "checked" : "")>
+                        <span></span>
+                    </label>
+                </div>
+                <p class="profile-status" id="extendedVoiceMessagesStatus"></p>
+                <div class="profile-toggle-row">
+                    <div>
+                        <strong>Premium badge near username</strong>
+                        <span>Show your Premium badge next to your name for other users.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="premiumBadgeToggle" @(Model.IsPremiumBadgeVisible ? "checked" : "")>
+                        <span></span>
+                    </label>
+                </div>
+                <p class="profile-status" id="premiumBadgeStatus"></p>
             </section>
         </div>
     </section>
 </main>
+
+<script>
+    window.elovoPremiumActions = {
+        isExtendedVoiceMessagesEnabled: @Json.Serialize(Model.IsExtendedVoiceMessagesEnabled),
+        isPremiumBadgeVisible: @Json.Serialize(Model.IsPremiumBadgeVisible)
+    };
+</script>
+
+@section Scripts {
+    <script src="~/Assets/Script/premium-actions.js" asp-append-version="true"></script>
+}

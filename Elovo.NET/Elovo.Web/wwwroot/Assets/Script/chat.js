@@ -99,6 +99,7 @@
     let voiceAutoStopTimer = null;
     let activeVoicePointerId = null;
     let isVoiceCancelArmed = false;
+    let lastVoicePointerEvent = null;
     let isPreparingVoice = false;
     let isRecordingVoice = false;
     let shouldStopVoiceWhenReady = false;
@@ -3814,20 +3815,18 @@
         const previouslyAllowedIds = new Set(state.allowedIds);
 
         const boundaryId = getOldestAllowedMediaId(userId, messages);
-        if (!boundaryId) {
-            return;
-        }
-
-        const boundary = Array.from(messageStream.querySelectorAll("[data-message-id]"))
-            .find((element) => element.dataset.messageId === boundaryId);
-        if (!boundary) {
-            return;
-        }
-
-        const streamRect = messageStream.getBoundingClientRect();
-        const boundaryRect = boundary.getBoundingClientRect();
-        if (boundaryRect.top > streamRect.top + mediaBatchBoundaryOffsetPx) {
-            return;
+        if (boundaryId) {
+            const boundary = Array.from(messageStream.querySelectorAll("[data-message-id]"))
+                .find((element) => element.dataset.messageId === boundaryId);
+            if (boundary) {
+                const streamRect = messageStream.getBoundingClientRect();
+                const boundaryRect = boundary.getBoundingClientRect();
+                if (boundaryRect.top > streamRect.top + mediaBatchBoundaryOffsetPx) {
+                    return;
+                }
+            } else if (currentScrollTop > mediaBatchBoundaryOffsetPx) {
+                return;
+            }
         }
 
         if (allowOlderMediaBatch(userId, messages)) {
@@ -4352,6 +4351,14 @@
             event.clientY <= rect.bottom;
     }
 
+    function rememberVoicePointer(event) {
+        lastVoicePointerEvent = {
+            pointerId: event.pointerId,
+            clientX: event.clientX,
+            clientY: event.clientY
+        };
+    }
+
     function hasActiveVoicePointer(event) {
         return activeVoicePointerId !== null && event.pointerId === activeVoicePointerId;
     }
@@ -4373,6 +4380,7 @@
             return;
         }
 
+        rememberVoicePointer(event);
         setVoiceCancelArmed(isPointerOverVoiceCancel(event));
     }
 
@@ -4382,6 +4390,7 @@
         }
 
         event.preventDefault();
+        rememberVoicePointer(event);
         const shouldSend = !isPointerOverVoiceCancel(event) && !isVoiceCancelArmed;
         removeVoicePointerListeners();
         stopVoiceRecording(shouldSend);
@@ -4467,6 +4476,9 @@
             voiceRecorder.start();
             isRecordingVoice = true;
             setVoiceRecordingState(true);
+            if (lastVoicePointerEvent) {
+                setVoiceCancelArmed(isPointerOverVoiceCancel(lastVoicePointerEvent));
+            }
             voiceAutoStopTimer = window.setTimeout(() => stopVoiceRecording(true), maxVoiceDurationMs);
 
             if (shouldStopVoiceWhenReady) {
@@ -4501,6 +4513,7 @@
         voiceRecordStartedAt = 0;
         removeVoicePointerListeners();
         activeVoicePointerId = null;
+        lastVoicePointerEvent = null;
         isRecordingVoice = false;
         isPreparingVoice = false;
         shouldStopVoiceWhenReady = false;
@@ -4833,7 +4846,12 @@
                     return;
                 }
 
+                if (!canStartVoiceRecording()) {
+                    return;
+                }
+
                 activeVoicePointerId = event.pointerId;
+                rememberVoicePointer(event);
                 setVoiceCancelArmed(false);
                 addVoicePointerListeners();
                 try {

@@ -641,6 +641,78 @@
         });
     }
 
+    function isElementNearMessageViewport(element, margin = 80) {
+        if (!messageStream || !element) {
+            return false;
+        }
+
+        const streamRect = messageStream.getBoundingClientRect();
+        const rect = element.getBoundingClientRect();
+        return rect.bottom >= streamRect.top - margin && rect.top <= streamRect.bottom + margin;
+    }
+
+    function getVisibleDeferredMediaMessages(messages) {
+        if (!messageStream || !activeConversation) {
+            return [];
+        }
+
+        const state = getMediaState(activeConversation.userId);
+        const mediaMessages = getMediaMessages(messages);
+        const visible = [];
+
+        for (const message of mediaMessages) {
+            if (!message.id || state.allowedIds.has(message.id)) {
+                continue;
+            }
+
+            const bubble = Array.from(messageStream.querySelectorAll("[data-message-id]"))
+                .find((element) => element.dataset.messageId === `${message.id}`);
+            const media = bubble?.querySelector(".message-image-frame[aria-busy='true'], .message-voice[aria-busy='true']");
+            if (media && isElementNearMessageViewport(media)) {
+                visible.push(message);
+            }
+
+            if (visible.length >= mediaBatchSize) {
+                break;
+            }
+        }
+
+        return visible;
+    }
+
+    function allowVisibleDeferredMediaBatch(userId, messages) {
+        const state = prepareMediaState(userId, messages);
+        if (state.exhausted) {
+            return false;
+        }
+
+        const visibleMessages = getVisibleDeferredMediaMessages(messages);
+        if (visibleMessages.length === 0) {
+            return false;
+        }
+
+        const previouslyAllowedIds = new Set(state.allowedIds);
+        allowMediaMessages(state, visibleMessages);
+        state.exhausted = getMediaMessages(messages).every((message) => !message.id || state.allowedIds.has(message.id));
+        renderAllowedMediaMessages(getNewlyAllowedMediaMessages(userId, messages, previouslyAllowedIds));
+        queueAllowedMediaLoad(userId, messages);
+        return true;
+    }
+
+    function requestVisibleDeferredMediaCheck(userId) {
+        if (!userId) {
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            if (!activeConversation || !sameId(activeConversation.userId, userId)) {
+                return;
+            }
+
+            allowVisibleDeferredMediaBatch(userId, readStoredMessages(userId));
+        });
+    }
+
     function getOldestAllowedMediaId(userId, messages) {
         const state = getMediaState(userId);
         return getMediaMessages(messages).find((message) => message.id && state.allowedIds.has(message.id))?.id || "";
@@ -2764,6 +2836,7 @@
         await markCachedAllowedMediaReady(userId, messages);
         syncRenderedMessages(messages, options);
         queueAllowedMediaLoad(userId, messages);
+        requestVisibleDeferredMediaCheck(userId);
     }
 
     function scrollMessageStreamToBottom({ smooth = true } = {}) {
@@ -3785,6 +3858,7 @@
         await markCachedAllowedMediaReady(userId, messages);
         renderMessages(messages, options);
         queueAllowedMediaLoad(userId, messages);
+        requestVisibleDeferredMediaCheck(userId);
     }
 
     function maybeLoadOlderMediaBatch() {
@@ -3808,6 +3882,10 @@
         const userId = activeConversation.userId;
         const messages = readStoredMessages(userId);
         const state = prepareMediaState(userId, messages);
+        if (allowVisibleDeferredMediaBatch(userId, messages)) {
+            return;
+        }
+
         if (state.exhausted || state.batchPromise) {
             return;
         }

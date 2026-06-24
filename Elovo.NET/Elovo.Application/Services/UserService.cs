@@ -313,6 +313,21 @@ public class UserService : IUserService
         return ToProfileDto(user);
     }
 
+    public async Task<ProfileDto> SetRawImageUploadsEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default)
+    {
+        var user = await GetRequiredUserAsync(userId, cancellationToken);
+        if (user.Premium is null)
+        {
+            throw new InvalidOperationException("Premium is required.");
+        }
+
+        user.Premium.IsRawImageUploadsEnabled = enabled;
+        _unitOfWork.Users.Update(user);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToProfileDto(user);
+    }
+
     public async Task<ProfileDto> SetPremiumBadgeVisibleAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default)
     {
         var user = await GetRequiredUserAsync(userId, cancellationToken);
@@ -542,6 +557,7 @@ public class UserService : IUserService
             IsTwoFactorEnabled = user.TwoFactor?.IsTwoFactorEnabled ?? false,
             IsPremium = user.Premium is not null,
             IsExtendedVoiceMessagesEnabled = user.Premium?.IsExtendedVoiceMessagesEnabled ?? false,
+            IsRawImageUploadsEnabled = user.Premium?.IsRawImageUploadsEnabled ?? false,
             IsPremiumBadgeVisible = user.Premium?.IsPremiumBadgeVisible ?? false,
             ActivityVisibility = NormalizeActivityVisibility(user.Session?.ActivityVisibility)
         };

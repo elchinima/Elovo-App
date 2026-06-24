@@ -12,6 +12,7 @@ public class ProfileDto
     public bool IsTwoFactorEnabled { get; set; }
     public bool IsPremium { get; set; }
     public bool IsExtendedVoiceMessagesEnabled { get; set; }
+    public bool IsRawImageUploadsEnabled { get; set; }
     public bool IsPremiumBadgeVisible { get; set; }
     public string ActivityVisibility { get; set; } = "full";
     public string Initial => string.IsNullOrWhiteSpace(Username) ? "?" : Username[..1].ToUpperInvariant();

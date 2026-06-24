@@ -4,6 +4,8 @@
     const extendedVoiceStatus = document.querySelector("#extendedVoiceMessagesStatus");
     const premiumBadgeToggle = document.querySelector("#premiumBadgeToggle");
     const premiumBadgeStatus = document.querySelector("#premiumBadgeStatus");
+    const rawImageUploadsToggle = document.querySelector("#rawImageUploadsToggle");
+    const rawImageUploadsStatus = document.querySelector("#rawImageUploadsStatus");
 
     function setStatus(element, message, type = "") {
         const status = element;
@@ -70,6 +72,18 @@
             profileKey: "isPremiumBadgeVisible",
             successEnabled: "Premium badge enabled.",
             successDisabled: "Premium badge hidden."
+        }));
+    }
+
+    if (rawImageUploadsToggle) {
+        rawImageUploadsToggle.addEventListener("change", () => savePremiumSetting({
+            toggle: rawImageUploadsToggle,
+            status: rawImageUploadsStatus,
+            endpoint: "/api/profile/raw-image-uploads",
+            enabled: rawImageUploadsToggle.checked,
+            profileKey: "isRawImageUploadsEnabled",
+            successEnabled: "Raw image uploads enabled.",
+            successDisabled: "Raw image uploads disabled."
         }));
     }
 })();

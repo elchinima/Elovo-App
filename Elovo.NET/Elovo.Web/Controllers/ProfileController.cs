@@ -172,6 +172,19 @@ public class ProfileController : Controller
         }
     }
 
+    [HttpPost("/api/profile/raw-image-uploads")]
+    public async Task<IActionResult> SetRawImageUploads([FromBody] RawImageUploadsSettingsDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _userService.SetRawImageUploadsEnabledAsync(GetCurrentUserId(), dto.Enabled, cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("/api/profile/activity-visibility")]
     public async Task<IActionResult> SetActivityVisibility([FromBody] ActivityVisibilitySettingsDto dto, CancellationToken cancellationToken)
     {

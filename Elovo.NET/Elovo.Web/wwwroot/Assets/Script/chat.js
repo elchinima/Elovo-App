@@ -1041,6 +1041,38 @@
         return `${match[1]}MP${match[2] ? "+" : ""}`;
     }
 
+    function isRawImagePath(path) {
+        return /_raw(?:_mp(?:12|48|50|64|100|108|200)(?:plus)?)?\.(?:png|jpe?g|gif|webp)(?:$|[?#])/i.test(String(path || ""));
+    }
+
+    function isRawImageMessage(message) {
+        return Boolean(
+            message &&
+            (isRawImagePath(message.imageStoragePath || message.content || message.imagePath) ||
+                /\(\s*raw\s*\)/i.test(message.imageFileName || ""))
+        );
+    }
+
+    function getImageResolutionLabel(message, megapixelLabel) {
+        const parts = [];
+        if (isRawImageMessage(message)) {
+            parts.push("Raw");
+        }
+        if (megapixelLabel) {
+            parts.push(megapixelLabel);
+        }
+
+        return parts.join(" ");
+    }
+
+    function getImageFileName(message) {
+        return message.imageFileName || "";
+    }
+
+    function getImageDownloadFileName(message) {
+        return getImageFileName(message) || "elovo-image";
+    }
+
     function applyLocalConversationHistory(items) {
         return items
             .map((chat) => {
@@ -3053,9 +3085,10 @@
     }
 
     async function downloadImageMessage(message) {
+        const fileName = getImageDownloadFileName(message);
         if (window.AndroidBridge && window.AndroidBridge.downloadFile && message.imagePath) {
             const absoluteUrl = new URL(message.imagePath, window.location.origin).href;
-            window.AndroidBridge.downloadFile(absoluteUrl, "image.jpg");
+            window.AndroidBridge.downloadFile(absoluteUrl, fileName);
             return;
         }
 
@@ -3075,7 +3108,7 @@
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = message.imageFileName || "elovo-image";
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -3126,12 +3159,13 @@
         let previewPath = message.imagePath;
         let objectUrl = null;
         const pathResolutionLabel = getImageMegapixelLabelFromPath(message.imageStoragePath || message.content || message.imagePath);
+        const imageFileName = getImageFileName(message);
         const canLoadMedia = isMessageMediaAllowed(message);
 
         frame.type = "button";
         frame.className = "message-image-frame is-loading";
-        frame.title = message.imageFileName || t("Open image");
-        image.alt = message.imageFileName || t("Sent image");
+        frame.title = imageFileName || t("Open image");
+        image.alt = imageFileName || t("Sent image");
         image.loading = "eager";
         loader.className = "image-transfer-loader";
         resolution.className = "message-image-resolution";
@@ -3148,7 +3182,8 @@
         image.addEventListener("load", () => {
             frame.classList.remove("is-loading");
             frame.classList.remove("is-error");
-            const label = pathResolutionLabel || getImageMegapixelLabel(image.naturalWidth, image.naturalHeight);
+            const megapixelLabel = pathResolutionLabel || getImageMegapixelLabel(image.naturalWidth, image.naturalHeight);
+            const label = getImageResolutionLabel(message, megapixelLabel);
             resolution.textContent = label;
             resolution.hidden = !label;
         });
@@ -3170,7 +3205,7 @@
             image.src = previewPath;
         });
 
-        frame.addEventListener("click", () => openImagePreview(previewPath, message.imageFileName));
+        frame.addEventListener("click", () => openImagePreview(previewPath, imageFileName));
         frame.addEventListener("DOMNodeRemoved", () => {
             if (objectUrl) {
                 URL.revokeObjectURL(objectUrl);
@@ -4327,7 +4362,7 @@
         try {
             const image = await uploadImage(file);
             const imageStorageKey = getImageStorageKey(image.path);
-            if (imageStorageKey) {
+            if (imageStorageKey && image.isRaw) {
                 pendingUploadedImages.set(imageStorageKey, file);
             }
 

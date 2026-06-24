@@ -80,6 +80,7 @@ public class ElovoDbContext : DbContext
             entity.ToTable("UserPremium");
             entity.HasKey(x => x.UserId);
             entity.Property(x => x.IsExtendedVoiceMessagesEnabled).HasDefaultValue(false);
+            entity.Property(x => x.IsRawImageUploadsEnabled).HasDefaultValue(false);
             entity.Property(x => x.IsPremiumBadgeVisible).HasDefaultValue(true);
 
             entity.HasOne(x => x.User)

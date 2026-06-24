@@ -21,10 +21,14 @@ public class ImageMessagesController : ControllerBase
     };
 
     private readonly IImageStorageService _imageStorageService;
+    private readonly IUserService _userService;
 
-    public ImageMessagesController(IImageStorageService imageStorageService)
+    public ImageMessagesController(
+        IImageStorageService imageStorageService,
+        IUserService userService)
     {
         _imageStorageService = imageStorageService;
+        _userService = userService;
     }
 
     [HttpPost("/api/messages/images")]
@@ -48,31 +52,36 @@ public class ImageMessagesController : ControllerBase
             return BadRequest("Only PNG, JPEG, JPG and GIF images are allowed.");
         }
 
-        await using var compressed = new MemoryStream();
-        ImageCompressionResult compression;
+        var useRawImage = await IsRawImageUploadEnabledAsync(cancellationToken);
+        await using var processed = new MemoryStream();
+        ImageProcessingResult processing;
 
         try
         {
             using var input = image.OpenReadStream();
-            compression = await SaveCompressedImageAsync(input, extension, compressed, cancellationToken);
+            processing = useRawImage
+                ? await SaveRawImageAsync(input, processed, cancellationToken)
+                : await SaveCompressedImageAsync(input, extension, processed, cancellationToken);
         }
-        catch (InvalidOperationException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return BadRequest("Image file is invalid.");
         }
 
-        var fileName = Path.GetFileName(image.FileName);
-        var megapixelToken = GetMegapixelPathToken(compression.MegapixelLabel);
-        var storagePath = $"messages/{GetCurrentUserId():N}/{Guid.NewGuid():N}{megapixelToken}{extension.ToLowerInvariant()}";
+        var fileName = GetTaggedImageFileName(image.FileName, processing.IsRaw);
+        var rawToken = processing.IsRaw ? "_raw" : string.Empty;
+        var megapixelToken = GetMegapixelPathToken(processing.MegapixelLabel);
+        var storagePath = $"messages/{GetCurrentUserId():N}/{Guid.NewGuid():N}{rawToken}{megapixelToken}{extension.ToLowerInvariant()}";
 
-        compressed.Position = 0;
-        var upload = await _imageStorageService.UploadAsync(compressed, storagePath, GetContentType(extension), cancellationToken);
+        processed.Position = 0;
+        var upload = await _imageStorageService.UploadAsync(processed, storagePath, GetContentType(extension), cancellationToken);
 
         return Ok(new
         {
             path = upload.Path,
             url = upload.Url,
-            fileName
+            fileName,
+            isRaw = processing.IsRaw
         });
     }
 
@@ -119,9 +128,29 @@ public class ImageMessagesController : ControllerBase
         return "image/jpeg";
     }
 
-    private sealed record ImageCompressionResult(string MegapixelLabel);
+    private async Task<bool> IsRawImageUploadEnabledAsync(CancellationToken cancellationToken)
+    {
+        var profile = await _userService.GetProfileAsync(GetCurrentUserId(), cancellationToken);
+        return profile.IsPremium && profile.IsRawImageUploadsEnabled;
+    }
 
-    private static async Task<ImageCompressionResult> SaveCompressedImageAsync(Stream input, string extension, Stream output, CancellationToken cancellationToken)
+    private sealed record ImageProcessingResult(string MegapixelLabel, bool IsRaw);
+
+    private static async Task<ImageProcessingResult> SaveRawImageAsync(Stream input, Stream output, CancellationToken cancellationToken)
+    {
+        await input.CopyToAsync(output, cancellationToken);
+        output.Position = 0;
+        var imageInfo = await Image.IdentifyAsync(output, cancellationToken);
+        if (imageInfo is null)
+        {
+            throw new InvalidOperationException("Image file is invalid.");
+        }
+
+        output.Position = 0;
+        return new ImageProcessingResult(GetImageMegapixelLabel(imageInfo.Width, imageInfo.Height), IsRaw: true);
+    }
+
+    private static async Task<ImageProcessingResult> SaveCompressedImageAsync(Stream input, string extension, Stream output, CancellationToken cancellationToken)
     {
         using var image = await Image.LoadAsync(input, cancellationToken);
         var width = Math.Max(1, (int)Math.Round(image.Width * ImageResizeRatio));
@@ -141,7 +170,7 @@ public class ImageMessagesController : ControllerBase
             {
                 Quality = ImageQuality
             }, cancellationToken);
-            return new ImageCompressionResult(megapixelLabel);
+            return new ImageProcessingResult(megapixelLabel, IsRaw: false);
         }
 
         if (extension.Equals(".png", StringComparison.OrdinalIgnoreCase))
@@ -150,11 +179,11 @@ public class ImageMessagesController : ControllerBase
             {
                 CompressionLevel = PngCompressionLevel.BestCompression
             }, cancellationToken);
-            return new ImageCompressionResult(megapixelLabel);
+            return new ImageProcessingResult(megapixelLabel, IsRaw: false);
         }
 
         await image.SaveAsGifAsync(output, cancellationToken);
-        return new ImageCompressionResult(megapixelLabel);
+        return new ImageProcessingResult(megapixelLabel, IsRaw: false);
     }
 
     private static string GetImageMegapixelLabel(int width, int height)
@@ -239,5 +268,21 @@ public class ImageMessagesController : ControllerBase
         return string.IsNullOrWhiteSpace(label)
             ? string.Empty
             : $"_mp{label.Replace("MP", string.Empty, StringComparison.Ordinal).Replace("+", "plus", StringComparison.Ordinal)}";
+    }
+
+    private static string GetTaggedImageFileName(string fileName, bool isRaw)
+    {
+        var cleanFileName = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(cleanFileName))
+        {
+            cleanFileName = "image";
+        }
+
+        var tag = isRaw ? "Raw" : "Compressed";
+        var name = Path.GetFileNameWithoutExtension(cleanFileName);
+        var extension = Path.GetExtension(cleanFileName);
+        return string.IsNullOrWhiteSpace(extension)
+            ? $"{name} ({tag})"
+            : $"{name} ({tag}){extension}";
     }
 }

@@ -3195,8 +3195,8 @@
         
         if (isVideo) {
             media.muted = true;
-            media.loop = true;
-            media.autoplay = true;
+            media.loop = false;
+            media.autoplay = false;
             media.playsInline = true;
         } else {
             media.alt = imageFileName || t("Sent image");
@@ -3213,6 +3213,12 @@
             frame.setAttribute("aria-busy", "true");
             frame.append(media, loader, resolution);
             return frame;
+        }
+
+        const playOverlay = isVideo ? document.createElement("div") : null;
+        if (playOverlay) {
+            playOverlay.className = "video-play-overlay";
+            playOverlay.innerHTML = `<img src="/Assets/Images/Icons/play-voice.svg" alt="">`;
         }
 
         const loadEvent = isVideo ? "loadedmetadata" : "load";
@@ -3254,7 +3260,12 @@
                 URL.revokeObjectURL(objectUrl);
             }
         }, { once: true });
-        frame.append(media, loader, resolution);
+
+        if (playOverlay) {
+            frame.append(media, playOverlay, loader, resolution);
+        } else {
+            frame.append(media, loader, resolution);
+        }
         return frame;
     }
 
@@ -4406,8 +4417,20 @@
 
             try {
                 const video = await uploadImage(file);
+                const videoStorageKey = getImageStorageKey(video.path);
+                if (videoStorageKey) {
+                    pendingUploadedImages.set(videoStorageKey, file);
+                }
+
                 setImageTransferState(true, 100);
-                await connection.invoke("SendImageMessage", targetConversationId, video.path, video.fileName || file.name);
+                try {
+                    await connection.invoke("SendImageMessage", targetConversationId, video.path, video.fileName || file.name);
+                } catch (error) {
+                    if (videoStorageKey) {
+                        pendingUploadedImages.delete(videoStorageKey);
+                    }
+                    throw error;
+                }
             } catch (error) {
                 uploadErrorMessage = error?.message || t("Image upload failed.");
             } finally {
@@ -4433,7 +4456,7 @@
         try {
             const image = await uploadImage(file);
             const imageStorageKey = getImageStorageKey(image.path);
-            if (imageStorageKey && image.isRaw) {
+            if (imageStorageKey) {
                 pendingUploadedImages.set(imageStorageKey, file);
             }
 

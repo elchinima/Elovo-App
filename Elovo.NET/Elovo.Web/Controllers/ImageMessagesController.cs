@@ -153,18 +153,22 @@ public class ImageMessagesController : ControllerBase
     }
 
     [HttpGet("/api/messages/images/file")]
+    [HttpGet("/api/messages/videos/file")]
     public async Task<IActionResult> Download([FromQuery] string path, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(path) || !_imageStorageService.IsImagePath(path))
+        var isImage = _imageStorageService.IsImagePath(path);
+        var isVideo = _imageStorageService.IsVideoPath(path);
+
+        if (string.IsNullOrWhiteSpace(path) || (!isImage && !isVideo))
         {
             return NotFound();
         }
 
         try
         {
-            var image = await _imageStorageService.DownloadAsync(path, cancellationToken);
+            var media = await _imageStorageService.DownloadAsync(path, cancellationToken);
             Response.Headers.CacheControl = "private, max-age=604800";
-            return File(image.Bytes, image.ContentType, "image.jpg");
+            return File(media.Bytes, media.ContentType, isVideo ? "video.mp4" : "image.jpg");
         }
         catch (Exception)
         {

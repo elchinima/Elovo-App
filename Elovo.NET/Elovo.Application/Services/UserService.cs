@@ -739,7 +739,7 @@ public class UserService : IUserService
 
     private async Task DeletePendingMessageMediaAsync(PendingMessage message, CancellationToken cancellationToken)
     {
-        if (_imageStorageService.IsImagePath(message.Content))
+        if (_imageStorageService.IsImagePath(message.Content) || _imageStorageService.IsVideoPath(message.Content))
         {
             await _imageStorageService.DeleteAsync(message.Content, cancellationToken);
         }

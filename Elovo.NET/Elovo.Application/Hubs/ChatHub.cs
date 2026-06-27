@@ -95,7 +95,7 @@ public class ChatHub : Hub
 
     public async Task SendImageMessage(Guid receiverId, string imagePath, string? fileName)
     {
-        if (string.IsNullOrWhiteSpace(imagePath) || !_imageStorageService.IsImagePath(imagePath))
+        if (string.IsNullOrWhiteSpace(imagePath) || (!_imageStorageService.IsImagePath(imagePath) && !_imageStorageService.IsVideoPath(imagePath)))
         {
             return;
         }
@@ -199,6 +199,7 @@ public class ChatHub : Hub
         if (message is null ||
             message.SenderId != senderId ||
             _imageStorageService.IsImagePath(message.Content) ||
+            _imageStorageService.IsVideoPath(message.Content) ||
             message.IsVoice ||
             message.IsCall)
         {
@@ -524,7 +525,7 @@ public class ChatHub : Hub
 
         foreach (var message in messages)
         {
-            var isImage = _imageStorageService.IsImagePath(message.Content);
+            var isImage = _imageStorageService.IsImagePath(message.Content) || _imageStorageService.IsVideoPath(message.Content);
             var isVoice = message.IsVoice && !string.IsNullOrWhiteSpace(message.VoiceUrl) && _imageStorageService.IsVoicePath(message.VoiceUrl);
             await Clients.Caller.SendAsync("ReceiveMessage", new MessageDto
             {
@@ -631,7 +632,7 @@ public class ChatHub : Hub
 
     private async Task DeletePendingMessageMediaAsync(PendingMessage message)
     {
-        if (_imageStorageService.IsImagePath(message.Content))
+        if (_imageStorageService.IsImagePath(message.Content) || _imageStorageService.IsVideoPath(message.Content))
         {
             await _imageStorageService.DeleteAsync(message.Content, Context.ConnectionAborted);
         }

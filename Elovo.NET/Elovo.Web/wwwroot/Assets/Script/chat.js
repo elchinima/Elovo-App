@@ -4387,6 +4387,40 @@
             return;
         }
 
+        const isVideo = allowedVideoTypes.includes(file.type);
+
+        if (isVideo) {
+            if (!window.elovoCurrentUserHasVideoUploads) {
+                showImageTransferError(t("Video uploads are not enabled."));
+                return;
+            }
+
+            if (file.size > maxVideoSize) {
+                showImageTransferError(t("Video size must be 50 MB or less."));
+                return;
+            }
+
+            isSending = true;
+            setImageTransferState(true, 0);
+            let uploadErrorMessage = "";
+
+            try {
+                const video = await uploadImage(file);
+                setImageTransferState(true, 100);
+                await connection.invoke("SendImageMessage", targetConversationId, video.path, video.fileName || file.name);
+            } catch (error) {
+                uploadErrorMessage = error?.message || t("Image upload failed.");
+            } finally {
+                isSending = false;
+                setImageTransferState(false);
+                if (uploadErrorMessage) {
+                    showImageTransferError(uploadErrorMessage);
+                }
+                focusComposerInput();
+            }
+            return;
+        }
+
         if (!allowedImageTypes.includes(file.type) || file.size > maxImageSize) {
             setImageTransferState(false);
             return;

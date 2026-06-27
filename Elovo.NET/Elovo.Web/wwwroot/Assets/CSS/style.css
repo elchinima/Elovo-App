@@ -394,6 +394,10 @@ input:disabled {
     transition: transform 180ms ease, filter 180ms ease, opacity 180ms ease;
 }
 
+.send-button {
+    touch-action: none;
+}
+
 .send-button .button-icon {
     width: 27px;
     height: 27px;

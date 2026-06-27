@@ -4480,12 +4480,18 @@
         window.addEventListener("pointermove", handleVoicePointerMove, true);
         window.addEventListener("pointerup", handleVoicePointerUp, true);
         window.addEventListener("pointercancel", handleVoicePointerCancel, true);
+        window.addEventListener("touchmove", handleVoiceTouchMove, { capture: true, passive: false });
+        window.addEventListener("touchend", handleVoiceTouchEnd, { capture: true, passive: false });
+        window.addEventListener("touchcancel", handleVoiceTouchCancel, true);
     }
 
     function removeVoicePointerListeners() {
         window.removeEventListener("pointermove", handleVoicePointerMove, true);
         window.removeEventListener("pointerup", handleVoicePointerUp, true);
         window.removeEventListener("pointercancel", handleVoicePointerCancel, true);
+        window.removeEventListener("touchmove", handleVoiceTouchMove, true);
+        window.removeEventListener("touchend", handleVoiceTouchEnd, true);
+        window.removeEventListener("touchcancel", handleVoiceTouchCancel, true);
     }
 
     function handleVoicePointerMove(event) {
@@ -4514,10 +4520,55 @@
             return;
         }
 
-        if (isVoiceCancelArmed) {
+        if (!isTouchDevice()) {
             removeVoicePointerListeners();
             stopVoiceRecording(false);
         }
+    }
+
+    function isTouchDevice() {
+        return navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+    }
+
+    function handleVoiceTouchMove(event) {
+        if (!isRecordingVoice && !isPreparingVoice) {
+            return;
+        }
+
+        const touch = event.changedTouches && event.changedTouches[0];
+        if (!touch) {
+            return;
+        }
+
+        event.preventDefault();
+        const syntheticEvent = { clientX: touch.clientX, clientY: touch.clientY };
+        setVoiceCancelArmed(isPointerOverVoiceCancel(syntheticEvent));
+    }
+
+    function handleVoiceTouchEnd(event) {
+        if (!isRecordingVoice && !isPreparingVoice) {
+            return;
+        }
+
+        const touch = event.changedTouches && event.changedTouches[0];
+        if (!touch) {
+            return;
+        }
+
+        event.preventDefault();
+        const syntheticEvent = { clientX: touch.clientX, clientY: touch.clientY };
+        const shouldSend = !isPointerOverVoiceCancel(syntheticEvent) && !isVoiceCancelArmed;
+        removeVoicePointerListeners();
+        stopVoiceRecording(shouldSend);
+    }
+
+    function handleVoiceTouchCancel() {
+        if (!isRecordingVoice && !isPreparingVoice) {
+            return;
+        }
+
+        removeVoicePointerListeners();
+        stopVoiceRecording(false);
     }
 
     function createRecordingMeterMarkup() {
@@ -4967,10 +5018,11 @@
                 rememberVoicePointer(event);
                 setVoiceCancelArmed(false);
                 addVoicePointerListeners();
-                try {
-                    submitButton.setPointerCapture(event.pointerId);
-                } catch {
-                    // Window-level pointer listeners keep the drag gesture alive on mobile.
+                if (!isTouchDevice()) {
+                    try {
+                        submitButton.setPointerCapture(event.pointerId);
+                    } catch {
+                    }
                 }
                 startVoiceRecording(event);
             });

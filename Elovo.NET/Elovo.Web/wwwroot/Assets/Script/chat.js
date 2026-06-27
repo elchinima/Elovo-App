@@ -4353,6 +4353,10 @@
             const data = new FormData();
             const request = new XMLHttpRequest();
 
+            if (window.AndroidBridge && window.AndroidBridge.startUploadWakeLock) {
+                window.AndroidBridge.startUploadWakeLock();
+            }
+
             data.append("image", file);
             request.open("POST", "/api/messages/images");
             request.setRequestHeader("RequestVerificationToken", getAntiForgeryToken());
@@ -4368,6 +4372,10 @@
             });
 
             request.addEventListener("load", () => {
+                if (window.AndroidBridge && window.AndroidBridge.stopUploadWakeLock) {
+                    window.AndroidBridge.stopUploadWakeLock();
+                }
+
                 if (request.status >= 200 && request.status < 300) {
                     resolve(request.response);
                     return;
@@ -4379,9 +4387,16 @@
                 reject(new Error(error));
             });
 
-            request.addEventListener("error", () => reject(new Error(t("Image upload failed."))));
-            request.addEventListener("abort", () => reject(new Error(t("Image upload was cancelled."))));
-            request.addEventListener("timeout", () => reject(new Error(t("Image upload timed out."))));
+            const onUploadError = (errMessage) => {
+                if (window.AndroidBridge && window.AndroidBridge.stopUploadWakeLock) {
+                    window.AndroidBridge.stopUploadWakeLock();
+                }
+                reject(new Error(errMessage));
+            };
+
+            request.addEventListener("error", () => onUploadError(t("Image upload failed.")));
+            request.addEventListener("abort", () => onUploadError(t("Image upload was cancelled.")));
+            request.addEventListener("timeout", () => onUploadError(t("Image upload timed out.")));
             request.send(data);
         });
     }
@@ -4808,6 +4823,10 @@
             const data = new FormData();
             const request = new XMLHttpRequest();
 
+            if (window.AndroidBridge && window.AndroidBridge.startUploadWakeLock) {
+                window.AndroidBridge.startUploadWakeLock();
+            }
+
             data.append("voice", blob, "voice-message");
             request.open("POST", "/api/messages/voice");
             request.setRequestHeader("RequestVerificationToken", getAntiForgeryToken());
@@ -4821,6 +4840,10 @@
             });
 
             request.addEventListener("load", () => {
+                if (window.AndroidBridge && window.AndroidBridge.stopUploadWakeLock) {
+                    window.AndroidBridge.stopUploadWakeLock();
+                }
+
                 if (request.status >= 200 && request.status < 300) {
                     resolve(request.response);
                     return;
@@ -4829,8 +4852,15 @@
                 reject(new Error(t("Voice upload failed.")));
             });
 
-            request.addEventListener("error", () => reject(new Error(t("Voice upload failed."))));
-            request.addEventListener("abort", () => reject(new Error(t("Voice upload was cancelled."))));
+            const onUploadError = (errMessage) => {
+                if (window.AndroidBridge && window.AndroidBridge.stopUploadWakeLock) {
+                    window.AndroidBridge.stopUploadWakeLock();
+                }
+                reject(new Error(errMessage));
+            };
+
+            request.addEventListener("error", () => onUploadError(t("Voice upload failed.")));
+            request.addEventListener("abort", () => onUploadError(t("Voice upload was cancelled.")));
             request.send(data);
         });
     }

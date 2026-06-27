@@ -4356,6 +4356,9 @@
             if (window.AndroidBridge && window.AndroidBridge.startUploadWakeLock) {
                 window.AndroidBridge.startUploadWakeLock();
             }
+            if (window.AndroidBridge && window.AndroidBridge.startUploadNotification) {
+                window.AndroidBridge.startUploadNotification(file.name || "file");
+            }
 
             data.append("image", file);
             request.open("POST", "/api/messages/images");
@@ -4368,12 +4371,19 @@
                     const progress = Math.round((event.loaded / event.total) * 100);
                     setImageTransferState(true, progress);
                     updateImageTransferStatus(true, progress, event.loaded, event.total);
+
+                    if (window.AndroidBridge && window.AndroidBridge.updateUploadNotification) {
+                        window.AndroidBridge.updateUploadNotification(progress);
+                    }
                 }
             });
 
             request.addEventListener("load", () => {
                 if (window.AndroidBridge && window.AndroidBridge.stopUploadWakeLock) {
                     window.AndroidBridge.stopUploadWakeLock();
+                }
+                if (window.AndroidBridge && window.AndroidBridge.stopUploadNotification) {
+                    window.AndroidBridge.stopUploadNotification(request.status >= 200 && request.status < 300);
                 }
 
                 if (request.status >= 200 && request.status < 300) {
@@ -4390,6 +4400,9 @@
             const onUploadError = (errMessage) => {
                 if (window.AndroidBridge && window.AndroidBridge.stopUploadWakeLock) {
                     window.AndroidBridge.stopUploadWakeLock();
+                }
+                if (window.AndroidBridge && window.AndroidBridge.stopUploadNotification) {
+                    window.AndroidBridge.stopUploadNotification(false);
                 }
                 reject(new Error(errMessage));
             };
@@ -4826,6 +4839,9 @@
             if (window.AndroidBridge && window.AndroidBridge.startUploadWakeLock) {
                 window.AndroidBridge.startUploadWakeLock();
             }
+            if (window.AndroidBridge && window.AndroidBridge.startUploadNotification) {
+                window.AndroidBridge.startUploadNotification(t("Voice message"));
+            }
 
             data.append("voice", blob, "voice-message");
             request.open("POST", "/api/messages/voice");
@@ -4836,12 +4852,19 @@
                 if (event.lengthComputable) {
                     const progress = Math.round((event.loaded / event.total) * 100);
                     setVoiceSendingState(true, progress);
+
+                    if (window.AndroidBridge && window.AndroidBridge.updateUploadNotification) {
+                        window.AndroidBridge.updateUploadNotification(progress);
+                    }
                 }
             });
 
             request.addEventListener("load", () => {
                 if (window.AndroidBridge && window.AndroidBridge.stopUploadWakeLock) {
                     window.AndroidBridge.stopUploadWakeLock();
+                }
+                if (window.AndroidBridge && window.AndroidBridge.stopUploadNotification) {
+                    window.AndroidBridge.stopUploadNotification(request.status >= 200 && request.status < 300);
                 }
 
                 if (request.status >= 200 && request.status < 300) {
@@ -4855,6 +4878,9 @@
             const onUploadError = (errMessage) => {
                 if (window.AndroidBridge && window.AndroidBridge.stopUploadWakeLock) {
                     window.AndroidBridge.stopUploadWakeLock();
+                }
+                if (window.AndroidBridge && window.AndroidBridge.stopUploadNotification) {
+                    window.AndroidBridge.stopUploadNotification(false);
                 }
                 reject(new Error(errMessage));
             };

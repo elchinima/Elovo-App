@@ -103,6 +103,24 @@
                 </div>
                 <p class="profile-status" id="rawImageUploadsStatus"></p>
             </section>
+            <section class="profile-panel">
+                <div class="profile-panel-heading">
+                    <img src="~/Assets/Images/Icons/premium-video-quality.svg" alt="" onerror="this.src='/Assets/Images/Icons/premium-photo-quality.svg'">
+                    <h2>Video uploads</h2>
+                </div>
+                <p class="chat-settings-copy">Control whether you can send video messages.</p>
+                <div class="profile-toggle-row">
+                    <div>
+                        <strong>Video file sending</strong>
+                        <span>Send video files up to 50MB while Premium is active.</span>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="videoUploadsToggle" @(Model.IsVideoUploadsEnabled ? "checked" : "")>
+                        <span></span>
+                    </label>
+                </div>
+                <p class="profile-status" id="videoUploadsStatus"></p>
+            </section>
         </div>
     </section>
 </main>
@@ -111,6 +129,7 @@
     window.elovoPremiumActions = {
         isExtendedVoiceMessagesEnabled: @Json.Serialize(Model.IsExtendedVoiceMessagesEnabled),
         isRawImageUploadsEnabled: @Json.Serialize(Model.IsRawImageUploadsEnabled),
+        isVideoUploadsEnabled: @Json.Serialize(Model.IsVideoUploadsEnabled),
         isPremiumBadgeVisible: @Json.Serialize(Model.IsPremiumBadgeVisible)
     };
 </script>

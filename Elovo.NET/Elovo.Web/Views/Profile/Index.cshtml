@@ -271,6 +271,25 @@
         </section>
     </div>
 
+    <div class="modal-backdrop" id="fileLimitModal" aria-hidden="true">
+        <section class="modal-panel confirm-modal-panel" role="dialog" aria-modal="true" aria-labelledby="fileLimitTitle">
+            <header class="modal-header">
+                <h2 id="fileLimitTitle">File too large</h2>
+                <button class="icon-button" type="button" data-close-modal aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <div class="confirm-modal-body">
+                <p class="restore-hidden-copy" id="fileLimitCopy" style="text-align: center; font-size: 1.1rem;"></p>
+                <div class="restore-hidden-actions">
+                    <button class="primary-icon-button" type="button" data-close-modal>
+                        <span>OK</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
     <div class="modal-backdrop" id="profileConfirmModal" aria-hidden="true">
         <section class="modal-panel confirm-modal-panel profile-confirm-panel" role="dialog" aria-modal="true" aria-labelledby="profileConfirmTitle">
             <header class="modal-header">

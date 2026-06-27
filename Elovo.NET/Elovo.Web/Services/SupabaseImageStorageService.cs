@@ -8,8 +8,10 @@ public class SupabaseImageStorageService : IImageStorageService
     private const string DefaultBucket = "chat-images";
     private const string DefaultProfileImagesBucket = "profile-images";
     private const string DefaultVoiceMessagesBucket = "chat-voices";
+    private const string DefaultVideoMessagesBucket = "chat-videos";
     private const int DefaultMediaFileSizeLimit = 10 * 1024 * 1024;
     private const int VoiceFileSizeLimit = 1024 * 1024;
+    private const int VideoFileSizeLimit = 50 * 1024 * 1024;
 
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
@@ -56,6 +58,11 @@ public class SupabaseImageStorageService : IImageStorageService
             return $"/api/messages/voice/file?path={Uri.EscapeDataString(storagePath)}";
         }
 
+        if (storagePath.StartsWith("videos/", StringComparison.Ordinal))
+        {
+            return $"/api/messages/videos/file?path={Uri.EscapeDataString(storagePath)}";
+        }
+
         if (storagePath.StartsWith("messages/", StringComparison.Ordinal))
         {
             return $"/api/messages/images/file?path={Uri.EscapeDataString(storagePath)}";
@@ -67,7 +74,7 @@ public class SupabaseImageStorageService : IImageStorageService
     public async Task<ImageDownloadResultDto> DownloadAsync(string path, CancellationToken cancellationToken = default)
     {
         var storagePath = NormalizeStoragePath(path);
-        if (!IsImagePath(storagePath) && !IsVoicePath(storagePath))
+        if (!IsImagePath(storagePath) && !IsVoicePath(storagePath) && !IsVideoPath(storagePath))
         {
             throw new InvalidOperationException("Storage path is invalid.");
         }
@@ -125,12 +132,19 @@ public class SupabaseImageStorageService : IImageStorageService
         return storagePath.StartsWith("voices/", StringComparison.Ordinal) && IsVoiceExtension(storagePath);
     }
 
+    public bool IsVideoPath(string path)
+    {
+        var storagePath = NormalizeStoragePath(path);
+        return storagePath.StartsWith("videos/", StringComparison.Ordinal) && IsVideoExtension(storagePath);
+    }
+
     private bool IsManagedImagePath(string path)
     {
         var normalizedPath = NormalizeStoragePath(path);
         return normalizedPath.StartsWith("messages/", StringComparison.Ordinal) ||
             normalizedPath.StartsWith("profiles/", StringComparison.Ordinal) ||
-            normalizedPath.StartsWith("voices/", StringComparison.Ordinal);
+            normalizedPath.StartsWith("voices/", StringComparison.Ordinal) ||
+            normalizedPath.StartsWith("videos/", StringComparison.Ordinal);
     }
 
     private async Task EnsureBucketAsync(string bucket, CancellationToken cancellationToken)
@@ -193,6 +207,8 @@ public class SupabaseImageStorageService : IImageStorageService
 
     private string VoiceMessagesBucket => GetConfiguredBucket("Supabase:VoiceMessagesBucket", DefaultVoiceMessagesBucket);
 
+    private string VideoMessagesBucket => GetConfiguredBucket("Supabase:VideoMessagesBucket", DefaultVideoMessagesBucket);
+
     private string GetConfiguredBucket(string key, string fallback)
     {
         var value = _configuration[key];
@@ -218,14 +234,27 @@ public class SupabaseImageStorageService : IImageStorageService
             return VoiceMessagesBucket;
         }
 
+        if (storagePath.StartsWith("videos/", StringComparison.Ordinal))
+        {
+            return VideoMessagesBucket;
+        }
+
         return Bucket;
     }
 
     private int GetFileSizeLimitForBucket(string bucket)
     {
-        return bucket.Equals(VoiceMessagesBucket, StringComparison.Ordinal)
-            ? VoiceFileSizeLimit
-            : DefaultMediaFileSizeLimit;
+        if (bucket.Equals(VoiceMessagesBucket, StringComparison.Ordinal))
+        {
+            return VoiceFileSizeLimit;
+        }
+
+        if (bucket.Equals(VideoMessagesBucket, StringComparison.Ordinal))
+        {
+            return VideoFileSizeLimit;
+        }
+
+        return DefaultMediaFileSizeLimit;
     }
 
     private string[] GetAllowedMimeTypesForBucket(string bucket)
@@ -235,6 +264,14 @@ public class SupabaseImageStorageService : IImageStorageService
             return
             [
                 "audio/mpeg"
+            ];
+        }
+
+        if (bucket.Equals(VideoMessagesBucket, StringComparison.Ordinal))
+        {
+            return
+            [
+                "video/mp4"
             ];
         }
 
@@ -299,6 +336,11 @@ public class SupabaseImageStorageService : IImageStorageService
             return "audio/mpeg";
         }
 
+        if (extension.Equals(".mp4", StringComparison.OrdinalIgnoreCase))
+        {
+            return "video/mp4";
+        }
+
         return "image/jpeg";
     }
 
@@ -316,6 +358,12 @@ public class SupabaseImageStorageService : IImageStorageService
     {
         var extension = Path.GetExtension(path);
         return extension.Equals(".mp3", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsVideoExtension(string path)
+    {
+        var extension = Path.GetExtension(path);
+        return extension.Equals(".mp4", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsPlaceholder(string value)
@@ -341,7 +389,7 @@ public class SupabaseImageStorageService : IImageStorageService
 
     private IReadOnlyList<string> GetKnownBuckets()
     {
-        return new[] { Bucket, ProfileImagesBucket, VoiceMessagesBucket }
+        return new[] { Bucket, ProfileImagesBucket, VoiceMessagesBucket, VideoMessagesBucket }
             .Distinct(StringComparer.Ordinal)
             .ToArray();
     }

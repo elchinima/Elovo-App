@@ -2,6 +2,10 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Processing;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using System.Globalization;
+using System.IO;
 
 namespace Elovo.Web.Controllers;
 
@@ -10,6 +14,8 @@ namespace Elovo.Web.Controllers;
 public class ImageMessagesController : ControllerBase
 {
     private const long MaxImageBytes = 10 * 1024 * 1024;
+    private const long MaxVideoBytes = 50 * 1024 * 1024;
+    private const long MaxRequestBytes = 50 * 1024 * 1024;
     private const int ImageQuality = 50;
     private const double ImageResizeRatio = 0.5;
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -17,7 +23,8 @@ public class ImageMessagesController : ControllerBase
         ".png",
         ".jpeg",
         ".jpg",
-        ".gif"
+        ".gif",
+        ".mp4"
     };
 
     private readonly IImageStorageService _imageStorageService;
@@ -32,24 +39,84 @@ public class ImageMessagesController : ControllerBase
     }
 
     [HttpPost("/api/messages/images")]
-    [RequestSizeLimit(MaxImageBytes)]
-    [RequestFormLimits(MultipartBodyLengthLimit = MaxImageBytes)]
+    [RequestSizeLimit(MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestBytes)]
     public async Task<IActionResult> Upload([FromForm] IFormFile? image, CancellationToken cancellationToken)
     {
         if (image is null || image.Length == 0)
         {
-            return BadRequest("Image is required.");
-        }
-
-        if (image.Length > MaxImageBytes)
-        {
-            return BadRequest("Image size must be 10 MB or less.");
+            return BadRequest("File is required.");
         }
 
         var extension = Path.GetExtension(image.FileName);
         if (!AllowedExtensions.Contains(extension))
         {
-            return BadRequest("Only PNG, JPEG, JPG and GIF images are allowed.");
+            return BadRequest("Only PNG, JPEG, JPG, GIF images and MP4 videos are allowed.");
+        }
+
+        var isVideo = extension.Equals(".mp4", StringComparison.OrdinalIgnoreCase);
+        if (isVideo)
+        {
+            if (image.Length > MaxVideoBytes)
+            {
+                return BadRequest("Video size must be 50 MB or less.");
+            }
+
+            var profile = await _userService.GetProfileAsync(GetCurrentUserId(), cancellationToken);
+            if (!profile.IsPremium || !profile.IsVideoUploadsEnabled)
+            {
+                return BadRequest("Video uploads are not enabled.");
+            }
+
+            var tempPath = Path.Combine(Path.GetTempPath(), $"elovo-videos-{Guid.NewGuid():N}.mp4");
+            int width = 0;
+            int height = 0;
+            double fps = 0;
+            try
+            {
+                var dir = Path.GetDirectoryName(tempPath);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
+                await using (var tempStream = System.IO.File.Create(tempPath))
+                {
+                    await image.CopyToAsync(tempStream, cancellationToken);
+                }
+                (width, height, fps) = await ProbeVideoAsync(tempPath, cancellationToken);
+            }
+            catch {}
+            finally
+            {
+                try
+                {
+                    if (System.IO.File.Exists(tempPath))
+                    {
+                        System.IO.File.Delete(tempPath);
+                    }
+                }
+                catch {}
+            }
+
+            var videoToken = width > 0 && height > 0 ? $"_q{height}_fps{(int)Math.Round(fps)}" : string.Empty;
+            var videoStoragePath = $"videos/{GetCurrentUserId():N}/{Guid.NewGuid():N}{videoToken}{extension.ToLowerInvariant()}";
+
+            await using var input = image.OpenReadStream();
+            var videoUpload = await _imageStorageService.UploadAsync(input, videoStoragePath, "video/mp4", cancellationToken);
+
+            return Ok(new
+            {
+                path = videoUpload.Path,
+                url = videoUpload.Url,
+                fileName = image.FileName,
+                isRaw = false
+            });
+        }
+
+        if (image.Length > MaxImageBytes)
+        {
+            return BadRequest("Image size must be 10 MB or less.");
         }
 
         var useRawImage = await IsRawImageUploadEnabledAsync(cancellationToken);
@@ -123,6 +190,11 @@ public class ImageMessagesController : ControllerBase
         if (extension.Equals(".gif", StringComparison.OrdinalIgnoreCase))
         {
             return "image/gif";
+        }
+
+        if (extension.Equals(".mp4", StringComparison.OrdinalIgnoreCase))
+        {
+            return "video/mp4";
         }
 
         return "image/jpeg";
@@ -284,5 +356,56 @@ public class ImageMessagesController : ControllerBase
         return string.IsNullOrWhiteSpace(extension)
             ? $"{name} ({tag})"
             : $"{name} ({tag}){extension}";
+    }
+
+    private static async Task<(int Width, int Height, double Fps)> ProbeVideoAsync(string videoPath, CancellationToken cancellationToken)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "ffmpeg",
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false
+        };
+
+        startInfo.ArgumentList.Add("-hide_banner");
+        startInfo.ArgumentList.Add("-i");
+        startInfo.ArgumentList.Add(videoPath);
+
+        using var process = Process.Start(startInfo);
+        if (process is null)
+        {
+            return (0, 0, 0);
+        }
+
+        var error = await process.StandardError.ReadToEndAsync(cancellationToken);
+        await process.WaitForExitAsync(cancellationToken);
+
+        int width = 0;
+        int height = 0;
+        double fps = 0;
+
+        var resMatch = Regex.Match(error, @"\b(\d{3,5})x(\d{3,5})\b");
+        if (resMatch.Success)
+        {
+            int.TryParse(resMatch.Groups[1].Value, out width);
+            int.TryParse(resMatch.Groups[2].Value, out height);
+        }
+
+        var fpsMatch = Regex.Match(error, @"\b(\d+(?:\.\d+)?)\s*fps\b");
+        if (fpsMatch.Success)
+        {
+            double.TryParse(fpsMatch.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out fps);
+        }
+        else
+        {
+            var tbrMatch = Regex.Match(error, @"\b(\d+(?:\.\d+)?)\s*tbr\b");
+            if (tbrMatch.Success)
+            {
+                double.TryParse(tbrMatch.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out fps);
+            }
+        }
+
+        return (width, height, fps);
     }
 }

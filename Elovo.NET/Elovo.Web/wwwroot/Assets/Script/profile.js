@@ -817,13 +817,22 @@ if (profileImageButton && profileImageInput) {
     profileImageInput.addEventListener("change", () => {
         const file = profileImageInput.files && profileImageInput.files[0];
         profileImageInput.value = "";
-
-        if (!file) {
+        if (!file) {
             return;
         }
 
-        if (!allowedProfileImageTypes.includes(file.type) || file.size > maxImageSize) {
+        if (!allowedProfileImageTypes.includes(file.type)) {
             setProfileStatus(profileImageStatus, t("Only PNG, JPEG and JPG images up to 10 MB are allowed."), "error");
+            return;
+        }
+
+        if (file.size > maxImageSize) {
+            const fileLimitModal = document.querySelector("#fileLimitModal");
+            const fileLimitCopy = document.querySelector("#fileLimitCopy");
+            if (fileLimitModal && fileLimitCopy) {
+                fileLimitCopy.textContent = "The selected image exceeds the maximum allowed size of 10 MB.";
+                openModal(fileLimitModal);
+            }
             return;
         }
 

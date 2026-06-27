@@ -5,7 +5,7 @@ artifacts/
 
 # Visual Studio / Rider / VS Code
 **/.vs/
-.vscode/
+.vscode
 .idea/
 *.user
 *.suo

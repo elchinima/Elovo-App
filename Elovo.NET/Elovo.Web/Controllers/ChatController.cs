@@ -39,6 +39,8 @@ public class ChatController : Controller
         ViewBag.CurrentUserActivityVisibility = profile.ActivityVisibility;
         ViewBag.CurrentUserIsPremium = profile.IsPremium;
         ViewBag.CurrentUserHasExtendedVoiceMessages = profile.IsExtendedVoiceMessagesEnabled;
+        ViewBag.CurrentUserHasRawImageUploads = profile.IsRawImageUploadsEnabled;
+        ViewBag.CurrentUserHasVideoUploads = profile.IsVideoUploadsEnabled;
         return View();
     }
 

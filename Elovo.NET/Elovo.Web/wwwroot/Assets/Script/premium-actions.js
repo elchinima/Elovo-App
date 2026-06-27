@@ -6,6 +6,8 @@
     const premiumBadgeStatus = document.querySelector("#premiumBadgeStatus");
     const rawImageUploadsToggle = document.querySelector("#rawImageUploadsToggle");
     const rawImageUploadsStatus = document.querySelector("#rawImageUploadsStatus");
+    const videoUploadsToggle = document.querySelector("#videoUploadsToggle");
+    const videoUploadsStatus = document.querySelector("#videoUploadsStatus");
 
     function setStatus(element, message, type = "") {
         const status = element;
@@ -84,6 +86,18 @@
             profileKey: "isRawImageUploadsEnabled",
             successEnabled: "Raw image uploads enabled.",
             successDisabled: "Raw image uploads disabled."
+        }));
+    }
+
+    if (videoUploadsToggle) {
+        videoUploadsToggle.addEventListener("change", () => savePremiumSetting({
+            toggle: videoUploadsToggle,
+            status: videoUploadsStatus,
+            endpoint: "/api/profile/video-uploads",
+            enabled: videoUploadsToggle.checked,
+            profileKey: "isVideoUploadsEnabled",
+            successEnabled: "Video uploads enabled.",
+            successDisabled: "Video uploads disabled."
         }));
     }
 })();

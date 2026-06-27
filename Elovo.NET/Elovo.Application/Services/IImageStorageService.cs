@@ -8,4 +8,5 @@ public interface IImageStorageService
     string GetPublicUrl(string path);
     bool IsImagePath(string path);
     bool IsVoicePath(string path);
+    bool IsVideoPath(string path);
 }

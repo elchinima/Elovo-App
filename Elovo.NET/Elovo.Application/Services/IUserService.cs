@@ -15,6 +15,7 @@ public interface IUserService
     Task<ProfileDto> SetTwoFactorEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default);
     Task<ProfileDto> SetExtendedVoiceMessagesEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default);
     Task<ProfileDto> SetRawImageUploadsEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default);
+    Task<ProfileDto> SetVideoUploadsEnabledAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default);
     Task<ProfileDto> SetPremiumBadgeVisibleAsync(Guid userId, bool enabled, CancellationToken cancellationToken = default);
     Task<ProfileDto> SetActivityVisibilityAsync(Guid userId, string? visibility, CancellationToken cancellationToken = default);
     Task<ProfileDto> SetProfileImagePathAsync(Guid userId, string path, CancellationToken cancellationToken = default);

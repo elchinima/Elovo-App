@@ -185,6 +185,19 @@ public class ProfileController : Controller
         }
     }
 
+    [HttpPost("/api/profile/video-uploads")]
+    public async Task<IActionResult> SetVideoUploads([FromBody] VideoUploadsSettingsDto dto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _userService.SetVideoUploadsEnabledAsync(GetCurrentUserId(), dto.Enabled, cancellationToken));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("/api/profile/activity-visibility")]
     public async Task<IActionResult> SetActivityVisibility([FromBody] ActivityVisibilitySettingsDto dto, CancellationToken cancellationToken)
     {

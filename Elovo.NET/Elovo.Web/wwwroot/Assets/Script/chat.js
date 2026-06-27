@@ -118,7 +118,9 @@
     let messageStreamLastScrollTop = 0;
     let instantScrollRestoreTimer = null;
     const allowedImageTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
+    const allowedVideoTypes = ["video/mp4"];
     const maxImageSize = 10 * 1024 * 1024;
+    const maxVideoSize = 50 * 1024 * 1024;
     const maxVoiceDurationMs = window.elovoCurrentUserHasExtendedVoiceMessages ? 180 * 1000 : 60 * 1000;
     const maxUnansweredCallDurationMs = 60 * 1000;
     const activityVisibilityModes = ["full", "online", "hidden"];
@@ -1039,6 +1041,29 @@
         }
 
         return `${match[1]}MP${match[2] ? "+" : ""}`;
+    }
+
+    function getVideoLabelFromPath(path) {
+        const match = String(path || "").match(/_q(\d+)_fps(\d+)\.mp4(?:$|[?#])/i);
+        if (!match) {
+            return "";
+        }
+        const height = parseInt(match[1], 10);
+        const fps = parseInt(match[2], 10);
+        return getVideoLabel(height, fps);
+    }
+
+    function getVideoLabel(height, fps) {
+        let quality = "";
+        if (height === 1080) quality = "FHD";
+        else if (height > 1080 && height < 1440) quality = "FHD+";
+        else if (height === 1440) quality = "QHD";
+        else if (height > 1440 && height < 2160) quality = "QHD+";
+        else if (height >= 2160) quality = "UHD";
+        else quality = `${height}p`;
+
+        let fpsStr = (fps && fps >= 30) ? ` ${fps}fps` : "";
+        return `${quality}${fpsStr}`;
     }
 
     function isRawImagePath(path) {
@@ -3153,42 +3178,60 @@
 
     function createImageMessage(message) {
         const frame = document.createElement("button");
-        const image = document.createElement("img");
-        const loader = document.createElement("span");
-        const resolution = document.createElement("span");
-        let previewPath = message.imagePath;
-        let objectUrl = null;
-        const pathResolutionLabel = getImageMegapixelLabelFromPath(message.imageStoragePath || message.content || message.imagePath);
         const imageFileName = getImageFileName(message);
         const canLoadMedia = isMessageMediaAllowed(message);
+        let previewPath = message.imagePath;
+        let objectUrl = null;
+
+        const isVideo = previewPath && (previewPath.endsWith(".mp4") || previewPath.includes("/api/messages/videos/file") || (message.imageStoragePath && message.imageStoragePath.endsWith(".mp4")));
+        const media = isVideo ? document.createElement("video") : document.createElement("img");
+        const loader = document.createElement("span");
+        const resolution = document.createElement("span");
+        const pathResolutionLabel = isVideo ? "" : getImageMegapixelLabelFromPath(message.imageStoragePath || message.content || message.imagePath);
 
         frame.type = "button";
         frame.className = "message-image-frame is-loading";
-        frame.title = imageFileName || t("Open image");
-        image.alt = imageFileName || t("Sent image");
-        image.loading = "eager";
+        frame.title = imageFileName || (isVideo ? t("Open video") : t("Open image"));
+        
+        if (isVideo) {
+            media.muted = true;
+            media.loop = true;
+            media.autoplay = true;
+            media.playsInline = true;
+        } else {
+            media.alt = imageFileName || t("Sent image");
+            media.loading = "eager";
+        }
+        
         loader.className = "image-transfer-loader";
         resolution.className = "message-image-resolution";
-        resolution.setAttribute("aria-label", t("Image resolution"));
+        resolution.setAttribute("aria-label", isVideo ? t("Video resolution") : t("Image resolution"));
         resolution.hidden = true;
 
         if (!canLoadMedia) {
             frame.disabled = true;
             frame.setAttribute("aria-busy", "true");
-            frame.append(image, loader, resolution);
+            frame.append(media, loader, resolution);
             return frame;
         }
 
-        image.addEventListener("load", () => {
+        const loadEvent = isVideo ? "loadedmetadata" : "load";
+        media.addEventListener(loadEvent, () => {
             frame.classList.remove("is-loading");
             frame.classList.remove("is-error");
-            const megapixelLabel = pathResolutionLabel || getImageMegapixelLabel(image.naturalWidth, image.naturalHeight);
-            const label = getImageResolutionLabel(message, megapixelLabel);
+            let label = "";
+            if (isVideo) {
+                const pathLabel = getVideoLabelFromPath(message.imageStoragePath || message.content || message.imagePath);
+                label = pathLabel || getVideoLabel(media.videoHeight);
+            } else {
+                const megapixelLabel = pathResolutionLabel || getImageMegapixelLabel(media.naturalWidth, media.naturalHeight);
+                label = getImageResolutionLabel(message, megapixelLabel);
+            }
             resolution.textContent = label;
             resolution.hidden = !label;
         });
 
-        image.addEventListener("error", () => {
+        media.addEventListener("error", () => {
             frame.classList.remove("is-loading");
             frame.classList.add("is-error");
             resolution.hidden = true;
@@ -3198,20 +3241,20 @@
             if (blob) {
                 objectUrl = URL.createObjectURL(blob);
                 previewPath = objectUrl;
-                image.src = previewPath;
+                media.src = previewPath;
                 return;
             }
 
-            image.src = previewPath;
+            media.src = previewPath;
         });
 
-        frame.addEventListener("click", () => openImagePreview(previewPath, imageFileName));
+        frame.addEventListener("click", () => openImagePreview(previewPath, imageFileName, { isVideo: isVideo }));
         frame.addEventListener("DOMNodeRemoved", () => {
             if (objectUrl) {
                 URL.revokeObjectURL(objectUrl);
             }
         }, { once: true });
-        frame.append(image, loader, resolution);
+        frame.append(media, loader, resolution);
         return frame;
     }
 
@@ -3344,9 +3387,11 @@
 
     function openImagePreview(path, fileName, options = {}) {
         const backdrop = document.createElement("div");
-        const image = document.createElement("img");
+        const isVideoPath = path && (path.includes(".mp4") || path.includes("/api/messages/videos/file"));
+        const isActuallyVideo = isVideoPath || options.isVideo;
+        const media = isActuallyVideo ? document.createElement("video") : document.createElement("img");
         const close = document.createElement("button");
-        const allowZoom = options.allowZoom !== false;
+        const allowZoom = options.allowZoom !== false && !isActuallyVideo;
         const pointers = new Map();
         let previewScale = 1;
         let translateX = 0;
@@ -3363,13 +3408,22 @@
         backdrop.classList.toggle("is-static-preview", !allowZoom);
         backdrop.setAttribute("role", "dialog");
         backdrop.setAttribute("aria-modal", "true");
-        image.src = path;
-        image.alt = fileName || t("Image preview");
-        image.draggable = false;
+        media.src = path;
+        
+        if (isActuallyVideo) {
+            media.controls = true;
+            media.autoplay = true;
+            media.style.maxWidth = "90%";
+            media.style.maxHeight = "90%";
+        } else {
+            media.alt = fileName || t("Image preview");
+            media.draggable = false;
+        }
+        
         close.type = "button";
         close.className = "image-preview-close";
         close.setAttribute("aria-label", t("Close"));
-        close.textContent = "Г—";
+        close.textContent = "×";
 
         close.title = t("Close");
 
@@ -3415,8 +3469,8 @@
             };
         };
         const clampTranslate = () => {
-            const maxX = Math.max(0, ((previewScale - 1) * image.offsetWidth) / 2);
-            const maxY = Math.max(0, ((previewScale - 1) * image.offsetHeight) / 2);
+            const maxX = Math.max(0, ((previewScale - 1) * media.offsetWidth) / 2);
+            const maxY = Math.max(0, ((previewScale - 1) * media.offsetHeight) / 2);
             translateX = clamp(translateX, -maxX, maxX);
             translateY = clamp(translateY, -maxY, maxY);
         };
@@ -3425,14 +3479,14 @@
             if (previewScale === 1) {
                 translateX = 0;
                 translateY = 0;
-                image.classList.remove("is-zoomed");
-                image.style.transform = "";
+                media.classList.remove("is-zoomed");
+                media.style.transform = "";
                 return;
             }
 
             clampTranslate();
-            image.classList.add("is-zoomed");
-            image.style.transform = `translate(${translateX}px, ${translateY}px) scale(${previewScale})`;
+            media.classList.add("is-zoomed");
+            media.style.transform = `translate(${translateX}px, ${translateY}px) scale(${previewScale})`;
         };
         const beginPointerGesture = () => {
             startScale = previewScale;
@@ -3452,82 +3506,65 @@
             startDistance = getDistance();
         };
 
-        image.addEventListener("click", (event) => {
-            event.stopPropagation();
-            if (!allowZoom) {
-                return;
-            }
+        if (allowZoom) {
+            media.addEventListener("click", (event) => {
+                event.stopPropagation();
+                if (moved) {
+                    moved = false;
+                    return;
+                }
 
-            if (moved) {
-                moved = false;
-                return;
-            }
-
-            const rect = image.getBoundingClientRect();
-            image.style.transformOrigin = `${clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100)}% ${clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100)}%`;
-            previewScale = previewScale > 1 ? 1 : 2;
-            applyTransform();
-        });
-        image.addEventListener("pointerdown", (event) => {
-            if (!allowZoom) {
-                return;
-            }
-
-            pointers.set(event.pointerId, event);
-            image.setPointerCapture(event.pointerId);
-            beginPointerGesture();
-        });
-        image.addEventListener("pointermove", (event) => {
-            if (!allowZoom) {
-                return;
-            }
-
-            if (!pointers.has(event.pointerId)) {
-                return;
-            }
-
-            pointers.set(event.pointerId, event);
-
-            if (pointers.size === 1 && previewScale > 1) {
-                translateX = startTranslateX + event.clientX - startX;
-                translateY = startTranslateY + event.clientY - startY;
-                moved = Math.abs(event.clientX - startX) > 4 || Math.abs(event.clientY - startY) > 4;
+                const rect = media.getBoundingClientRect();
+                media.style.transformOrigin = `${clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100)}% ${clamp(((event.clientY - rect.top) / rect.height) * 100, 0, 100)}%`;
+                previewScale = previewScale > 1 ? 1 : 2;
                 applyTransform();
-                return;
-            }
-
-            if (pointers.size >= 2 && startDistance > 0) {
-                const center = getCenter();
-                previewScale = startScale * (getDistance() / startDistance);
-                translateX = startTranslateX + center.x - startX;
-                translateY = startTranslateY + center.y - startY;
-                moved = true;
-                applyTransform();
-            }
-        });
-        const endPointerGesture = (event) => {
-            if (!allowZoom) {
-                return;
-            }
-
-            pointers.delete(event.pointerId);
-            if (pointers.size > 0) {
+            });
+            media.addEventListener("pointerdown", (event) => {
+                pointers.set(event.pointerId, event);
+                media.setPointerCapture(event.pointerId);
                 beginPointerGesture();
-            }
-        };
+            });
+            media.addEventListener("pointermove", (event) => {
+                if (!pointers.has(event.pointerId)) {
+                    return;
+                }
 
-        image.addEventListener("pointerup", endPointerGesture);
-        image.addEventListener("pointercancel", endPointerGesture);
-        image.addEventListener("lostpointercapture", endPointerGesture);
-        image.addEventListener("wheel", (event) => {
-            if (!allowZoom) {
-                return;
-            }
+                pointers.set(event.pointerId, event);
 
-            event.preventDefault();
-            previewScale += event.deltaY < 0 ? 0.18 : -0.18;
-            applyTransform();
-        });
+                if (pointers.size === 1 && previewScale > 1) {
+                    translateX = startTranslateX + event.clientX - startX;
+                    translateY = startTranslateY + event.clientY - startY;
+                    moved = Math.abs(event.clientX - startX) > 4 || Math.abs(event.clientY - startY) > 4;
+                    applyTransform();
+                    return;
+                }
+
+                if (pointers.size >= 2 && startDistance > 0) {
+                    const center = getCenter();
+                    previewScale = startScale * (getDistance() / startDistance);
+                    translateX = startTranslateX + center.x - startX;
+                    translateY = startTranslateY + center.y - startY;
+                    moved = true;
+                    applyTransform();
+                }
+            });
+            const endPointerGesture = (event) => {
+                pointers.delete(event.pointerId);
+                if (pointers.size > 0) {
+                    beginPointerGesture();
+                }
+            };
+
+            media.addEventListener("pointerup", endPointerGesture);
+            media.addEventListener("pointercancel", endPointerGesture);
+            media.addEventListener("lostpointercapture", endPointerGesture);
+            media.addEventListener("wheel", (event) => {
+                event.preventDefault();
+                previewScale += event.deltaY < 0 ? 0.18 : -0.18;
+                applyTransform();
+            });
+        }
+
         backdrop.addEventListener("click", (event) => {
             if (event.target === backdrop) {
                 closePreview();
@@ -3535,7 +3572,7 @@
         });
         document.addEventListener("keydown", onKeyDown);
 
-        backdrop.append(image, close);
+        backdrop.append(media, close);
         document.body.appendChild(backdrop);
         syncModalScrollLock();
     }

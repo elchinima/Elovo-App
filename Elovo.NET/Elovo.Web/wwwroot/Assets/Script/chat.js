@@ -3198,6 +3198,7 @@
             media.loop = false;
             media.autoplay = false;
             media.playsInline = true;
+            media.poster = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
         } else {
             media.alt = imageFileName || t("Sent image");
             media.loading = "eager";

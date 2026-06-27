@@ -1850,7 +1850,8 @@ html[lang="az"] .home-hero h1 {
     position: absolute;
     inset: 0;
     display: none;
-    place-items: center;
+    align-items: center;
+    justify-content: center;
     background: rgba(5, 8, 22, 0.45);
     backdrop-filter: blur(12px) saturate(160%);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
@@ -1858,28 +1859,29 @@ html[lang="az"] .home-hero h1 {
     animation: none !important;
 }
 
-.image-transfer-loader::before {
+.image-transfer-loader::before,
+.image-transfer-loader::after {
     content: "";
-    grid-area: 1 / 1;
+    position: absolute;
+    border-radius: 50%;
+}
+
+.image-transfer-loader::before {
     width: 24px;
     height: 24px;
     border: 2px solid transparent;
     border-bottom: 2px solid var(--accent-3);
     border-left: 2px solid var(--accent-2);
-    border-radius: 50%;
     animation: loaderRotateReverse 900ms linear infinite;
     filter: drop-shadow(0 0 4px var(--accent-3));
 }
 
 .image-transfer-loader::after {
-    content: "";
-    grid-area: 1 / 1;
     width: 40px;
     height: 40px;
     border: 3px solid transparent;
     border-top: 3px solid var(--accent);
     border-right: 3px solid var(--accent-2);
-    border-radius: 50%;
     animation: loaderRotate 750ms linear infinite !important;
     filter: drop-shadow(0 0 6px var(--accent));
 }
@@ -1903,7 +1905,7 @@ html[lang="az"] .home-hero h1 {
 }
 
 .message-image-frame.is-loading .image-transfer-loader {
-    display: grid;
+    display: flex;
 }
 
 .message-status-icon {

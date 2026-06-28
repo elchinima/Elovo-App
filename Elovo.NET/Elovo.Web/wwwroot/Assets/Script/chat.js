@@ -3352,7 +3352,7 @@
             icon.src = "/Assets/Images/Icons/play-voice.svg";
             playButton.setAttribute("aria-label", t("Play voice message"));
             playButton.setAttribute("title", t("Play voice message"));
-            if (activeVoiceAudio === audio) {
+            if (isEnded && activeVoiceAudio === audio) {
                 activeVoiceAudio = null;
             }
 

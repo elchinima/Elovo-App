@@ -214,7 +214,10 @@ public class ProfileController : Controller
     [HttpPost("/api/profile/image")]
     [RequestSizeLimit(MaxImageBytes)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxImageBytes)]
-    public async Task<IActionResult> UploadImage([FromForm] IFormFile? image, CancellationToken cancellationToken)
+    public async Task<IActionResult> UploadImage(
+        [FromForm] IFormFile? image,
+        [FromQuery] bool isPremiumImage = false,
+        CancellationToken cancellationToken = default)
     {
         if (image is null || image.Length == 0)
         {
@@ -234,26 +237,55 @@ public class ProfileController : Controller
 
         var userId = GetCurrentUserId();
         var profile = await _userService.GetProfileAsync(userId, cancellationToken);
-        var storagePath = $"profiles/{userId:N}/{Guid.NewGuid():N}.webp";
 
-        await using var output = new MemoryStream();
+        if (isPremiumImage && !profile.IsPremium)
+        {
+            return BadRequest("Premium status is required to upload high-quality profile images.");
+        }
+
+        var suffix = isPremiumImage ? "_512" : "";
+        var storagePath = $"profiles/{userId:N}/{Guid.NewGuid():N}{suffix}.webp";
+
+        MemoryStream? mainStream = null;
+        MemoryStream? smallStream = null;
         try
         {
             await using var input = image.OpenReadStream();
-            await SaveProfileImageAsync(input, output, cancellationToken);
+            (mainStream, smallStream) = await ProcessProfileImageAsync(input, isPremiumImage, cancellationToken);
         }
         catch
         {
+            mainStream?.Dispose();
+            smallStream?.Dispose();
             return BadRequest("Image file is invalid.");
         }
 
-        output.Position = 0;
-        await _imageStorageService.UploadAsync(output, storagePath, "image/webp", cancellationToken);
+        try
+        {
+            await _imageStorageService.UploadAsync(mainStream, storagePath, "image/webp", cancellationToken);
+            var smallStoragePath = storagePath.Replace(".webp", "_small.webp");
+            await _imageStorageService.UploadAsync(smallStream, smallStoragePath, "image/webp", cancellationToken);
+        }
+        finally
+        {
+            await mainStream.DisposeAsync();
+            await smallStream.DisposeAsync();
+        }
+
         var updatedProfile = await _userService.SetProfileImagePathAsync(userId, storagePath, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(profile.ProfileImagePath))
         {
             await _imageStorageService.DeleteAsync(profile.ProfileImagePath, cancellationToken);
+            var oldSmallPath = profile.ProfileImagePath.Replace(".webp", "_small.webp");
+            try
+            {
+                await _imageStorageService.DeleteAsync(oldSmallPath, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete old small profile image at {Path}", oldSmallPath);
+            }
         }
 
         return Ok(updatedProfile);
@@ -267,6 +299,15 @@ public class ProfileController : Controller
         if (!string.IsNullOrWhiteSpace(profile.ProfileImagePath))
         {
             await _imageStorageService.DeleteAsync(profile.ProfileImagePath, cancellationToken);
+            var smallPath = profile.ProfileImagePath.Replace(".webp", "_small.webp");
+            try
+            {
+                await _imageStorageService.DeleteAsync(smallPath, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to delete small profile image at {Path}", smallPath);
+            }
         }
 
         return Ok(await _userService.RemoveProfileImagePathAsync(userId, cancellationToken));
@@ -280,23 +321,51 @@ public class ProfileController : Controller
             : throw new InvalidOperationException("Current user id is missing.");
     }
 
-    private static async Task SaveProfileImageAsync(Stream input, Stream output, CancellationToken cancellationToken)
+    private static async Task<(MemoryStream MainImage, MemoryStream SmallImage)> ProcessProfileImageAsync(
+        Stream input,
+        bool isPremiumImage,
+        CancellationToken cancellationToken)
     {
         using var image = await Image.LoadAsync(input, cancellationToken);
         var side = Math.Min(image.Width, image.Height);
         var crop = new Rectangle((image.Width - side) / 2, (image.Height - side) / 2, side, side);
+        var targetSize = isPremiumImage ? 512 : 256;
+
         image.Mutate(x => x
             .Crop(crop)
             .Resize(new ResizeOptions
             {
-                Size = new Size(256, 256),
+                Size = new Size(targetSize, targetSize),
                 Mode = ResizeMode.Stretch,
                 Sampler = KnownResamplers.Lanczos3
             }));
 
-        await image.SaveAsWebpAsync(output, new WebpEncoder
+        var mainStream = new MemoryStream();
+        await image.SaveAsWebpAsync(mainStream, new WebpEncoder
         {
             Quality = 50
         }, cancellationToken);
+
+        mainStream.Position = 0;
+
+        using var compressedImage = await Image.LoadAsync(mainStream, cancellationToken);
+        compressedImage.Mutate(x => x
+            .Resize(new ResizeOptions
+            {
+                Size = new Size(64, 64),
+                Mode = ResizeMode.Stretch,
+                Sampler = KnownResamplers.Lanczos3
+            }));
+
+        var smallStream = new MemoryStream();
+        await compressedImage.SaveAsWebpAsync(smallStream, new WebpEncoder
+        {
+            Quality = 100
+        }, cancellationToken);
+
+        mainStream.Position = 0;
+        smallStream.Position = 0;
+
+        return (mainStream, smallStream);
     }
 }

@@ -9,6 +9,7 @@ public class ProfileDto
     public DateTime? EmailCooldownEndsAt { get; set; }
     public string? ProfileImagePath { get; set; }
     public string? ProfileImageUrl { get; set; }
+    public string? ProfileImageSmallUrl { get; set; }
     public bool IsTwoFactorEnabled { get; set; }
     public bool IsPremium { get; set; }
     public bool IsExtendedVoiceMessagesEnabled { get; set; }

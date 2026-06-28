@@ -7,7 +7,11 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="brand-mark" id="currentUserAvatar">
-                    @if (!string.IsNullOrWhiteSpace(ViewBag.CurrentUserProfileImageUrl as string))
+                    @if (!string.IsNullOrWhiteSpace(ViewBag.CurrentUserProfileImageSmallUrl as string))
+                    {
+                        <img class="profile-image" src="@ViewBag.CurrentUserProfileImageSmallUrl" alt="">
+                    }
+                    else if (!string.IsNullOrWhiteSpace(ViewBag.CurrentUserProfileImageUrl as string))
                     {
                         <img class="profile-image" src="@ViewBag.CurrentUserProfileImageUrl" alt="">
                     }
@@ -189,6 +193,7 @@
                     <img src="~/Assets/Images/Icons/premium-drive.svg" alt="">
                     <img src="~/Assets/Images/Icons/premium-noise.svg" alt="">
                     <img src="~/Assets/Images/Icons/premium-badge.svg" alt="">
+                    <img src="~/Assets/Images/Icons/premium-early-access.svg" alt="">
                     <img src="~/Assets/Images/Icons/premium-voice.svg" alt="">
                     <img src="~/Assets/Images/Icons/premium-photo-quality.svg" alt="">
                     <img src="~/Assets/Images/Icons/premium-online-visibility.svg" alt="">
@@ -198,6 +203,7 @@
                     <img src="~/Assets/Images/Icons/premium-drive.svg" alt="">
                     <img src="~/Assets/Images/Icons/premium-noise.svg" alt="">
                     <img src="~/Assets/Images/Icons/premium-badge.svg" alt="">
+                    <img src="~/Assets/Images/Icons/premium-early-access.svg" alt="">
                 </div>
                 <div class="premium-price">
                     <strong>First month $1</strong>
@@ -239,6 +245,10 @@
                     <li>
                         <img src="~/Assets/Images/Icons/premium-badge.svg" alt="">
                         <span>A unique badge next to the username. It can be hidden if the buyer wants.</span>
+                    </li>
+                    <li>
+                        <img src="~/Assets/Images/Icons/premium-early-access.svg" alt="">
+                        <span>Early access to new features.</span>
                     </li>
                 </ul>
                 @if (ViewBag.CurrentUserIsPremium != true)

@@ -40,6 +40,24 @@ public class UserService : IUserService
     public async Task<ProfileDto> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = await GetRequiredUserAsync(userId, cancellationToken);
+        if (user.Premium is null && !string.IsNullOrWhiteSpace(user.ProfileImagePath) && user.ProfileImagePath.Contains("_512.webp"))
+        {
+            var oldPath = user.ProfileImagePath;
+            user.ProfileImagePath = null;
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await _imageStorageService.DeleteAsync(oldPath, cancellationToken);
+                var smallPath = oldPath.Replace(".webp", "_small.webp");
+                await _imageStorageService.DeleteAsync(smallPath, cancellationToken);
+            }
+            catch
+            {
+                // Ignore Supabase errors during cleanup
+            }
+        }
         return ToProfileDto(user);
     }
 
@@ -65,6 +83,13 @@ public class UserService : IUserService
 
             var presence = GetVisiblePresence(user, viewerVisibility);
 
+            var hasPremium = user.Premium is not null;
+            var path = user.ProfileImagePath;
+            if (!hasPremium && !string.IsNullOrWhiteSpace(path) && path.Contains("_512.webp"))
+            {
+                path = null;
+            }
+
             return new ConversationDto
             {
                 Id = conversation.Id,
@@ -75,8 +100,9 @@ public class UserService : IUserService
                 IsActivityHidden = presence.IsActivityHidden,
                 IsLastSeenHidden = presence.IsLastSeenHidden,
                 IsPremium = IsPremiumBadgeVisible(user),
-                ProfileImagePath = user.ProfileImagePath,
-                ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
+                ProfileImagePath = path,
+                ProfileImageUrl = GetImageUrl(path),
+                ProfileImageSmallUrl = GetSmallImageUrl(path),
                 LastMessage = "Start a conversation.",
                 LastMessageAt = null,
                 OtherUserReadAt = conversation.FirstUserId == user.Id
@@ -114,6 +140,13 @@ public class UserService : IUserService
 
             var presence = GetVisiblePresence(user, viewerVisibility);
 
+            var hasPremium = user.Premium is not null;
+            var path = user.ProfileImagePath;
+            if (!hasPremium && !string.IsNullOrWhiteSpace(path) && path.Contains("_512.webp"))
+            {
+                path = null;
+            }
+
             items.Add(new FriendCandidateDto
             {
                 Id = user.Id,
@@ -123,8 +156,9 @@ public class UserService : IUserService
                 IsActivityHidden = presence.IsActivityHidden,
                 IsLastSeenHidden = presence.IsLastSeenHidden,
                 IsPremium = IsPremiumBadgeVisible(user),
-                ProfileImagePath = isFriend ? user.ProfileImagePath : null,
-                ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, isFriend),
+                ProfileImagePath = isFriend ? path : null,
+                ProfileImageUrl = GetVisibleProfileImageUrl(path, isFriend),
+                ProfileImageSmallUrl = isFriend ? GetVisibleProfileImageSmallUrl(path, isFriend) : null,
                 Status = isFriend
                     ? "friend"
                     : request is null
@@ -143,14 +177,25 @@ public class UserService : IUserService
     {
         var requests = await _unitOfWork.FriendRequests.GetIncomingAsync(currentUserId, cancellationToken);
 
-        return requests.Select(x => new FriendRequestDto
+        return requests.Select(x =>
         {
-            Id = x.Id,
-            SenderId = x.SenderId,
-            SenderUsername = x.Sender.Username,
-            ProfileImagePath = null,
-            ProfileImageUrl = GetVisibleProfileImageUrl(x.Sender.ProfileImagePath, false),
-            CreatedAt = x.CreatedAt
+            var hasPremium = x.Sender.Premium is not null;
+            var path = x.Sender.ProfileImagePath;
+            if (!hasPremium && !string.IsNullOrWhiteSpace(path) && path.Contains("_512.webp"))
+            {
+                path = null;
+            }
+
+            return new FriendRequestDto
+            {
+                Id = x.Id,
+                SenderId = x.SenderId,
+                SenderUsername = x.Sender.Username,
+                ProfileImagePath = null,
+                ProfileImageUrl = GetVisibleProfileImageUrl(path, false),
+                ProfileImageSmallUrl = GetVisibleProfileImageSmallUrl(path, false),
+                CreatedAt = x.CreatedAt
+            };
         }).ToList();
     }
 
@@ -536,8 +581,17 @@ public class UserService : IUserService
         dto.LastSeenAt = presence.LastSeenAt;
         dto.IsActivityHidden = presence.IsActivityHidden;
         dto.IsLastSeenHidden = presence.IsLastSeenHidden;
-        dto.ProfileImagePath = canSeeProfileImage ? user.ProfileImagePath : null;
-        dto.ProfileImageUrl = GetVisibleProfileImageUrl(user.ProfileImagePath, canSeeProfileImage);
+
+        var isPremium = user.Premium is not null;
+        var path = user.ProfileImagePath;
+        if (!isPremium && !string.IsNullOrWhiteSpace(path) && path.Contains("_512.webp"))
+        {
+            path = null;
+        }
+
+        dto.ProfileImagePath = canSeeProfileImage ? path : null;
+        dto.ProfileImageUrl = GetVisibleProfileImageUrl(path, canSeeProfileImage);
+        dto.ProfileImageSmallUrl = canSeeProfileImage ? GetVisibleProfileImageSmallUrl(path, canSeeProfileImage) : null;
         return dto;
     }
 
@@ -558,8 +612,36 @@ public class UserService : IUserService
         return canSeeProfileImage ? GetImageUrl(path) : HiddenProfileImageUrl;
     }
 
+    private string? GetSmallImageUrl(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        var smallPath = path.Replace(".webp", "_small.webp");
+        return GetImageUrl(smallPath);
+    }
+
+    private string? GetVisibleProfileImageSmallUrl(string? path, bool canSeeProfileImage)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return null;
+        }
+
+        return canSeeProfileImage ? GetSmallImageUrl(path) : HiddenProfileImageUrl;
+    }
+
     private ProfileDto ToProfileDto(User user)
     {
+        var isPremium = user.Premium is not null;
+        var path = user.ProfileImagePath;
+        if (!isPremium && !string.IsNullOrWhiteSpace(path) && path.Contains("_512.webp"))
+        {
+            path = null;
+        }
+
         return new ProfileDto
         {
             Id = user.Id,
@@ -567,10 +649,11 @@ public class UserService : IUserService
             Email = user.EmailSettings?.Email,
             IsEmailConfirmed = user.EmailSettings?.IsEmailConfirmed ?? false,
             EmailCooldownEndsAt = user.EmailSettings is null ? null : GetEmailCooldownEndsAt(user.EmailSettings),
-            ProfileImagePath = user.ProfileImagePath,
-            ProfileImageUrl = GetImageUrl(user.ProfileImagePath),
+            ProfileImagePath = path,
+            ProfileImageUrl = GetImageUrl(path),
+            ProfileImageSmallUrl = GetSmallImageUrl(path),
             IsTwoFactorEnabled = user.TwoFactor?.IsTwoFactorEnabled ?? false,
-            IsPremium = user.Premium is not null,
+            IsPremium = isPremium,
             IsExtendedVoiceMessagesEnabled = user.Premium?.IsExtendedVoiceMessagesEnabled ?? false,
             IsRawImageUploadsEnabled = user.Premium?.IsRawImageUploadsEnabled ?? false,
             IsVideoUploadsEnabled = user.Premium?.IsVideoUploadsEnabled ?? false,

@@ -2685,7 +2685,10 @@
         if (activeChatSummary) {
             activeChatSummary.classList.toggle("is-status-hidden", !statusText);
         }
-        setAvatarElement(activeAvatar, chat, chat.initial);
+        setAvatarElement(activeAvatar, {
+            ...chat,
+            profileImageUrl: chat.profileImageSmallUrl || chat.profileImageUrl
+        }, chat.initial);
         const canPreviewAvatar = !!getAvatarImageSource(activeAvatar);
         activeAvatar.classList.toggle("is-previewable", canPreviewAvatar);
         if (canPreviewAvatar) {
@@ -2937,10 +2940,11 @@
     }
 
     function openAvatarImagePreview(avatar, label) {
-        const imageSource = getAvatarImageSource(avatar);
+        let imageSource = getAvatarImageSource(avatar);
         if (!imageSource) {
             return;
         }
+        imageSource = imageSource.replace("_small.webp", ".webp");
 
         openImagePreview(imageSource, label || t("Profile image"), { allowZoom: false });
     }
@@ -3331,6 +3335,10 @@
             icon.src = "/Assets/Images/Icons/pause-voice.svg";
             playButton.setAttribute("aria-label", t("Pause voice message"));
             playButton.setAttribute("title", t("Pause voice message"));
+
+            if (window.AndroidBridge && window.AndroidBridge.startAudioPlayback) {
+                window.AndroidBridge.startAudioPlayback(t("Voice message"));
+            }
         });
 
         const resetPlayState = () => {
@@ -3340,6 +3348,10 @@
             playButton.setAttribute("title", t("Play voice message"));
             if (activeVoiceAudio === audio) {
                 activeVoiceAudio = null;
+            }
+
+            if (window.AndroidBridge && window.AndroidBridge.stopAudioPlayback) {
+                window.AndroidBridge.stopAudioPlayback();
             }
         };
 
@@ -4986,7 +4998,10 @@
 
         if (event.data.type === "elovo:profile-updated" && currentUserAvatar) {
             const profile = event.data.profile || {};
-            setAvatarElement(currentUserAvatar, profile, profile.initial || "?");
+            setAvatarElement(currentUserAvatar, {
+                ...profile,
+                profileImageUrl: profile.profileImageSmallUrl || profile.profileImageUrl
+            }, profile.initial || "?");
             const image = currentUserAvatar.querySelector("img");
             if (image) {
                 image.classList.add("profile-image");

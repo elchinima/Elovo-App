@@ -1,0 +1,11 @@
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Rocket outline -->
+  <path d="M14 3.5C14 3.5 19.25 8.75 19.25 14v4.38c0 .96-.79 1.75-1.75 1.75H10.5c-.96 0-1.75-.79-1.75-1.75V14C8.75 8.75 14 3.5 14 3.5Z" stroke="#F5F7FF" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- Wings -->
+  <path d="M8.75 16.63 5.25 19.25v2.63h3.5" stroke="#F5F7FF" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M19.25 16.63l3.5 2.62v2.63h-3.5" stroke="#F5F7FF" stroke-width="1.8" stroke-linejoin="round"/>
+  <!-- Flame outline -->
+  <path d="M11.38 21.88c0 1.92 1.31 3.5 2.62 3.5s2.62-1.58 2.62-3.5" stroke="#F5F7FF" stroke-width="1.8" stroke-linecap="round"/>
+  <!-- Circular window with accent colors -->
+  <circle cx="14" cy="12.25" r="2.62" fill="#8B7CFF" stroke="#F8C853" stroke-width="1.15"/>
+</svg>

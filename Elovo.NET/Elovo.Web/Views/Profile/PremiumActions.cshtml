@@ -47,6 +47,35 @@
                 </div>
             </section>
 
+            <section class="profile-panel profile-avatar-panel">
+                <div class="profile-avatar" id="premiumProfileAvatar">
+                    @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                    {
+                        <img src="@Model.ProfileImageUrl" alt="">
+                    }
+                    else
+                    {
+                        <span>@Model.Initial</span>
+                    }
+                </div>
+                <div class="profile-panel-copy">
+                    <h2>Premium profile image</h2>
+                    <span>Upload a high-quality 512x512 profile image while Premium is active.</span>
+                </div>
+                <input class="visually-hidden-file" type="file" id="premiumProfileImageInput" accept="image/png,image/jpeg,image/jpg">
+                <div class="profile-actions">
+                    <button class="primary-icon-button" id="premiumProfileImageButton" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/profile-image.svg" alt="">
+                        <span>Choose</span>
+                    </button>
+                    <button class="secondary-icon-button" id="deletePremiumProfileImageButton" type="button" @(string.IsNullOrWhiteSpace(Model.ProfileImageUrl) ? "disabled" : "")>
+                        <img class="button-icon" src="~/Assets/Images/Icons/delete-local.svg" alt="">
+                        <span>Delete</span>
+                    </button>
+                </div>
+                <p class="profile-status" id="premiumProfileImageStatus"></p>
+            </section>
+
             <section class="profile-panel">
                 <div class="profile-panel-heading">
                     <img src="~/Assets/Images/Icons/premium-voice.svg" alt="">
@@ -123,6 +152,77 @@
             </section>
         </div>
     </section>
+
+    <div class="modal-backdrop" id="avatarCropModal" aria-hidden="true">
+        <section class="modal-panel avatar-crop-panel" role="dialog" aria-modal="true" aria-labelledby="avatarCropTitle">
+            <header class="modal-header">
+                <h2 id="avatarCropTitle">Crop profile image</h2>
+                <button class="icon-button" type="button" id="avatarCropCancel" aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <div class="avatar-crop-body">
+                <div class="avatar-crop-stage" id="avatarCropStage">
+                    <img id="avatarCropImage" alt="">
+                </div>
+                <label class="avatar-zoom">
+                    Zoom
+                    <input type="range" id="avatarZoom" min="1" max="3" step="0.01" value="1">
+                </label>
+                <button class="primary-icon-button" id="avatarCropSave" type="button">
+                    <img class="button-icon" src="~/Assets/Images/Icons/profile-image.svg" alt="">
+                    <span>Save</span>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="fileLimitModal" aria-hidden="true">
+        <section class="modal-panel confirm-modal-panel" role="dialog" aria-modal="true" aria-labelledby="fileLimitTitle">
+            <header class="modal-header">
+                <h2 id="fileLimitTitle">File too large</h2>
+                <button class="icon-button" type="button" data-close-modal aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <div class="confirm-modal-body">
+                <p class="restore-hidden-copy" id="fileLimitCopy" style="text-align: center; font-size: 1.1rem;"></p>
+                <div class="restore-hidden-actions">
+                    <button class="primary-icon-button" type="button" data-close-modal>
+                        <span>OK</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="modal-backdrop" id="profileConfirmModal" aria-hidden="true">
+        <section class="modal-panel confirm-modal-panel profile-confirm-panel" role="dialog" aria-modal="true" aria-labelledby="profileConfirmTitle">
+            <header class="modal-header">
+                <h2 id="profileConfirmTitle">Confirm action</h2>
+                <button class="icon-button" type="button" id="profileConfirmClose" aria-label="Close" title="Close">
+                    <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                </button>
+            </header>
+            <div class="confirm-modal-body">
+                <div class="profile-confirm-art" aria-hidden="true">
+                    <img class="profile-confirm-card profile-confirm-card-main" id="profileConfirmIcon" src="~/Assets/Images/Icons/confirm-profile.svg" alt="">
+                    <img class="profile-confirm-card profile-confirm-card-accent" id="profileConfirmAccent" src="~/Assets/Images/Icons/confirm-spark.svg" alt="">
+                </div>
+                <p class="profile-confirm-copy" id="profileConfirmMessage">Are you sure?</p>
+                <div class="profile-confirm-actions">
+                    <button class="secondary-icon-button" id="profileConfirmCancel" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/close.svg" alt="">
+                        <span>Cancel</span>
+                    </button>
+                    <button class="primary-icon-button" id="profileConfirmAccept" type="button">
+                        <img class="button-icon" src="~/Assets/Images/Icons/sent-action.svg" alt="">
+                        <span>Confirm</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </div>
 </main>
 
 <script>
@@ -131,6 +231,11 @@
         isRawImageUploadsEnabled: @Json.Serialize(Model.IsRawImageUploadsEnabled),
         isVideoUploadsEnabled: @Json.Serialize(Model.IsVideoUploadsEnabled),
         isPremiumBadgeVisible: @Json.Serialize(Model.IsPremiumBadgeVisible)
+    };
+    window.elovoProfile = {
+        username: "@Model.Username",
+        initial: "@Model.Initial",
+        profileImageUrl: "@Model.ProfileImageUrl"
     };
 </script>
 

@@ -3336,12 +3336,18 @@
             playButton.setAttribute("aria-label", t("Pause voice message"));
             playButton.setAttribute("title", t("Pause voice message"));
 
-            if (window.AndroidBridge && window.AndroidBridge.startAudioPlayback) {
-                window.AndroidBridge.startAudioPlayback(t("Voice message"));
+            if (window.AndroidBridge) {
+                const durationMs = Math.round((audio.duration || 0) * 1000);
+                if (window.AndroidBridge.startAudioPlayback) {
+                    window.AndroidBridge.startAudioPlayback(t("Voice message"), durationMs);
+                }
+                if (window.AndroidBridge.updateAudioState) {
+                    window.AndroidBridge.updateAudioState(true);
+                }
             }
         });
 
-        const resetPlayState = () => {
+        const resetPlayState = (isEnded) => {
             player.classList.remove("is-playing");
             icon.src = "/Assets/Images/Icons/play-voice.svg";
             playButton.setAttribute("aria-label", t("Play voice message"));
@@ -3350,16 +3356,24 @@
                 activeVoiceAudio = null;
             }
 
-            if (window.AndroidBridge && window.AndroidBridge.stopAudioPlayback) {
-                window.AndroidBridge.stopAudioPlayback();
+            if (window.AndroidBridge) {
+                if (isEnded) {
+                    if (window.AndroidBridge.stopAudioPlayback) {
+                        window.AndroidBridge.stopAudioPlayback();
+                    }
+                } else {
+                    if (window.AndroidBridge.updateAudioState) {
+                        window.AndroidBridge.updateAudioState(false);
+                    }
+                }
             }
         };
 
-        audio.addEventListener("pause", resetPlayState);
+        audio.addEventListener("pause", () => resetPlayState(false));
         audio.addEventListener("ended", () => {
             audio.currentTime = 0;
             player.style.setProperty("--voice-progress", "0%");
-            resetPlayState();
+            resetPlayState(true);
         });
 
         audio.addEventListener("timeupdate", () => {
@@ -3369,6 +3383,13 @@
 
             player.style.setProperty("--voice-progress", `${Math.min(100, (audio.currentTime / audio.duration) * 100)}%`);
             duration.textContent = formatVoiceDuration(Math.max(0, audio.duration - audio.currentTime));
+
+            if (window.AndroidBridge && window.AndroidBridge.updateAudioPosition) {
+                window.AndroidBridge.updateAudioPosition(
+                    Math.round(audio.currentTime * 1000),
+                    Math.round(audio.duration * 1000)
+                );
+            }
         });
 
         player.addEventListener("DOMNodeRemoved", () => {
@@ -5274,4 +5295,14 @@
     if (userSearchButton) {
         userSearchButton.addEventListener("click", () => searchUsers(true));
     }
+
+    window.toggleVoiceFromNative = function () {
+        if (activeVoiceAudio) {
+            if (activeVoiceAudio.paused) {
+                activeVoiceAudio.play().catch(() => { });
+            } else {
+                activeVoiceAudio.pause();
+            }
+        }
+    };
 })();

@@ -3208,7 +3208,7 @@
             media.loop = false;
             media.autoplay = false;
             media.playsInline = true;
-            media.poster = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+            media.preload = "metadata";
         } else {
             media.alt = imageFileName || t("Sent image");
             media.loading = "eager";
@@ -3258,11 +3258,11 @@
             if (blob) {
                 objectUrl = URL.createObjectURL(blob);
                 previewPath = objectUrl;
-                media.src = previewPath;
+                media.src = isVideo ? previewPath + "#t=0.001" : previewPath;
                 return;
             }
 
-            media.src = previewPath;
+            media.src = isVideo ? previewPath + "#t=0.001" : previewPath;
         });
 
         frame.addEventListener("click", () => openImagePreview(previewPath, imageFileName, { isVideo: isVideo }));

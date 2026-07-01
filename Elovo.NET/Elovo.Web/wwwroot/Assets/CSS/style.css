@@ -1752,7 +1752,6 @@ html[lang="az"] .home-hero h1 {
 
 .message-image-frame {
     width: 100%;
-    aspect-ratio: 4 / 3;
     display: block;
     position: relative;
     border: 0;
@@ -1765,9 +1764,8 @@ html[lang="az"] .home-hero h1 {
 .message-image-frame > img,
 .message-image-frame > video {
     width: 100%;
-    height: 100%;
+    height: auto;
     display: block;
-    object-fit: cover;
     opacity: 1;
     transition: opacity 180ms ease, transform 180ms ease;
 }

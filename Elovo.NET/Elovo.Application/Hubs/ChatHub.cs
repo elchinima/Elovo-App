@@ -318,7 +318,7 @@ public class ChatHub : Hub
         }
 
         activeCall.CallerName = caller.Username;
-        activeCall.CallerAvatar = caller.ProfileImageUrl ?? string.Empty;
+        activeCall.CallerAvatar = caller.ProfileImageSmallUrl ?? caller.ProfileImageUrl ?? string.Empty;
         activeCall.OfferSdp = null;
         activeCall.IsRejected = false;
         activeCall.AnsweredAt = null;
@@ -333,7 +333,7 @@ public class ChatHub : Hub
                 await _pushNotificationService.SendCallPushAsync(
                     fcmToken,
                     caller.Username,
-                    caller.ProfileImageUrl ?? string.Empty,
+                    caller.ProfileImageSmallUrl ?? caller.ProfileImageUrl ?? string.Empty,
                     callerId.ToString());
             }
         }
@@ -342,7 +342,7 @@ public class ChatHub : Hub
             "IncomingCall",
             callerId,
             caller.Username,
-            caller.ProfileImageUrl,
+            caller.ProfileImageSmallUrl ?? caller.ProfileImageUrl,
             Context.ConnectionAborted);
     }
 

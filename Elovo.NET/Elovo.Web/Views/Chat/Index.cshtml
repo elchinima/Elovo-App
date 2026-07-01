@@ -382,6 +382,7 @@
         window.AndroidBridge.onUserLoggedIn(window.elovoCurrentUserId);
     }
     window.elovoCurrentUserProfileImageUrl = "@ViewBag.CurrentUserProfileImageUrl";
+    window.elovoCurrentUserProfileImageSmallUrl = "@ViewBag.CurrentUserProfileImageSmallUrl";
     window.elovoCurrentUserActivityVisibility = @Json.Serialize(ViewBag.CurrentUserActivityVisibility ?? "full");
     window.elovoCurrentUserIsPremium = @Json.Serialize(ViewBag.CurrentUserIsPremium == true);
     window.elovoCurrentUserHasExtendedVoiceMessages = @Json.Serialize(ViewBag.CurrentUserHasExtendedVoiceMessages == true);

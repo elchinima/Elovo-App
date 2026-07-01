@@ -1568,7 +1568,10 @@
         }
 
         if (callAvatar) {
-            setAvatarElement(callAvatar, user, user.initial || "?");
+            setAvatarElement(callAvatar, {
+                ...user,
+                profileImageUrl: user.profileImageSmallUrl || user.profileImageUrl
+            }, user.initial || "?");
         }
     }
 
@@ -2651,7 +2654,10 @@
             meta.className = "chat-meta";
             time.className = "time";
             status.className = `chat-status-dot${chat.isOnline ? " is-online" : ""}`;
-            setAvatarElement(avatar, chat, chat.initial);
+            setAvatarElement(avatar, {
+                ...chat,
+                profileImageUrl: chat.profileImageSmallUrl || chat.profileImageUrl
+            }, chat.initial);
             name.textContent = chat.username;
             preview.textContent = chat.lastMessage || t("Start a conversation.");
             time.textContent = formatTime(chat.lastMessageAt);
@@ -3691,7 +3697,10 @@
             button.type = "button";
             button.className = `row-action${user.status === "none" ? " primary" : ""}`;
 
-            setAvatarElement(avatar, user, user.initial);
+            setAvatarElement(avatar, {
+                ...user,
+                profileImageUrl: user.profileImageSmallUrl || user.profileImageUrl
+            }, user.initial);
             name.textContent = user.username;
             status.textContent = formatCandidateStatus(user.status);
             const icon = document.createElement("img");
@@ -3768,7 +3777,10 @@
             deleteIcon.src = "/Assets/Images/Icons/remove-friend.svg";
             deleteIcon.alt = "";
 
-            setAvatarElement(avatar, friend, friend.initial);
+            setAvatarElement(avatar, {
+                ...friend,
+                profileImageUrl: friend.profileImageSmallUrl || friend.profileImageUrl
+            }, friend.initial);
             name.textContent = friend.username;
             status.textContent = formatStatus(friend);
             button.append(openIcon, openLabel);
@@ -3926,7 +3938,10 @@
             button.type = "button";
             button.className = "row-action primary";
 
-            setAvatarElement(avatar, request, request.initial);
+            setAvatarElement(avatar, {
+                ...request,
+                profileImageUrl: request.profileImageSmallUrl || request.profileImageUrl
+            }, request.initial);
             name.textContent = request.senderUsername;
             date.textContent = formatTime(request.createdAt);
             button.textContent = t("Accept");
@@ -5029,6 +5044,7 @@
             }
             syncCurrentUserAvatarPreviewState();
             window.elovoCurrentUserProfileImageUrl = profile.profileImageUrl || "";
+            window.elovoCurrentUserProfileImageSmallUrl = profile.profileImageSmallUrl || "";
             window.elovoCurrentUserIsPremium = readPremiumState(profile.isPremium ?? profile.IsPremium ?? window.elovoCurrentUserIsPremium);
             syncPremiumButtonVisibility();
             const previousActivityVisibility = getCurrentUserActivityVisibility();

@@ -126,11 +126,21 @@
                 if (!response.ok) throw new Error("Fetch failed");
                 const blob = await response.blob();
                 
-                cached = cached || {};
-                cached[urlProperty] = url;
-                cached[blobProperty] = blob;
-                
-                await runAvatarCacheRequest("readwrite", store => store.put(cached, userId));
+                await runAvatarCacheRequest("readwrite", async store => {
+                    return new Promise((resolve, reject) => {
+                        const getReq = store.get(userId);
+                        getReq.onsuccess = () => {
+                            const latestCached = getReq.result || {};
+                            latestCached[urlProperty] = url;
+                            latestCached[blobProperty] = blob;
+                            const putReq = store.put(latestCached, userId);
+                            putReq.onsuccess = () => resolve();
+                            putReq.onerror = () => reject(putReq.error);
+                        };
+                        getReq.onerror = () => reject(getReq.error);
+                    });
+                });
+
                 return URL.createObjectURL(blob);
             } catch (e) {
                 console.error("Avatar fetch/cache error", e);
@@ -160,15 +170,26 @@
         }
 
         element.innerHTML = "";
-        const imageUrl = item && item.profileImageUrl ? item.profileImageUrl : "";
-        if (imageUrl) {
+        
+        const originalUrl = item && item.profileImageUrl ? item.profileImageUrl : "";
+        const smallUrl = item && item.profileImageSmallUrl ? item.profileImageSmallUrl : originalUrl;
+        
+        if (originalUrl) {
+            element.dataset.originalUrl = originalUrl;
+            element.dataset.userId = item.id || item.userId || item.otherUserId || item.senderId || item.callerId || "";
+        } else {
+            delete element.dataset.originalUrl;
+            delete element.dataset.userId;
+        }
+
+        if (smallUrl) {
             const fetchId = Math.random().toString();
             element.dataset.avatarFetchId = fetchId;
             element.textContent = item && item.initial ? item.initial : initialFallback;
 
-            const userId = item ? (item.id || item.userId || item.otherUserId || item.senderId || item.callerId) : null;
+            const userId = element.dataset.userId;
 
-            getOrFetchAvatar(userId, imageUrl).then(localUrl => {
+            getOrFetchAvatar(userId, smallUrl).then(localUrl => {
                 if (element.dataset.avatarFetchId !== fetchId) return;
                 element.innerHTML = "";
                 const image = document.createElement("img");
@@ -357,6 +378,7 @@
         getAntiForgeryToken,
         setAvatarElement,
         preloadUserAvatars,
+        getOrFetchAvatar,
         readResponseText,
         syncModalScrollLock,
         openModal,

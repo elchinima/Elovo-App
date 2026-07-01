@@ -1568,10 +1568,7 @@
         }
 
         if (callAvatar) {
-            setAvatarElement(callAvatar, {
-                ...user,
-                profileImageUrl: user.profileImageSmallUrl || user.profileImageUrl
-            }, user.initial || "?");
+            setAvatarElement(callAvatar, user, user.initial || "?");
         }
     }
 
@@ -2654,10 +2651,7 @@
             meta.className = "chat-meta";
             time.className = "time";
             status.className = `chat-status-dot${chat.isOnline ? " is-online" : ""}`;
-            setAvatarElement(avatar, {
-                ...chat,
-                profileImageUrl: chat.profileImageSmallUrl || chat.profileImageUrl
-            }, chat.initial);
+            setAvatarElement(avatar, chat, chat.initial);
             name.textContent = chat.username;
             preview.textContent = chat.lastMessage || t("Start a conversation.");
             time.textContent = formatTime(chat.lastMessageAt);
@@ -2691,10 +2685,7 @@
         if (activeChatSummary) {
             activeChatSummary.classList.toggle("is-status-hidden", !statusText);
         }
-        setAvatarElement(activeAvatar, {
-            ...chat,
-            profileImageUrl: chat.profileImageSmallUrl || chat.profileImageUrl
-        }, chat.initial);
+        setAvatarElement(activeAvatar, chat, chat.initial);
         const canPreviewAvatar = !!getAvatarImageSource(activeAvatar);
         activeAvatar.classList.toggle("is-previewable", canPreviewAvatar);
         if (canPreviewAvatar) {
@@ -2945,12 +2936,20 @@
         return image?.currentSrc || image?.src || "";
     }
 
-    function openAvatarImagePreview(avatar, label) {
+    async function openAvatarImagePreview(avatar, label) {
         let imageSource = getAvatarImageSource(avatar);
         if (!imageSource) {
             return;
         }
-        imageSource = imageSource.replace("_small.webp", ".webp");
+
+        const originalUrl = avatar.dataset.originalUrl;
+        const userId = avatar.dataset.userId;
+
+        if (originalUrl && window.Elovo && window.Elovo.getOrFetchAvatar) {
+            imageSource = await window.Elovo.getOrFetchAvatar(userId, originalUrl);
+        } else if (!imageSource.startsWith("blob:")) {
+            imageSource = imageSource.replace("_small.webp", ".webp");
+        }
 
         openImagePreview(imageSource, label || t("Profile image"), { allowZoom: false });
     }
@@ -3702,10 +3701,7 @@
             button.type = "button";
             button.className = `row-action${user.status === "none" ? " primary" : ""}`;
 
-            setAvatarElement(avatar, {
-                ...user,
-                profileImageUrl: user.profileImageSmallUrl || user.profileImageUrl
-            }, user.initial);
+            setAvatarElement(avatar, user, user.initial);
             name.textContent = user.username;
             status.textContent = formatCandidateStatus(user.status);
             const icon = document.createElement("img");
@@ -3782,10 +3778,7 @@
             deleteIcon.src = "/Assets/Images/Icons/remove-friend.svg";
             deleteIcon.alt = "";
 
-            setAvatarElement(avatar, {
-                ...friend,
-                profileImageUrl: friend.profileImageSmallUrl || friend.profileImageUrl
-            }, friend.initial);
+            setAvatarElement(avatar, friend, friend.initial);
             name.textContent = friend.username;
             status.textContent = formatStatus(friend);
             button.append(openIcon, openLabel);
@@ -3943,10 +3936,7 @@
             button.type = "button";
             button.className = "row-action primary";
 
-            setAvatarElement(avatar, {
-                ...request,
-                profileImageUrl: request.profileImageSmallUrl || request.profileImageUrl
-            }, request.initial);
+            setAvatarElement(avatar, request, request.initial);
             name.textContent = request.senderUsername;
             date.textContent = formatTime(request.createdAt);
             button.textContent = t("Accept");

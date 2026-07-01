@@ -1598,7 +1598,8 @@ html[lang="az"] .home-hero h1 {
 }
 
 .message.has-image {
-    width: min(68%, 360px);
+    width: max-content;
+    max-width: min(68%, 288px);
     padding: 6px;
     white-space: normal;
 }
@@ -1751,7 +1752,8 @@ html[lang="az"] .home-hero h1 {
 }
 
 .message-image-frame {
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
     display: block;
     position: relative;
     border: 0;
@@ -1763,7 +1765,9 @@ html[lang="az"] .home-hero h1 {
 
 .message-image-frame > img,
 .message-image-frame > video {
-    width: 100%;
+    max-width: 100%;
+    max-height: 260px;
+    width: auto;
     height: auto;
     display: block;
     opacity: 1;

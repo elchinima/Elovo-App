@@ -3641,6 +3641,11 @@
         const payload = await response.json();
         conversations = applyLocalConversationHistory(readConversationsPayload(payload)).map(applyCurrentUserActivityVisibility);
         hiddenConversationIds = readHiddenConversationIds();
+        
+        if (window.Elovo.preloadUserAvatars) {
+            conversations.forEach(chat => window.Elovo.preloadUserAvatars(chat));
+        }
+
         await purgeRemovedLocalConversations(conversations.map((chat) => chat.userId));
         updateRestoreHiddenButton();
         const visibleConversations = getFilteredConversations();
@@ -4110,6 +4115,30 @@
 
         connection.on("UserOnline", (userId, lastSeenAt, isActivityHidden = false, isLastSeenHidden = false) => {
             updateUserStatus(userId, true, lastSeenAt, isActivityHidden, isLastSeenHidden);
+            
+            // Check for profile image updates in the background
+            const chat = conversations.find(x => sameId(x.userId, userId));
+            if (chat && chat.username && window.Elovo.preloadUserAvatars) {
+                fetch(`/api/users?query=${encodeURIComponent(chat.username)}`, { headers: { "Accept": "application/json" } })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(users => {
+                        if (!users) return;
+                        const updatedUser = users.find(x => sameId(x.id, userId));
+                        if (updatedUser) {
+                            if (updatedUser.profileImageUrl !== chat.profileImageUrl || updatedUser.profileImageSmallUrl !== chat.profileImageSmallUrl) {
+                                chat.profileImageUrl = updatedUser.profileImageUrl;
+                                chat.profileImageSmallUrl = updatedUser.profileImageSmallUrl;
+                                window.Elovo.preloadUserAvatars(chat).then(() => {
+                                    renderChatList(getFilteredConversations());
+                                    if (activeConversation && sameId(activeConversation.userId, userId)) {
+                                        renderConversationHeader(activeConversation);
+                                    }
+                                });
+                            }
+                        }
+                    })
+                    .catch(() => {});
+            }
         });
 
         connection.on("UserOffline", (userId, lastSeenAt, isActivityHidden = false, isLastSeenHidden = false) => {

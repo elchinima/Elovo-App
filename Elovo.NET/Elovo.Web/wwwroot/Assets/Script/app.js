@@ -46,6 +46,114 @@
         return token ? token.value : "";
     }
 
+    const avatarCacheDbName = "elovo-avatar-cache";
+    const avatarCacheStoreName = "avatars";
+    let avatarCacheDb = null;
+    let avatarCacheDbPromise = null;
+
+    function openAvatarCacheDb() {
+        if (!window.indexedDB) {
+            return Promise.reject(new Error("IndexedDB is unavailable."));
+        }
+        if (avatarCacheDb) return Promise.resolve(avatarCacheDb);
+        if (avatarCacheDbPromise) return avatarCacheDbPromise;
+
+        avatarCacheDbPromise = new Promise((resolve, reject) => {
+            const request = window.indexedDB.open(avatarCacheDbName, 1);
+            request.addEventListener("upgradeneeded", () => {
+                const db = request.result;
+                if (!db.objectStoreNames.contains(avatarCacheStoreName)) {
+                    db.createObjectStore(avatarCacheStoreName);
+                }
+            });
+            request.addEventListener("success", () => {
+                avatarCacheDb = request.result;
+                avatarCacheDb.addEventListener("close", () => {
+                    avatarCacheDb = null;
+                    avatarCacheDbPromise = null;
+                });
+                resolve(avatarCacheDb);
+            });
+            request.addEventListener("error", () => reject(request.error || new Error("Avatar cache failed.")));
+        });
+        return avatarCacheDbPromise;
+    }
+
+    async function runAvatarCacheRequest(mode, transactionCallback) {
+        const db = await openAvatarCacheDb();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(avatarCacheStoreName, mode);
+            const store = transaction.objectStore(avatarCacheStoreName);
+            const request = transactionCallback(store);
+
+            transaction.addEventListener("complete", () => resolve(request ? request.result : undefined));
+            transaction.addEventListener("error", () => reject(transaction.error || new Error("Avatar cache transaction failed.")));
+        });
+    }
+
+    const pendingAvatarFetches = new Map();
+
+    async function getOrFetchAvatar(userId, url) {
+        if (!url || url.startsWith("blob:") || url.startsWith("data:")) return url;
+        if (!userId) {
+            const match = url.match(/\/([a-f0-9\-]{36})\/[^/]+\.(webp|png|jpg|jpeg)$/i);
+            if (match) userId = match[1];
+        }
+        if (!userId) return url;
+
+        const isSmall = url.includes("_512");
+        const urlProperty = isSmall ? "smallUrl" : "originalUrl";
+        const blobProperty = isSmall ? "smallBlob" : "originalBlob";
+
+        let cached = null;
+        try {
+            cached = await runAvatarCacheRequest("readonly", store => store.get(userId));
+        } catch (e) {
+            console.error("Avatar cache read error", e);
+        }
+
+        if (cached && cached[urlProperty] === url && cached[blobProperty]) {
+            return URL.createObjectURL(cached[blobProperty]);
+        }
+
+        if (pendingAvatarFetches.has(url)) {
+            return pendingAvatarFetches.get(url);
+        }
+
+        const fetchPromise = (async () => {
+            try {
+                const response = await fetch(url, { cache: "no-store" });
+                if (!response.ok) throw new Error("Fetch failed");
+                const blob = await response.blob();
+                
+                cached = cached || {};
+                cached[urlProperty] = url;
+                cached[blobProperty] = blob;
+                
+                await runAvatarCacheRequest("readwrite", store => store.put(cached, userId));
+                return URL.createObjectURL(blob);
+            } catch (e) {
+                console.error("Avatar fetch/cache error", e);
+                return url;
+            } finally {
+                pendingAvatarFetches.delete(url);
+            }
+        })();
+
+        pendingAvatarFetches.set(url, fetchPromise);
+        return fetchPromise;
+    }
+
+    async function preloadUserAvatars(user) {
+        if (!user) return;
+        const userId = user.id || user.userId || user.otherUserId || user.senderId || user.callerId;
+        const originalUrl = user.profileImageUrl;
+        const smallUrl = user.profileImageSmallUrl || originalUrl;
+
+        if (smallUrl) await getOrFetchAvatar(userId, smallUrl);
+        if (originalUrl && originalUrl !== smallUrl) await getOrFetchAvatar(userId, originalUrl);
+    }
+
     function setAvatarElement(element, item, initialFallback = "?") {
         if (!element) {
             return;
@@ -54,10 +162,20 @@
         element.innerHTML = "";
         const imageUrl = item && item.profileImageUrl ? item.profileImageUrl : "";
         if (imageUrl) {
-            const image = document.createElement("img");
-            image.src = imageUrl;
-            image.alt = "";
-            element.appendChild(image);
+            const fetchId = Math.random().toString();
+            element.dataset.avatarFetchId = fetchId;
+            element.textContent = item && item.initial ? item.initial : initialFallback;
+
+            const userId = item ? (item.id || item.userId || item.otherUserId || item.senderId || item.callerId) : null;
+
+            getOrFetchAvatar(userId, imageUrl).then(localUrl => {
+                if (element.dataset.avatarFetchId !== fetchId) return;
+                element.innerHTML = "";
+                const image = document.createElement("img");
+                image.src = localUrl;
+                image.alt = "";
+                element.appendChild(image);
+            });
             return;
         }
 
@@ -238,6 +356,7 @@
         navigateWithLoader,
         getAntiForgeryToken,
         setAvatarElement,
+        preloadUserAvatars,
         readResponseText,
         syncModalScrollLock,
         openModal,

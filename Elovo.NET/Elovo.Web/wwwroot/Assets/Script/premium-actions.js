@@ -176,8 +176,9 @@
 
         const url = URL.createObjectURL(file);
         avatarCropImage.onload = () => {
+            openModal(avatarCropModal);
             const rect = avatarCropStage.getBoundingClientRect();
-            const stageSize = rect.width;
+            const stageSize = rect.width || 320;
             avatarCropState = {
                 url,
                 zoom: 1,
@@ -193,7 +194,6 @@
 
             avatarZoom.value = "1";
             renderAvatarCrop();
-            openModal(avatarCropModal);
         };
         avatarCropImage.src = url;
     }

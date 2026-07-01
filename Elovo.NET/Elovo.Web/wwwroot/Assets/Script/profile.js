@@ -408,6 +408,7 @@ function renderAvatarCrop() {
 
     avatarCropImage.style.width = `${width}px`;
     avatarCropImage.style.height = `${height}px`;
+
     avatarCropImage.style.left = `calc(50% + ${avatarCropState.offsetX}px)`;
     avatarCropImage.style.top = `calc(50% + ${avatarCropState.offsetY}px)`;
     avatarCropImage.style.transform = "translate(-50%, -50%)";
@@ -420,6 +421,7 @@ function openAvatarCrop(file) {
 
     const url = URL.createObjectURL(file);
     avatarCropImage.onload = () => {
+        openModal(avatarCropModal);
         const rect = avatarCropStage.getBoundingClientRect();
         const stageSize = rect.width || 320;
         avatarCropState = {
@@ -437,7 +439,6 @@ function openAvatarCrop(file) {
         };
         avatarZoom.value = "1";
         renderAvatarCrop();
-        openModal(avatarCropModal);
     };
     avatarCropImage.src = url;
 }

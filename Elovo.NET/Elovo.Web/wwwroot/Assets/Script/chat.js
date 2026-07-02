@@ -3235,6 +3235,13 @@
         media.addEventListener(loadEvent, () => {
             frame.classList.remove("is-loading");
             frame.classList.remove("is-error");
+            
+            const w = isVideo ? media.videoWidth : media.naturalWidth;
+            const h = isVideo ? media.videoHeight : media.naturalHeight;
+            if (w && h) {
+                frame.style.aspectRatio = `${w} / ${h}`;
+            }
+
             let label = "";
             if (isVideo) {
                 const pathLabel = getVideoLabelFromPath(message.imageStoragePath || message.content || message.imagePath);

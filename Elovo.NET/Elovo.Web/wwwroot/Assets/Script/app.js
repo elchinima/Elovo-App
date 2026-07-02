@@ -101,7 +101,7 @@
         }
         if (!userId) return url;
 
-        const isSmall = url.includes("_512");
+        const isSmall = url.includes("_small");
         const urlProperty = isSmall ? "smallUrl" : "originalUrl";
         const blobProperty = isSmall ? "smallBlob" : "originalBlob";
 
